@@ -31,18 +31,17 @@ export default function AppShell() {
     <div className="flex h-screen overflow-hidden bg-white">
       {/* Sidebar */}
       <aside
-        className={`flex flex-col transition-all duration-300 flex-shrink-0 ${
+        className={`flex flex-col transition-all duration-300 flex-shrink-0 border-r border-gray-200 bg-white ${
           sidebarOpen ? 'w-64' : 'w-16'
         }`}
-        style={{ backgroundColor: '#0d0d0d' }}
       >
         {/* Logo */}
-        <div className="flex items-center justify-center px-4 py-4 border-b" style={{ borderColor: '#2a2a2a' }}>
+        <div className="flex items-center justify-center px-4 py-4 border-b border-gray-200">
           {sidebarOpen ? (
             <Image src="/geh-logo.svg" alt="GEH Suites" width={150} height={60} priority />
           ) : (
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm flex-shrink-0"
-              style={{ backgroundColor: '#c8920a', color: '#0d0d0d' }}>
+              style={{ backgroundColor: '#c8920a', color: '#ffffff' }}>
               G
             </div>
           )}
@@ -57,19 +56,19 @@ export default function AppShell() {
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors"
               style={
                 activeTab === tab.id
-                  ? { backgroundColor: '#c8920a', color: '#0d0d0d', fontWeight: 600 }
-                  : { color: '#9ca3af' }
+                  ? { backgroundColor: '#c8920a', color: '#ffffff', fontWeight: 600 }
+                  : { color: '#6b7280' }
               }
               onMouseEnter={(e) => {
                 if (activeTab !== tab.id) {
-                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1a1a1a';
-                  (e.currentTarget as HTMLButtonElement).style.color = '#ffffff';
+                  (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(200,146,10,0.08)';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#c8920a';
                 }
               }}
               onMouseLeave={(e) => {
                 if (activeTab !== tab.id) {
                   (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-                  (e.currentTarget as HTMLButtonElement).style.color = '#9ca3af';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#6b7280';
                 }
               }}
             >
@@ -80,32 +79,22 @@ export default function AppShell() {
         </nav>
 
         {/* Footer */}
-        <div className="p-3 border-t space-y-2" style={{ borderColor: '#2a2a2a' }}>
+        <div className="p-3 border-t border-gray-200 space-y-2">
           {sidebarOpen && fileName && (
-            <p className="text-xs truncate px-1" style={{ color: '#6b7280' }} title={fileName}>
+            <p className="text-xs truncate px-1 text-gray-400" title={fileName}>
               📁 {fileName}
             </p>
           )}
           <button
             onClick={() => { setRawRows([]); setFileName(''); }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors"
-            style={{ color: '#6b7280' }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = '#ef4444';
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = '#1a1a1a';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.color = '#6b7280';
-              (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent';
-            }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-400 transition-colors hover:text-red-500 hover:bg-red-50"
           >
             <span>🔄</span>
             {sidebarOpen && <span>Cargar nuevo archivo</span>}
           </button>
           <button
             onClick={() => setSidebarOpen((v) => !v)}
-            className="w-full flex items-center justify-center py-2 transition-colors"
-            style={{ color: '#6b7280' }}
+            className="w-full flex items-center justify-center py-2 text-gray-400 hover:text-gray-600 transition-colors"
           >
             {sidebarOpen ? '◀' : '▶'}
           </button>
