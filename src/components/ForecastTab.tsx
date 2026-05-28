@@ -79,22 +79,26 @@ export default function ForecastTab() {
       )}
 
       {/* Gauge */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a' }}>
-        <h2 className="text-sm font-semibold text-white mb-4">Indicador de Agotamiento de la Bolsa</h2>
+      <div className="rounded-xl p-5 bg-white border border-gray-200">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-1 h-5 rounded-full" style={{ backgroundColor: '#c8920a' }} />
+          <h2 className="text-sm font-semibold text-gray-800">Indicador de Agotamiento de la Bolsa</h2>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#1a1a1a' }}>
+          <div className="text-center p-4 rounded-xl"
+            style={{ backgroundColor: 'rgba(200,146,10,0.06)', border: '1px solid rgba(200,146,10,0.2)' }}>
             <p className="text-xs font-medium" style={{ color: '#c8920a' }}>Porcentaje Consumido</p>
-            <p className="text-3xl font-bold text-white mt-2">{(summary.porcentajeConsumido * 100).toFixed(1)}%</p>
+            <p className="text-3xl font-bold text-gray-900 mt-2">{(summary.porcentajeConsumido * 100).toFixed(1)}%</p>
           </div>
-          <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#1a1a1a' }}>
-            <p className="text-xs font-medium" style={{ color: '#c8920a' }}>Saldo Disponible</p>
-            <p className="text-lg font-bold text-white mt-2">{formatCOP(summary.saldoComercialDisponible)}</p>
+          <div className="text-center p-4 rounded-xl bg-gray-50 border border-gray-200">
+            <p className="text-xs font-medium text-gray-500">Saldo Disponible</p>
+            <p className="text-lg font-bold text-gray-900 mt-2">{formatCOP(summary.saldoComercialDisponible)}</p>
           </div>
           {mediumScenario && (
             <>
-              <div className="text-center p-4 rounded-xl" style={{ backgroundColor: '#1a1a1a' }}>
-                <p className="text-xs font-medium" style={{ color: '#c8920a' }}>Fecha Estimada Agotamiento</p>
-                <p className="text-lg font-bold text-white mt-2">
+              <div className="text-center p-4 rounded-xl bg-gray-50 border border-gray-200">
+                <p className="text-xs font-medium text-gray-500">Fecha Estimada Agotamiento</p>
+                <p className="text-lg font-bold text-gray-900 mt-2">
                   {mediumScenario.fechaEstimada?.toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }) ?? 'N/D'}
                 </p>
               </div>

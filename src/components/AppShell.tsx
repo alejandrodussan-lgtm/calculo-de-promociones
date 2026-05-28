@@ -28,7 +28,7 @@ export default function AppShell() {
   const showWarning = maxFileDate && maxFileDate < today;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f5f4f2]">
+    <div className="flex h-screen overflow-hidden bg-white">
       {/* Sidebar */}
       <aside
         className={`flex flex-col transition-all duration-300 flex-shrink-0 ${

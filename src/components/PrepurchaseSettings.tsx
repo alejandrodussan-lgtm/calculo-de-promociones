@@ -72,17 +72,18 @@ export default function PrepurchaseSettings() {
       </div>
 
       {/* Preview */}
-      <div className="rounded-xl p-5" style={{ backgroundColor: '#0d0d0d', border: '1px solid #2a2a2a' }}>
-        <h3 className="text-sm font-semibold text-white mb-3">Valores calculados (vista previa)</h3>
+      <div className="rounded-xl p-5 bg-white border border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-700 mb-3">Valores calculados (vista previa)</h3>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: 'Valor Precompra', value: formatCOP(local.valorPrecompra) },
             { label: `Beneficio Comercial (${(local.porcentajeAdicional * 100).toFixed(1)}%)`, value: formatCOP(beneficio) },
             { label: 'Cupo Comercial Total', value: formatCOP(cupoTotal) },
           ].map((item) => (
-            <div key={item.label} className="text-center p-3 rounded-lg" style={{ backgroundColor: '#1a1a1a' }}>
+            <div key={item.label} className="text-center p-4 rounded-lg"
+              style={{ backgroundColor: 'rgba(200,146,10,0.06)', border: '1px solid rgba(200,146,10,0.2)' }}>
               <p className="text-xs font-medium" style={{ color: '#c8920a' }}>{item.label}</p>
-              <p className="text-lg font-bold text-white mt-1">{item.value}</p>
+              <p className="text-lg font-bold text-gray-900 mt-1">{item.value}</p>
             </div>
           ))}
         </div>
