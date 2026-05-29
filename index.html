@@ -161,7 +161,80 @@
   .save-btn.primary{background:var(--gold);color:#fff;border-color:var(--gold-dark);}
   .save-btn.primary:hover{background:var(--gold-dark);}
   .save-status{font-size:.7rem;color:var(--gray3);margin-left:4px;}
+/* OTB MODULE */
+.otb-section{padding:20px 24px;}
+.otb-header{margin-bottom:20px;}
+.otb-header h2{color:var(--gold-dark);font-size:1.1rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;}
+.otb-header p{color:var(--gray3);font-size:.75rem;margin-top:4px;}
+.otb-upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:700px){.otb-upload-grid{grid-template-columns:1fr;}}
+.otb-upload-card{background:var(--white);border:2px dashed var(--gold-border);border-radius:var(--radius);padding:24px;text-align:center;transition:all .2s;cursor:pointer;}
+.otb-upload-card.has-file{border-style:solid;border-color:var(--gold);}
+.otb-upload-card:hover{border-color:var(--gold);background:var(--gold-subtle);}
+.otb-upload-title{font-size:.8rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;}
+.otb-upload-icon{font-size:2rem;margin-bottom:8px;}
+.otb-upload-hint{font-size:.72rem;color:var(--gray3);margin-top:6px;}
+.otb-file-name{font-size:.76rem;color:var(--gold-dark);font-weight:700;margin-top:8px;word-break:break-all;}
+.otb-btn{padding:6px 16px;border-radius:16px;border:1.5px solid var(--gold-border);background:var(--gold-pale);color:var(--gold-dark);font-size:.74rem;font-weight:700;cursor:pointer;transition:all .15s;margin:4px;}
+.otb-btn:hover{background:var(--gold);color:#fff;}
+.otb-btn.primary{background:var(--gold);color:#fff;border-color:var(--gold-dark);}
+.otb-btn.primary:hover{background:var(--gold-dark);}
+.otb-btn.danger{border-color:#fcc;color:#c00;}
+.otb-btn.danger:hover{background:#c00;color:#fff;}
+.otb-kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.otb-kpi{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);padding:14px;text-align:center;}
+.otb-kpi-label{font-size:.65rem;font-weight:700;color:var(--gray3);text-transform:uppercase;letter-spacing:.8px;}
+.otb-kpi-value{font-size:1.4rem;font-weight:800;color:var(--gold-dark);margin:4px 0;}
+.otb-kpi-sub{font-size:.68rem;color:var(--gray3);}
+.otb-kpi.up .otb-kpi-value{color:#1a6e3c;}
+.otb-kpi.down .otb-kpi-value{color:#c00;}
+.otb-table-wrap{overflow-x:auto;background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);margin-bottom:20px;}
+.otb-table{width:100%;border-collapse:collapse;font-size:.75rem;min-width:900px;}
+.otb-table thead th{background:var(--gold-pale);padding:6px 8px;text-align:center;font-size:.62rem;font-weight:800;color:var(--gold-dark);border-bottom:1.5px solid var(--gold-border);white-space:nowrap;}
+.otb-table tbody td{padding:5px 8px;text-align:center;border-bottom:1px solid var(--gray2);}
+.otb-table tbody tr:hover{background:var(--gold-subtle);}
+.ind-up{color:#1a6e3c;font-weight:800;}
+.ind-down{color:#c00;font-weight:800;}
+.ind-same{color:#888;}
+.otb-card{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
+.otb-card-title{font-size:.78rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;border-bottom:1.5px solid var(--gold-border);padding-bottom:6px;}
+.otb-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+@media(max-width:900px){.otb-chart-grid{grid-template-columns:1fr;}}
+.otb-chart-box{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);padding:16px;}
+.otb-chart-title{font-size:.74rem;font-weight:800;color:var(--gold-dark);margin-bottom:12px;text-transform:uppercase;letter-spacing:.6px;}
+.otb-rec{border-left:4px solid var(--gold);padding:10px 14px;margin-bottom:10px;background:var(--gold-subtle);border-radius:0 var(--radius) var(--radius) 0;}
+.otb-rec.positive{border-color:#1a6e3c;background:#f0faf4;}
+.otb-rec.negative{border-color:#c00;background:#fff5f5;}
+.otb-rec.warning{border-color:#e6a817;background:#fffbf0;}
+.otb-rec-title{font-size:.76rem;font-weight:800;color:var(--text);margin-bottom:4px;}
+.otb-rec-body{font-size:.73rem;color:#555;line-height:1.5;}
+.otb-rec-priority{font-size:.62rem;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-top:4px;}
+.otb-rec-priority.high{background:#fde;color:#c00;}
+.otb-rec-priority.medium{background:#fff3cd;color:#856404;}
+.otb-rec-priority.low{background:#d4edda;color:#1a6e3c;}
+.otb-alert{padding:12px 16px;border-radius:var(--radius);margin-bottom:12px;font-size:.78rem;font-weight:600;display:flex;align-items:center;gap:8px;}
+.otb-alert.green{background:#d4edda;color:#1a6e3c;border:1px solid #b8ddc8;}
+.otb-alert.red{background:#fde;color:#c00;border:1px solid #f5c6cb;}
+.otb-alert.yellow{background:#fff3cd;color:#856404;border:1px solid #ffeaa7;}
+.otb-alert.gray{background:var(--gray1);color:var(--gray4);border:1px solid var(--gray2);}
+.otb-map-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+@media(max-width:600px){.otb-map-grid{grid-template-columns:1fr;}}
+.otb-map-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray2);}
+.otb-map-row label{flex:1;font-size:.76rem;font-weight:600;color:var(--gray4);}
+.otb-map-row select{flex:1.5;padding:4px 6px;border:1px solid var(--gold-border);border-radius:4px;font-size:.75rem;background:var(--off-white);color:var(--text);}
+.otb-hist-table{width:100%;border-collapse:collapse;font-size:.74rem;}
+.otb-hist-table th{background:var(--gold-pale);padding:6px 10px;text-align:left;font-size:.65rem;font-weight:800;color:var(--gold-dark);border-bottom:1.5px solid var(--gold-border);}
+.otb-hist-table td{padding:6px 10px;border-bottom:1px solid var(--gray2);}
+.otb-hist-table tr:hover td{background:var(--gold-subtle);}
+.otb-tabs{display:flex;gap:0;border-bottom:2px solid var(--gold-border);margin-bottom:16px;}
+.otb-tab-btn{padding:8px 18px;background:none;border:none;border-bottom:3px solid transparent;margin-bottom:-2px;font-size:.76rem;font-weight:700;color:var(--gray3);cursor:pointer;transition:all .15s;}
+.otb-tab-btn.active{color:var(--gold-dark);border-bottom-color:var(--gold);}
+.otb-tab-btn:hover{color:var(--gold-dark);}
+.otb-sub-panel{display:none;}
+.otb-sub-panel.active{display:block;}
 </style>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -203,7 +276,9 @@
 </div>
 
 <div class="channel-tabs" id="tabs"></div>
-<div class="content"><div id="pages"></div></div>
+<div class="content"><div id="pages"></div>
+<div id="page-otb" class="channel-page" style="display:none;"></div></div>
+<div id="otb-panel" style="display:none;"></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -889,6 +964,7 @@ function init() {
       currentChannelKey=ch.key;
       document.querySelectorAll('.channel-tab').forEach(b=>b.classList.remove('active'));
       document.querySelectorAll('.channel-page').forEach(p=>p.classList.remove('active'));
+      document.getElementById('page-otb').style.display='none';
       btn.classList.add('active');
       document.getElementById('page-'+ch.key).classList.add('active');
       renderSections(ch);
@@ -918,6 +994,24 @@ function init() {
       renderSections(ch);
     });
   });
+
+  // OTB Tab
+  const otbBtn = document.createElement('button');
+  otbBtn.className = 'channel-tab';
+  otbBtn.dataset.key = 'otb';
+  otbBtn.textContent = 'Comparativa OTB';
+  otbBtn.style.color = '#1a6e3c';
+  otbBtn.addEventListener('click', () => {
+    currentChannelKey = 'otb';
+    document.querySelectorAll('.channel-tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.channel-page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+    otbBtn.classList.add('active');
+    const otbPage = document.getElementById('page-otb');
+    otbPage.style.display = 'block';
+    otbPage.classList.add('active');
+    if (!otbPage._initialized) { initOTB(otbPage); otbPage._initialized = true; }
+  });
+  tabsEl.appendChild(otbBtn);
 
   currentChannelKey = CHANNELS[0].key;
   renderSections(CHANNELS[0]);
@@ -982,6 +1076,738 @@ document.getElementById('btn-restore').addEventListener('click', ()=>{
   const saved = localStorage.getItem('rmd_state');
   if (saved) { restoreFullState(saved); savedSnapshot = saved; }
 })();
+
+// ═══════════════════════════════════════════════════════════════
+// OTB MODULE — Comparativa On the Book
+// ═══════════════════════════════════════════════════════════════
+
+const OTB_STATE = {
+  beforeData: null,
+  afterData: null,
+  beforeCols: null,
+  afterCols: null,
+  comparison: null,
+  charts: {},
+  history: JSON.parse(localStorage.getItem('otb_history')||'[]')
+};
+
+const COL_ALIASES = {
+  date:     ['fecha','date','día','day','stay date','arrival date','periodo'],
+  occ:      ['ocupacion','ocupación','occupancy','occ','occ %','% ocupacion','% occ'],
+  rooms:    ['habitaciones vendidas','rooms sold','sold rooms','room nights','rn','noches vendidas','hab vendidas','hab. vendidas'],
+  adr:      ['adr','average daily rate','tarifa promedio','tarifa media','avg rate'],
+  revpar:   ['revpar','revenue per available room','revpar neto','revpar bruto'],
+  revenue:  ['revenue','room revenue','ingresos','venta alojamiento','produccion','producción'],
+  hotel:    ['hotel','propiedad','property']
+};
+
+function detectColumn(headers, field) {
+  const aliases = COL_ALIASES[field] || [];
+  for (const h of headers) {
+    const hl = h.toLowerCase().trim();
+    if (aliases.some(a => hl.includes(a) || a.includes(hl))) return h;
+  }
+  return null;
+}
+
+function parseExcelDate(val) {
+  if (!val && val !== 0) return null;
+  if (typeof val === 'number') {
+    const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().split('T')[0];
+  }
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  const m1 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+  const m2 = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})/);
+  if (m2) return m2[3]+'-'+m2[1].padStart(2,'0')+'-'+m2[2].padStart(2,'0');
+  return null;
+}
+
+function cleanNum(val) {
+  if (val === null || val === undefined || val === '') return null;
+  if (typeof val === 'number') return val;
+  const s = String(val).replace(/[$,\s]/g,'').replace(/[^0-9.\-]/g,'');
+  const n = parseFloat(s);
+  return isNaN(n) ? null : n;
+}
+
+function normalizeOcc(val) {
+  const n = cleanNum(val);
+  if (n === null) return null;
+  return n > 1 ? n : n * 100;
+}
+
+function parseFileData(wb, mapping) {
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const raw = XLSX.utils.sheet_to_json(ws, {defval:''});
+  return raw.map((r,i) => ({
+    _idx: i,
+    date:    parseExcelDate(r[mapping.date]),
+    occ:     normalizeOcc(r[mapping.occ]),
+    rooms:   cleanNum(r[mapping.rooms]),
+    adr:     cleanNum(r[mapping.adr]),
+    revpar:  cleanNum(r[mapping.revpar]),
+    revenue: cleanNum(r[mapping.revenue]),
+    hotel:   mapping.hotel ? r[mapping.hotel] : null,
+    _raw:    r
+  })).filter(r => r.date);
+}
+
+function compareOTB(before, after) {
+  const bMap = {};
+  before.forEach(r => { if (r.date) bMap[r.date] = r; });
+  const aMap = {};
+  after.forEach(r => { if (r.date) aMap[r.date] = r; });
+  const allDates = [...new Set([...Object.keys(bMap), ...Object.keys(aMap)])].sort();
+
+  return allDates.map(date => {
+    const b = bMap[date];
+    const a = aMap[date];
+    if (!b) return { date, status:'new', b:null, a, note:'Nueva fecha en DESPUÉS' };
+    if (!a) return { date, status:'missing', b, a:null, note:'Sin dato en DESPUÉS' };
+
+    const diff = (af, bf) => {
+      if (af === null || bf === null) return { abs: null, pct: null, dir: 'same' };
+      const abs = af - bf;
+      const pct = bf !== 0 ? (abs/bf)*100 : null;
+      const tol = 0.5;
+      const dir = Math.abs(abs) < tol ? 'same' : abs > 0 ? 'up' : 'down';
+      return { abs, pct, dir };
+    };
+
+    const occ   = diff(a.occ,   b.occ);
+    const rooms = diff(a.rooms, b.rooms);
+    const adr   = diff(a.adr,   b.adr);
+    const rev   = diff(a.revpar, b.revpar);
+
+    const ups   = [occ,rooms,rev].filter(x=>x.dir==='up').length;
+    const downs = [occ,rooms,rev].filter(x=>x.dir==='down').length;
+    let status = 'stable';
+    if (ups >= 2) status = 'positive';
+    else if (downs >= 2) status = 'negative';
+    else if (ups > 0 && downs > 0) status = 'mixed';
+
+    return { date, status, b, a, occ, rooms, adr, revpar: rev };
+  });
+}
+
+function buildSummaryMetrics(rows) {
+  const valid = rows.filter(r => r.b && r.a);
+  const up    = rows.filter(r => r.status === 'positive').length;
+  const down  = rows.filter(r => r.status === 'negative').length;
+  const stable= rows.filter(r => r.status === 'stable' || r.status === 'mixed').length;
+
+  const avg = (field) => {
+    const vals = valid.map(r => r[field] && r[field].abs !== undefined ? r[field].abs : null).filter(v => v !== null);
+    return vals.length ? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+  };
+
+  const general = (() => {
+    const overallUps = rows.length ? up / rows.length : 0;
+    if (overallUps > 0.6) return 'Positivo';
+    if (overallUps < 0.3 && down > up) return 'Negativo';
+    if (up > 0 && down > 0) return 'Mixto';
+    return 'Estable';
+  })();
+
+  return { total: rows.length, up, down, stable, avgOcc: avg('occ'), avgRooms: avg('rooms'), avgAdr: avg('adr'), avgRevpar: avg('revpar'), general };
+}
+
+function generateRecommendations(metrics, rows) {
+  const recs = [];
+  const { general, avgOcc, avgRevpar, up, down } = metrics;
+
+  if (general === 'Positivo' || avgOcc > 2) {
+    recs.push({ type:'positive', title:'Oportunidad de subida tarifaria', body:'La ocupación y el RevPAR muestran crecimiento. Se recomienda evaluar incremento tarifario gradual entre 3% y 8% en las fechas con mayor presión de demanda.', priority:'high' });
+    recs.push({ type:'positive', title:'Aplicar restricciones de estancia', body:'Con alta ocupación se sugiere activar mínimos de 2 o 3 noches en fechas pico para optimizar el mix de estadía y proteger el inventario.', priority:'medium' });
+  }
+  if (general === 'Negativo' || avgOcc < -2) {
+    recs.push({ type:'negative', title:'Revisar competitividad tarifaria', body:'Se detecta caída en ocupación y habitaciones vendidas. Se recomienda revisar paridad de canales, activar promociones tácticas y mejorar visibilidad OTA.', priority:'high' });
+    recs.push({ type:'negative', title:'Activar promociones de demanda', body:'Considerar: tarifa No Reembolsable con descuento, promoción móvil, oferta por país o compra anticipada para las fechas afectadas.', priority:'high' });
+  }
+  if (general === 'Mixto') {
+    recs.push({ type:'warning', title:'Gestión diferenciada por fecha', body:'El comportamiento es mixto. Se recomienda analizar fecha por fecha: subir tarifa en días con alta ocupación y activar promociones en días con baja tracción.', priority:'medium' });
+  }
+
+  const critDown = rows.filter(r => r.status === 'negative').slice(0,5);
+  critDown.forEach(r => {
+    recs.push({ type:'negative', title:'Fecha crítica: '+r.date, body:'Ocupación: '+(r.b&&r.b.occ!==null?r.b.occ.toFixed(1):'N/A')+'% → '+(r.a&&r.a.occ!==null?r.a.occ.toFixed(1):'N/A')+'%. RevPAR: '+fmtCOP(r.b&&r.b.revpar)+' → '+fmtCOP(r.a&&r.a.revpar)+'. Acción: revisar tarifa y activar promoción táctica.', priority:'high' });
+  });
+
+  const topUp = rows.filter(r => r.status === 'positive').slice(0,3);
+  topUp.forEach(r => {
+    recs.push({ type:'positive', title:'Fecha destacada: '+r.date, body:'Crecimiento positivo. Se recomienda mantener o incrementar gradualmente la tarifa para capitalizar la demanda.', priority:'low' });
+  });
+
+  return recs;
+}
+
+function fmtCOP(n) {
+  if (n === null || n === undefined) return 'N/D';
+  return '$ ' + Math.round(n).toLocaleString('es-CO');
+}
+function fmtPct(n, decimals) {
+  decimals = decimals !== undefined ? decimals : 1;
+  if (n === null || n === undefined) return 'N/D';
+  return (n > 0 ? '+' : '') + n.toFixed(decimals) + '%';
+}
+function dirIcon(dir) {
+  if (dir === 'up')   return '<span class="ind-up">⬆</span>';
+  if (dir === 'down') return '<span class="ind-down">⬇</span>';
+  return '<span class="ind-same">⚫</span>';
+}
+
+function initOTB(page) {
+  page.innerHTML = '<div class="otb-section">'
+    + '<div class="otb-header"><h2>Comparativa On the Book (OTB)</h2>'
+    + '<p>Análisis antes vs después · Ocupación · ADR · RevPAR · Habitaciones vendidas</p></div>'
+    + '<div class="otb-tabs">'
+    + '<button class="otb-tab-btn active" data-tab="upload">Carga de datos</button>'
+    + '<button class="otb-tab-btn" data-tab="comparison">Comparativa</button>'
+    + '<button class="otb-tab-btn" data-tab="charts">Gráficos</button>'
+    + '<button class="otb-tab-btn" data-tab="consultant">Consultor RM</button>'
+    + '<button class="otb-tab-btn" data-tab="history">Histórico</button>'
+    + '</div>'
+    + '<div id="otb-panel-upload" class="otb-sub-panel active">'
+    + '<div class="otb-upload-grid">'
+    + '<div class="otb-upload-card" id="otb-drop-before" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'before\')">'
+    + '<div class="otb-upload-icon">📂</div>'
+    + '<div class="otb-upload-title">OTB ANTES</div>'
+    + '<div class="otb-upload-hint">Línea base inicial del On the Book</div>'
+    + '<div class="otb-file-name" id="otb-fname-before">Sin archivo cargado</div>'
+    + '<div style="margin-top:10px">'
+    + '<input type="file" id="otb-file-before" accept=".xlsx,.xls,.csv" style="display:none" onchange="otbLoadFile(this,\'before\')">'
+    + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-before\').click()">Seleccionar archivo</button>'
+    + '<button class="otb-btn danger" onclick="otbClearFile(\'before\')">Limpiar</button>'
+    + '</div>'
+    + '<div class="otb-upload-hint" style="margin-top:8px;color:#e6a817">📷 Imágenes: Próximamente (OCR Fase 2)</div>'
+    + '</div>'
+    + '<div class="otb-upload-card" id="otb-drop-after" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'after\')">'
+    + '<div class="otb-upload-icon">📊</div>'
+    + '<div class="otb-upload-title">OTB DESPUÉS</div>'
+    + '<div class="otb-upload-hint">Estado posterior a las acciones aplicadas</div>'
+    + '<div class="otb-file-name" id="otb-fname-after">Sin archivo cargado</div>'
+    + '<div style="margin-top:10px">'
+    + '<input type="file" id="otb-file-after" accept=".xlsx,.xls,.csv" style="display:none" onchange="otbLoadFile(this,\'after\')">'
+    + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-after\').click()">Seleccionar archivo</button>'
+    + '<button class="otb-btn danger" onclick="otbClearFile(\'after\')">Limpiar</button>'
+    + '</div>'
+    + '<div class="otb-upload-hint" style="margin-top:8px;color:#e6a817">📷 Imágenes: Próximamente (OCR Fase 2)</div>'
+    + '</div>'
+    + '</div>'
+    + '<div id="otb-mapping-area"></div>'
+    + '<div id="otb-editor-area"></div>'
+    + '<div style="text-align:center;padding:10px 0" id="otb-compare-btn-area" style="display:none">'
+    + '<button class="otb-btn primary" style="font-size:.85rem;padding:10px 28px" onclick="otbRunComparison()">▶ Calcular comparativa</button>'
+    + '</div>'
+    + '<div id="otb-errors" style="margin-top:12px"></div>'
+    + '</div>'
+    + '<div id="otb-panel-comparison" class="otb-sub-panel">'
+    + '<div id="otb-alerts-area"></div>'
+    + '<div id="otb-kpi-area"></div>'
+    + '<div id="otb-filters-area"></div>'
+    + '<div id="otb-table-area"></div>'
+    + '<div style="margin:12px 0">'
+    + '<button class="otb-btn primary" onclick="otbExportExcel()">⬇ Exportar a Excel</button>'
+    + '<button class="otb-btn" onclick="otbSaveToHistory()">💾 Guardar en histórico</button>'
+    + '</div>'
+    + '</div>'
+    + '<div id="otb-panel-charts" class="otb-sub-panel">'
+    + '<div id="otb-charts-area" class="otb-chart-grid"></div>'
+    + '</div>'
+    + '<div id="otb-panel-consultant" class="otb-sub-panel">'
+    + '<div id="otb-consultant-area"></div>'
+    + '</div>'
+    + '<div id="otb-panel-history" class="otb-sub-panel">'
+    + '<div id="otb-history-area"></div>'
+    + '</div>'
+    + '</div>';
+
+  // Sub-tab switching
+  page.querySelectorAll('.otb-tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      page.querySelectorAll('.otb-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      page.querySelectorAll('.otb-sub-panel').forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      page.querySelector('#otb-panel-'+btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'charts' && OTB_STATE.comparison) otbRenderCharts();
+      if (btn.dataset.tab === 'history') otbRenderHistory();
+    });
+  });
+
+  otbRenderHistory();
+}
+
+function otbShowError(msg) {
+  const el = document.getElementById('otb-errors');
+  if (!el) return;
+  el.innerHTML = '<div class="otb-alert red">⚠ ' + msg + '</div>';
+  setTimeout(function() { if(el) el.innerHTML=''; }, 5000);
+}
+
+function otbHandleDrop(e, side) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  otbProcessFile(file, side);
+}
+
+function otbLoadFile(input, side) {
+  if (!input.files[0]) return;
+  otbProcessFile(input.files[0], side);
+}
+
+function otbClearFile(side) {
+  OTB_STATE[side+'Data'] = null;
+  OTB_STATE[side+'Cols'] = null;
+  const fnEl = document.getElementById('otb-fname-'+side);
+  const dropEl = document.getElementById('otb-drop-'+side);
+  if (fnEl) fnEl.textContent = 'Sin archivo cargado';
+  if (dropEl) dropEl.classList.remove('has-file');
+  const mapArea = document.getElementById('otb-mapping-area');
+  const edArea = document.getElementById('otb-editor-area');
+  const cmpBtn = document.getElementById('otb-compare-btn-area');
+  if (mapArea) mapArea.innerHTML = '';
+  if (edArea) edArea.innerHTML = '';
+  if (cmpBtn) cmpBtn.style.display = 'none';
+}
+
+function otbProcessFile(file, side) {
+  const name = file.name.toLowerCase();
+  if (name.match(/\.(png|jpg|jpeg)$/)) {
+    otbShowError('La lectura automática de imágenes estará disponible en Fase 2. Cargue archivos Excel o CSV.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let wb;
+      if (name.endsWith('.csv')) {
+        wb = XLSX.read(e.target.result, {type:'string'});
+      } else {
+        wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
+      }
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, {defval:'',header:1});
+      const headers = (raw[0] || []).map(function(h){ return String(h).trim(); });
+
+      const mapping = {};
+      Object.keys(COL_ALIASES).forEach(function(field) {
+        const found = detectColumn(headers, field);
+        if (found) mapping[field] = found;
+      });
+
+      OTB_STATE[side+'WB'] = wb;
+      OTB_STATE[side+'Headers'] = headers;
+      OTB_STATE[side+'Mapping'] = mapping;
+
+      const fnEl = document.getElementById('otb-fname-'+side);
+      const dropEl = document.getElementById('otb-drop-'+side);
+      if (fnEl) fnEl.textContent = '✓ ' + file.name;
+      if (dropEl) dropEl.classList.add('has-file');
+
+      otbShowMappingUI();
+    } catch(err) {
+      otbShowError('Error al leer el archivo: ' + err.message);
+    }
+  };
+  if (name.endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+function otbShowMappingUI() {
+  const area = document.getElementById('otb-mapping-area');
+  const sides = [
+    { key:'before', label:'OTB ANTES' },
+    { key:'after',  label:'OTB DESPUÉS' }
+  ].filter(function(s){ return OTB_STATE[s.key+'Headers']; });
+
+  if (!sides.length) { if(area) area.innerHTML=''; return; }
+
+  let html = '<div class="otb-card"><div class="otb-card-title">Mapeo de columnas</div>';
+  sides.forEach(function(s) {
+    const headers = OTB_STATE[s.key+'Headers'];
+    const mapping = OTB_STATE[s.key+'Mapping'];
+    const fields = [
+      { key:'date',    label:'Fecha *' },
+      { key:'occ',     label:'Ocupación %' },
+      { key:'rooms',   label:'Hab. vendidas' },
+      { key:'adr',     label:'ADR' },
+      { key:'revpar',  label:'RevPAR' },
+      { key:'revenue', label:'Ingresos' },
+      { key:'hotel',   label:'Hotel' }
+    ];
+    html += '<div style="margin-bottom:12px"><strong style="font-size:.78rem;color:var(--gold-dark)">'+s.label+'</strong><div class="otb-map-grid">';
+    fields.forEach(function(f) {
+      const opts = [''].concat(headers).map(function(h){ return '<option value="'+h+'"'+(mapping[f.key]===h?' selected':'')+'>'+( h||'— No mapear —')+'</option>'; }).join('');
+      html += '<div class="otb-map-row"><label>'+f.label+'</label><select data-side="'+s.key+'" data-field="'+f.key+'" onchange="otbUpdateMapping(this)">'+opts+'</select></div>';
+    });
+    html += '</div></div>';
+  });
+  html += '</div>';
+
+  if (OTB_STATE.beforeHeaders && OTB_STATE.afterHeaders) {
+    html += '<div style="text-align:center;padding:8px 0"><button class="otb-btn primary" onclick="otbApplyMapping()">✓ Aplicar mapeo y previsualizar datos</button></div>';
+  }
+  if (area) area.innerHTML = html;
+}
+
+function otbUpdateMapping(sel) {
+  const side = sel.dataset.side;
+  const field = sel.dataset.field;
+  if (!OTB_STATE[side+'Mapping']) OTB_STATE[side+'Mapping'] = {};
+  OTB_STATE[side+'Mapping'][field] = sel.value || null;
+}
+
+function otbApplyMapping() {
+  if (!OTB_STATE.beforeMapping || !OTB_STATE.beforeMapping.date) { otbShowError('Mapee la columna Fecha para OTB ANTES'); return; }
+  if (!OTB_STATE.afterMapping  || !OTB_STATE.afterMapping.date)  { otbShowError('Mapee la columna Fecha para OTB DESPUÉS'); return; }
+
+  OTB_STATE.beforeData = parseFileData(OTB_STATE.beforeWB, OTB_STATE.beforeMapping);
+  OTB_STATE.afterData  = parseFileData(OTB_STATE.afterWB,  OTB_STATE.afterMapping);
+
+  if (!OTB_STATE.beforeData.length) { otbShowError('No se encontraron filas con fechas válidas en ANTES'); return; }
+  if (!OTB_STATE.afterData.length)  { otbShowError('No se encontraron filas con fechas válidas en DESPUÉS'); return; }
+
+  otbShowEditorUI();
+  const cmpBtn = document.getElementById('otb-compare-btn-area');
+  if (cmpBtn) cmpBtn.style.display = 'block';
+}
+
+function otbShowEditorUI() {
+  const mkTable = function(data, side) {
+    const label = side === 'before' ? 'OTB ANTES' : 'OTB DESPUÉS';
+    let t = '<div style="font-size:.78rem;font-weight:800;color:var(--gold-dark);margin-bottom:6px">'+label+' — '+data.length+' fechas detectadas</div>'
+      + '<div class="otb-table-wrap" style="max-height:220px;overflow-y:auto">'
+      + '<table class="otb-table"><thead><tr>'
+      + '<th>Fecha</th><th>Ocup %</th><th>Hab.Vend</th><th>ADR</th><th>RevPAR</th><th>Ingresos</th>'
+      + '</tr></thead><tbody>';
+    data.forEach(function(r,i) {
+      t += '<tr>'
+        + '<td><input style="border:none;background:transparent;width:90px;font-size:.73rem" value="'+(r.date||'')+'" data-side="'+side+'" data-idx="'+i+'" data-field="date" onchange="otbEditCell(this)"></td>'
+        + '<td><input style="border:none;background:transparent;width:55px;text-align:center;font-size:.73rem" value="'+(r.occ!==null&&r.occ!==undefined?r.occ.toFixed(1):'')+'" data-side="'+side+'" data-idx="'+i+'" data-field="occ" onchange="otbEditCell(this)"></td>'
+        + '<td><input style="border:none;background:transparent;width:55px;text-align:center;font-size:.73rem" value="'+(r.rooms||'')+'" data-side="'+side+'" data-idx="'+i+'" data-field="rooms" onchange="otbEditCell(this)"></td>'
+        + '<td><input style="border:none;background:transparent;width:70px;text-align:right;font-size:.73rem" value="'+(r.adr!==null&&r.adr!==undefined?r.adr.toFixed(0):'')+'" data-side="'+side+'" data-idx="'+i+'" data-field="adr" onchange="otbEditCell(this)"></td>'
+        + '<td><input style="border:none;background:transparent;width:70px;text-align:right;font-size:.73rem" value="'+(r.revpar!==null&&r.revpar!==undefined?r.revpar.toFixed(0):'')+'" data-side="'+side+'" data-idx="'+i+'" data-field="revpar" onchange="otbEditCell(this)"></td>'
+        + '<td><input style="border:none;background:transparent;width:80px;text-align:right;font-size:.73rem" value="'+(r.revenue!==null&&r.revenue!==undefined?r.revenue.toFixed(0):'')+'" data-side="'+side+'" data-idx="'+i+'" data-field="revenue" onchange="otbEditCell(this)"></td>'
+        + '</tr>';
+    });
+    t += '</tbody></table></div>';
+    return t;
+  };
+  const edArea = document.getElementById('otb-editor-area');
+  if (edArea) edArea.innerHTML = '<div class="otb-card">'
+    + '<div class="otb-card-title">Revisión y edición de datos extraídos</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    + '<div>'+mkTable(OTB_STATE.beforeData,'before')+'</div>'
+    + '<div>'+mkTable(OTB_STATE.afterData,'after')+'</div>'
+    + '</div>'
+    + '<div style="text-align:center;margin-top:10px">'
+    + '<button class="otb-btn" onclick="otbRunComparison()">↺ Recalcular comparativa</button>'
+    + '</div></div>';
+}
+
+function otbEditCell(input) {
+  const side = input.dataset.side;
+  const idx  = parseInt(input.dataset.idx);
+  const field = input.dataset.field;
+  const val = input.value;
+  if (field === 'date') {
+    OTB_STATE[side+'Data'][idx].date = val;
+  } else {
+    OTB_STATE[side+'Data'][idx][field] = parseFloat(val) || null;
+  }
+}
+
+function otbRunComparison() {
+  if (!OTB_STATE.beforeData || !OTB_STATE.beforeData.length || !OTB_STATE.afterData || !OTB_STATE.afterData.length) {
+    otbShowError('Cargue y mapee ambos archivos antes de comparar'); return;
+  }
+  OTB_STATE.comparison = compareOTB(OTB_STATE.beforeData, OTB_STATE.afterData);
+  OTB_STATE.metrics    = buildSummaryMetrics(OTB_STATE.comparison);
+  OTB_STATE.recs       = generateRecommendations(OTB_STATE.metrics, OTB_STATE.comparison);
+
+  otbRenderComparison();
+  otbRenderCharts();
+  otbRenderConsultant();
+
+  // Switch to comparison tab
+  document.querySelectorAll('.otb-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.otb-sub-panel').forEach(function(p){ p.classList.remove('active'); });
+  const compBtn = document.querySelector('.otb-tab-btn[data-tab="comparison"]');
+  if (compBtn) compBtn.classList.add('active');
+  const compPanel = document.getElementById('otb-panel-comparison');
+  if (compPanel) compPanel.classList.add('active');
+}
+
+function otbRenderComparison() {
+  const m = OTB_STATE.metrics;
+  const rows = OTB_STATE.comparison;
+
+  let alertClass = 'gray', alertText = 'Sin variaciones relevantes frente a la línea base.';
+  if (m.general === 'Positivo') { alertClass='green'; alertText='✅ El OTB muestra crecimiento frente a la línea base.'; }
+  else if (m.general === 'Negativo') { alertClass='red'; alertText='🔴 El OTB presenta caída en fechas críticas.'; }
+  else if (m.general === 'Mixto') { alertClass='yellow'; alertText='⚠ El comportamiento es mixto. Revise fechas específicas.'; }
+
+  const alertsArea = document.getElementById('otb-alerts-area');
+  if (alertsArea) alertsArea.innerHTML = '<div class="otb-alert '+alertClass+'">'+alertText+'</div>';
+
+  const kpis = [
+    { label:'Fechas analizadas', val: m.total, cls:'', sub:'' },
+    { label:'Fechas subieron',   val: m.up,    cls:'up',   sub: (m.total?((m.up/m.total)*100).toFixed(0):0)+'%' },
+    { label:'Fechas bajaron',    val: m.down,  cls:'down', sub: (m.total?((m.down/m.total)*100).toFixed(0):0)+'%' },
+    { label:'Fechas estables',   val: m.stable,cls:'',     sub: '' },
+    { label:'Var. prom. Ocup.',  val: m.avgOcc!==null ? fmtPct(m.avgOcc) : 'N/D', cls: m.avgOcc>0?'up':m.avgOcc<0?'down':'', sub:'pp' },
+    { label:'Var. prom. RevPAR', val: m.avgRevpar!==null ? fmtCOP(m.avgRevpar) : 'N/D', cls: m.avgRevpar>0?'up':m.avgRevpar<0?'down':'', sub:'' },
+  ];
+  const kpiArea = document.getElementById('otb-kpi-area');
+  if (kpiArea) kpiArea.innerHTML = '<div class="otb-kpi-grid">'
+    + kpis.map(function(k){ return '<div class="otb-kpi '+k.cls+'"><div class="otb-kpi-label">'+k.label+'</div><div class="otb-kpi-value">'+k.val+'</div><div class="otb-kpi-sub">'+k.sub+'</div></div>'; }).join('')
+    + '</div>';
+
+  const filtersArea = document.getElementById('otb-filters-area');
+  if (filtersArea) filtersArea.innerHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center">'
+    + '<span style="font-size:.74rem;font-weight:700;color:var(--gray4)">Filtrar:</span>'
+    + '<button class="otb-btn" data-filter="all" onclick="otbFilter(\'all\',this)" style="background:var(--gold);color:#fff">Todas</button>'
+    + '<button class="otb-btn" data-filter="positive" onclick="otbFilter(\'positive\',this)">⬆ Subieron</button>'
+    + '<button class="otb-btn" data-filter="negative" onclick="otbFilter(\'negative\',this)">⬇ Bajaron</button>'
+    + '<button class="otb-btn" data-filter="stable" onclick="otbFilter(\'stable\',this)">⚫ Estables</button>'
+    + '<button class="otb-btn" data-filter="mixed" onclick="otbFilter(\'mixed\',this)">↔ Mixtas</button>'
+    + '</div>';
+
+  otbRenderTable(rows);
+}
+
+function otbFilter(filter, btn) {
+  document.querySelectorAll('[data-filter]').forEach(function(b){ b.style.background=''; b.style.color=''; });
+  btn.style.background = 'var(--gold)'; btn.style.color = '#fff';
+  const rows = filter === 'all' ? OTB_STATE.comparison : OTB_STATE.comparison.filter(function(r){ return r.status === filter; });
+  otbRenderTable(rows);
+}
+
+function otbRenderTable(rows) {
+  let html = '<div class="otb-table-wrap"><table class="otb-table"><thead><tr>'
+    + '<th>Fecha</th>'
+    + '<th>Ocup Antes</th><th>Ocup Dsp</th><th>Var Ocup</th><th></th>'
+    + '<th>Hab Antes</th><th>Hab Dsp</th><th>Var Hab</th><th></th>'
+    + '<th>ADR Antes</th><th>ADR Dsp</th><th>Var ADR</th><th></th>'
+    + '<th>RevPAR Ant</th><th>RevPAR Dsp</th><th>Var RevPAR</th><th></th>'
+    + '<th>Estado</th><th>Nota</th>'
+    + '</tr></thead><tbody>';
+
+  rows.forEach(function(r) {
+    const statusLabel = { positive:'✅ Subió', negative:'🔴 Bajó', stable:'⚫ Estable', mixed:'↔ Mixto', new:'🆕 Nueva', missing:'❓ Sin dato' }[r.status] || r.status;
+    const fmt1 = function(v){ return (v !== null && v !== undefined) ? v.toFixed(1) : '—'; };
+    const fmt0 = function(v){ return (v !== null && v !== undefined) ? fmtCOP(v) : '—'; };
+
+    html += '<tr>'
+      + '<td style="font-weight:700;white-space:nowrap">'+r.date+'</td>'
+      + '<td>'+fmt1(r.b&&r.b.occ)+'%</td><td>'+fmt1(r.a&&r.a.occ)+'%</td>'
+      + '<td>'+(r.occ&&r.occ.abs!==null ? fmtPct(r.occ.abs,1)+' pp' : '—')+'</td><td>'+(r.occ ? dirIcon(r.occ.dir) : '')+'</td>'
+      + '<td>'+fmt1(r.b&&r.b.rooms)+'</td><td>'+fmt1(r.a&&r.a.rooms)+'</td>'
+      + '<td>'+(r.rooms&&r.rooms.abs!==null ? (r.rooms.abs>0?'+':'')+r.rooms.abs.toFixed(0) : '—')+'</td><td>'+(r.rooms ? dirIcon(r.rooms.dir) : '')+'</td>'
+      + '<td>'+fmt0(r.b&&r.b.adr)+'</td><td>'+fmt0(r.a&&r.a.adr)+'</td>'
+      + '<td>'+(r.adr&&r.adr.abs!==null ? fmtCOP(r.adr.abs) : '—')+'</td><td>'+(r.adr ? dirIcon(r.adr.dir) : '')+'</td>'
+      + '<td>'+fmt0(r.b&&r.b.revpar)+'</td><td>'+fmt0(r.a&&r.a.revpar)+'</td>'
+      + '<td>'+(r.revpar&&r.revpar.abs!==null ? fmtCOP(r.revpar.abs) : '—')+'</td><td>'+(r.revpar ? dirIcon(r.revpar.dir) : '')+'</td>'
+      + '<td style="white-space:nowrap">'+statusLabel+'</td>'
+      + '<td style="font-size:.68rem;color:#666;max-width:120px">'+(r.note||'')+'</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table></div>';
+  const tArea = document.getElementById('otb-table-area');
+  if (tArea) tArea.innerHTML = html;
+}
+
+function otbRenderCharts() {
+  if (!OTB_STATE.comparison) return;
+  const rows = OTB_STATE.comparison.filter(function(r){ return r.b && r.a; });
+  const labels = rows.map(function(r){ return r.date.slice(5); });
+  const area = document.getElementById('otb-charts-area');
+  if (!area) return;
+  area.innerHTML = '';
+
+  const mkCanvas = function(id, title) {
+    const box = document.createElement('div'); box.className='otb-chart-box';
+    box.innerHTML = '<div class="otb-chart-title">'+title+'</div><canvas id="'+id+'"></canvas>';
+    area.appendChild(box); return id;
+  };
+
+  Object.values(OTB_STATE.charts).forEach(function(c){ try { c.destroy(); } catch(e){} });
+  OTB_STATE.charts = {};
+
+  const mkLine = function(id, title, beforeArr, afterArr) {
+    const cId = mkCanvas(id, title);
+    OTB_STATE.charts[id] = new Chart(document.getElementById(cId), {
+      type:'line',
+      data:{ labels: labels, datasets:[
+        { label:'Antes', data:beforeArr, borderColor:'#e8c88a', backgroundColor:'rgba(232,200,138,.15)', tension:.3, fill:true },
+        { label:'Después', data:afterArr, borderColor:'#1a6e3c', backgroundColor:'rgba(26,110,60,.1)', tension:.3, fill:true }
+      ]},
+      options:{ responsive:true, plugins:{ legend:{position:'top'} }, scales:{ y:{beginAtZero:false} } }
+    });
+  };
+
+  mkLine('ch-occ','Ocupación % — Antes vs Después', rows.map(function(r){return r.b.occ;}), rows.map(function(r){return r.a.occ;}));
+  mkLine('ch-revpar','RevPAR — Antes vs Después', rows.map(function(r){return r.b.revpar;}), rows.map(function(r){return r.a.revpar;}));
+  mkLine('ch-adr','ADR — Antes vs Después', rows.map(function(r){return r.b.adr;}), rows.map(function(r){return r.a.adr;}));
+
+  const barId = mkCanvas('ch-var','Variación diaria de Ocupación (pp)');
+  OTB_STATE.charts['ch-var'] = new Chart(document.getElementById(barId), {
+    type:'bar',
+    data:{ labels: labels, datasets:[{ label:'Var. Ocup (pp)', data:rows.map(function(r){return r.occ&&r.occ.abs!==null?r.occ.abs:0;}),
+      backgroundColor: rows.map(function(r){ return (r.occ&&r.occ.abs>=0) ? 'rgba(26,110,60,.7)' : 'rgba(200,0,0,.6)'; }) }]},
+    options:{ responsive:true, plugins:{legend:{display:false}} }
+  });
+
+  const m = OTB_STATE.metrics;
+  const doId = mkCanvas('ch-dist','Distribución de resultados');
+  OTB_STATE.charts['ch-dist'] = new Chart(document.getElementById(doId), {
+    type:'doughnut',
+    data:{ labels:['Subieron','Bajaron','Estables/Mixtos'], datasets:[{
+      data:[m.up, m.down, m.stable],
+      backgroundColor:['#1a6e3c','#c00','#999']
+    }]},
+    options:{ responsive:true, plugins:{ legend:{position:'bottom'} } }
+  });
+}
+
+function otbRenderConsultant() {
+  const recs = OTB_STATE.recs || [];
+  const m = OTB_STATE.metrics;
+  const area = document.getElementById('otb-consultant-area');
+  if (!area) return;
+  if (!m) { area.innerHTML='<p style="color:var(--gray3);padding:20px">Ejecute la comparativa primero.</p>'; return; }
+
+  let html = '<div class="otb-card"><div class="otb-card-title">Diagnóstico general</div>'
+    + '<div class="otb-alert '+(m.general==='Positivo'?'green':m.general==='Negativo'?'red':'yellow')+'">'
+    + 'Estado del OTB: <strong>'+m.general+'</strong> · '+m.up+' fechas mejoraron · '+m.down+' fechas cayeron · Var. prom. RevPAR: '+(m.avgRevpar!==null?fmtCOP(m.avgRevpar):'N/D')
+    + '</div></div>';
+
+  html += '<div class="otb-card"><div class="otb-card-title">Recomendaciones estratégicas ('+recs.length+')</div>';
+  recs.forEach(function(r) {
+    html += '<div class="otb-rec '+r.type+'">'
+      + '<div class="otb-rec-title">'+r.title+'</div>'
+      + '<div class="otb-rec-body">'+r.body+'</div>'
+      + '<span class="otb-rec-priority '+r.priority+'">'+ ({high:'Alta',medium:'Media',low:'Baja'}[r.priority]||r.priority) +'</span>'
+      + '</div>';
+  });
+  html += '</div>';
+
+  const topUp   = (OTB_STATE.comparison||[]).filter(function(r){return r.revpar&&r.revpar.abs!==null;}).slice().sort(function(a,b){return (b.revpar.abs||0)-(a.revpar.abs||0);}).slice(0,5);
+  const topDown = (OTB_STATE.comparison||[]).filter(function(r){return r.revpar&&r.revpar.abs!==null;}).slice().sort(function(a,b){return (a.revpar.abs||0)-(b.revpar.abs||0);}).slice(0,5);
+
+  html += '<div class="otb-card"><div class="otb-card-title">Top 5 mejores fechas (RevPAR)</div><table class="otb-hist-table"><thead><tr><th>Fecha</th><th>RevPAR Antes</th><th>RevPAR Después</th><th>Variación</th></tr></thead><tbody>';
+  topUp.forEach(function(r){ html += '<tr><td>'+r.date+'</td><td>'+fmtCOP(r.b&&r.b.revpar)+'</td><td>'+fmtCOP(r.a&&r.a.revpar)+'</td><td class="ind-up">+'+fmtCOP(r.revpar.abs)+'</td></tr>'; });
+  html += '</tbody></table></div>';
+
+  html += '<div class="otb-card"><div class="otb-card-title">Top 5 peores fechas (RevPAR)</div><table class="otb-hist-table"><thead><tr><th>Fecha</th><th>RevPAR Antes</th><th>RevPAR Después</th><th>Variación</th></tr></thead><tbody>';
+  topDown.forEach(function(r){ html += '<tr><td>'+r.date+'</td><td>'+fmtCOP(r.b&&r.b.revpar)+'</td><td>'+fmtCOP(r.a&&r.a.revpar)+'</td><td class="ind-down">'+fmtCOP(r.revpar.abs)+'</td></tr>'; });
+  html += '</tbody></table></div>';
+
+  area.innerHTML = html;
+}
+
+function otbSaveToHistory() {
+  if (!OTB_STATE.metrics) { otbShowError('No hay comparativa activa para guardar'); return; }
+  const m = OTB_STATE.metrics;
+  const entry = {
+    id: Date.now(),
+    hotel: currentHotel,
+    month: new Date().toLocaleDateString('es-CO',{year:'numeric',month:'long'}),
+    date: new Date().toLocaleDateString('es-CO'),
+    total: m.total, up: m.up, down: m.down, stable: m.stable,
+    avgOcc: m.avgOcc, avgAdr: m.avgAdr, avgRevpar: m.avgRevpar,
+    general: m.general
+  };
+  OTB_STATE.history.unshift(entry);
+  localStorage.setItem('otb_history', JSON.stringify(OTB_STATE.history.slice(0,50)));
+  otbRenderHistory();
+  alert('✓ Guardado en el histórico mensual');
+}
+
+function otbRenderHistory() {
+  const area = document.getElementById('otb-history-area');
+  if (!area) return;
+  if (!OTB_STATE.history.length) {
+    area.innerHTML = '<p style="color:var(--gray3);padding:20px">No hay comparativas guardadas aún. Ejecute una comparativa y presione "Guardar en histórico".</p>';
+    return;
+  }
+  let html = '<div class="otb-card"><div class="otb-card-title">Histórico de comparativas OTB ('+OTB_STATE.history.length+')</div>'
+    + '<div class="otb-table-wrap"><table class="otb-hist-table"><thead><tr>'
+    + '<th>Fecha análisis</th><th>Hotel</th><th>Mes</th><th>Fechas</th><th>Subieron</th><th>Bajaron</th><th>Estables</th>'
+    + '<th>Var. Ocup</th><th>Var. ADR</th><th>Var. RevPAR</th><th>Estado</th><th></th>'
+    + '</tr></thead><tbody>';
+  OTB_STATE.history.forEach(function(e) {
+    const stColor = e.general==='Positivo'?'#1a6e3c':e.general==='Negativo'?'#c00':'#856404';
+    html += '<tr>'
+      + '<td>'+e.date+'</td><td>'+e.hotel+'</td><td>'+e.month+'</td>'
+      + '<td>'+e.total+'</td>'
+      + '<td style="color:#1a6e3c;font-weight:700">'+e.up+'</td>'
+      + '<td style="color:#c00;font-weight:700">'+e.down+'</td>'
+      + '<td>'+e.stable+'</td>'
+      + '<td>'+(e.avgOcc!==null&&e.avgOcc!==undefined?fmtPct(e.avgOcc):'N/D')+'</td>'
+      + '<td>'+(e.avgAdr!==null&&e.avgAdr!==undefined?fmtCOP(e.avgAdr):'N/D')+'</td>'
+      + '<td>'+(e.avgRevpar!==null&&e.avgRevpar!==undefined?fmtCOP(e.avgRevpar):'N/D')+'</td>'
+      + '<td style="color:'+stColor+';font-weight:700">'+e.general+'</td>'
+      + '<td><button class="otb-btn danger" style="padding:2px 8px;font-size:.65rem" onclick="otbDeleteHistory('+e.id+')">✕</button></td>'
+      + '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  area.innerHTML = html;
+}
+
+function otbDeleteHistory(id) {
+  OTB_STATE.history = OTB_STATE.history.filter(function(e){ return e.id !== id; });
+  localStorage.setItem('otb_history', JSON.stringify(OTB_STATE.history));
+  otbRenderHistory();
+}
+
+function otbExportExcel() {
+  if (!OTB_STATE.comparison) { otbShowError('No hay datos para exportar'); return; }
+  const m = OTB_STATE.metrics;
+  const wb = XLSX.utils.book_new();
+
+  const resumen = [
+    ['Revenue Master Dashboard — GEH Suites'],
+    ['Comparativa OTB', '', currentHotel],
+    ['Fecha exportación', new Date().toLocaleDateString('es-CO')],
+    [],
+    ['Indicador','Valor'],
+    ['Total fechas', m.total], ['Fechas subieron', m.up], ['Fechas bajaron', m.down], ['Fechas estables', m.stable],
+    ['Var. prom. Ocupación (pp)', m.avgOcc!==null?m.avgOcc.toFixed(2):'N/D'],
+    ['Var. prom. ADR', m.avgAdr!==null?m.avgAdr.toFixed(0):'N/D'],
+    ['Var. prom. RevPAR', m.avgRevpar!==null?m.avgRevpar.toFixed(0):'N/D'],
+    ['Estado general', m.general]
+  ];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen OTB');
+
+  const comp = [['Fecha','Ocup Antes','Ocup Después','Var Ocup','Hab Antes','Hab Después','Var Hab','ADR Antes','ADR Después','Var ADR','RevPAR Antes','RevPAR Después','Var RevPAR','Estado']];
+  OTB_STATE.comparison.forEach(function(r) {
+    comp.push([
+      r.date,
+      r.b&&r.b.occ!==null?r.b.occ.toFixed(1):'', r.a&&r.a.occ!==null?r.a.occ.toFixed(1):'', r.occ&&r.occ.abs!==null?r.occ.abs.toFixed(1):'',
+      r.b&&r.b.rooms!==null?r.b.rooms:'', r.a&&r.a.rooms!==null?r.a.rooms:'', r.rooms&&r.rooms.abs!==null?r.rooms.abs.toFixed(0):'',
+      r.b&&r.b.adr!==null?r.b.adr.toFixed(0):'', r.a&&r.a.adr!==null?r.a.adr.toFixed(0):'', r.adr&&r.adr.abs!==null?r.adr.abs.toFixed(0):'',
+      r.b&&r.b.revpar!==null?r.b.revpar.toFixed(0):'', r.a&&r.a.revpar!==null?r.a.revpar.toFixed(0):'', r.revpar&&r.revpar.abs!==null?r.revpar.abs.toFixed(0):'',
+      r.status
+    ]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(comp), 'Comparativa Día a Día');
+
+  const recs = [['Tipo','Título','Descripción','Prioridad']];
+  (OTB_STATE.recs||[]).forEach(function(r){ recs.push([r.type, r.title, r.body, r.priority]); });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(recs), 'Recomendaciones Revenue');
+
+  XLSX.writeFile(wb, 'OTB_Comparativa_'+currentHotel.replace(/ /g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// END OTB MODULE
+// ═══════════════════════════════════════════════════════════════
 </script>
 </body>
 </html>
