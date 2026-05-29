@@ -246,6 +246,47 @@
 .otb-sub-panel{display:none;}
 .otb-sub-panel.active{display:block;}
 
+/* OTB EXTRAS */
+.otb-mode-bar{display:flex;align-items:center;gap:10px;padding:10px 0 14px;flex-wrap:wrap;}
+.otb-mode-label{font-size:.74rem;font-weight:700;color:var(--gold-dark);}
+.otb-mode-select{padding:6px 10px;border:1.5px solid var(--gold-border);border-radius:6px;background:var(--off-white);font-size:.78rem;font-weight:700;color:var(--gold-dark);outline:none;cursor:pointer;}
+.otb-manual-btn{padding:5px 12px;border-radius:14px;border:1.5px dashed var(--gold);background:var(--gold-pale);color:var(--gold-dark);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s;margin-top:6px;}
+.otb-manual-btn:hover{background:var(--gold);color:#fff;border-style:solid;}
+.otb-manual-form{background:#fffdf8;border:1.5px solid var(--gold-border);border-radius:8px;padding:14px 16px;margin:10px 0;display:none;}
+.otb-manual-form.open{display:block;}
+.otb-manual-form h4{font-size:.75rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.otb-manual-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
+@media(max-width:700px){.otb-manual-grid{grid-template-columns:1fr 1fr;}}
+.otb-manual-field{display:flex;flex-direction:column;gap:3px;}
+.otb-manual-field label{font-size:.63rem;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.5px;}
+.otb-manual-field input{padding:5px 8px;border:1.5px solid var(--gold-border);border-radius:5px;font-size:.82rem;font-weight:600;background:var(--white);color:var(--text);outline:none;}
+.otb-manual-field input:focus{border-color:var(--gold);}
+.otb-manual-daily{margin-top:8px;}
+.otb-manual-daily label{font-size:.68rem;font-weight:700;color:var(--gold-dark);display:block;margin-bottom:3px;}
+.otb-manual-daily textarea{width:100%;height:60px;padding:5px 8px;border:1.5px solid var(--gold-border);border-radius:5px;font-size:.75rem;resize:vertical;outline:none;font-family:monospace;}
+.otb-diag-card{background:#fff8f0;border:1.5px solid #f0c070;border-radius:8px;padding:14px 16px;margin-bottom:16px;}
+.otb-diag-title{font-size:.76rem;font-weight:800;color:#b06000;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.otb-diag-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;font-size:.73rem;}
+@media(max-width:600px){.otb-diag-grid{grid-template-columns:1fr;}}
+.otb-diag-row{display:flex;gap:6px;padding:3px 0;border-bottom:1px solid #f5e0b0;}
+.otb-diag-key{color:#b06000;font-weight:700;min-width:160px;flex-shrink:0;}
+.otb-diag-val{color:#333;}
+.otb-diag-action{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:8px 12px;margin-top:10px;font-size:.75rem;color:#856404;font-weight:600;}
+.otb-summary-table{width:100%;border-collapse:collapse;font-size:.8rem;margin-bottom:16px;}
+.otb-summary-table th{background:var(--gold-pale);padding:8px 12px;text-align:center;font-size:.68rem;font-weight:800;color:var(--gold-dark);border-bottom:2px solid var(--gold-border);}
+.otb-summary-table th:first-child{text-align:left;}
+.otb-summary-table td{padding:8px 12px;text-align:center;border-bottom:1px solid var(--gray2);font-weight:600;}
+.otb-summary-table td:first-child{text-align:left;font-weight:700;color:var(--gray4);}
+.otb-summary-table tr:hover td{background:var(--gold-subtle);}
+.otb-val-up{color:#1a6e3c;font-weight:800;}
+.otb-val-down{color:#c00;font-weight:800;}
+.otb-val-same{color:#888;}
+.otb-diagnosis-box{background:linear-gradient(135deg,#fff8f0,#fdf5e0);border:1.5px solid var(--gold-border);border-radius:8px;padding:14px 16px;margin-bottom:16px;font-size:.78rem;line-height:1.6;color:#444;}
+.otb-diagnosis-box strong{color:var(--gold-dark);}
+.otb-actions-list{list-style:none;padding:0;margin:8px 0 0;}
+.otb-actions-list li{padding:4px 0 4px 20px;position:relative;font-size:.74rem;color:#333;}
+.otb-actions-list li::before{content:'▶';position:absolute;left:0;color:var(--gold);font-size:.6rem;top:6px;}
+
 /* PROMO CONFIG MODAL */
 .pcfg-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;overflow:auto;padding:20px;}
 .pcfg-overlay.open{display:flex;align-items:flex-start;justify-content:center;}
@@ -1553,11 +1594,13 @@ function pcfgExportExcel() {
 // ═══════════════════════════════════════════════════════════════
 
 const OTB_STATE = {
-  beforeData: null,
-  afterData: null,
-  beforeCols: null,
-  afterCols: null,
-  comparison: null,
+  beforeData: null, afterData: null,
+  beforeCols: null, afterCols: null,
+  beforeSummary: null, afterSummary: null,   // {label,startDate,endDate,occ,adr,revpar,revenue}
+  beforeSource: null, afterSource: null,     // 'excel'|'image'|'manual'
+  comparison: null, metrics: null, recs: null,
+  comparisonMode: 'dayOfMonth',              // 'exactDate'|'dayOfMonth'|'periodIndex'|'monthlySummary'
+  diagnostics: null,
   charts: {},
   history: JSON.parse(localStorage.getItem('otb_history')||'[]')
 };
@@ -1747,36 +1790,50 @@ function initOTB(page) {
     + '<div class="otb-upload-card" id="otb-drop-before" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'before\')">'
     + '<div class="otb-upload-icon">🖼</div>'
     + '<div class="otb-upload-title">OTB ANTES</div>'
-    + '<div class="otb-upload-hint">Imagen JPG — línea base del On the Book</div>'
+    + '<div class="otb-upload-hint">Imagen JPG/PNG — línea base del On the Book</div>'
     + '<div class="otb-file-name" id="otb-fname-before">Sin archivo cargado</div>'
     + '<div style="margin-top:10px">'
-    + '<input type="file" id="otb-file-before" accept=".jpg,.jpeg" style="display:none" onchange="otbLoadFile(this,\'before\')">'
+    + '<input type="file" id="otb-file-before" accept=".jpg,.jpeg,.png" style="display:none" onchange="otbLoadFile(this,\'before\')">'
     + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-before\').click()">Seleccionar archivo</button>'
     + '<button class="otb-btn danger" onclick="otbClearFile(\'before\')">Limpiar</button>'
     + '</div>'
-    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 Solo imágenes JPG · OCR automático activado</div>'
+    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 JPG / PNG · OCR automático</div>'
+    + '<button class="otb-manual-btn" onclick="otbOpenManual(event, \'before\')">✏ Ingresar datos manualmente</button>'
     + '</div>'
     + '<div class="otb-upload-card" id="otb-drop-after" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'after\')">'
     + '<div class="otb-upload-icon">🖼</div>'
     + '<div class="otb-upload-title">OTB DESPUÉS</div>'
-    + '<div class="otb-upload-hint">Imagen JPG — estado posterior a acciones</div>'
+    + '<div class="otb-upload-hint">Imagen JPG/PNG — estado posterior a acciones</div>'
     + '<div class="otb-file-name" id="otb-fname-after">Sin archivo cargado</div>'
     + '<div style="margin-top:10px">'
-    + '<input type="file" id="otb-file-after" accept=".jpg,.jpeg" style="display:none" onchange="otbLoadFile(this,\'after\')">'
+    + '<input type="file" id="otb-file-after" accept=".jpg,.jpeg,.png" style="display:none" onchange="otbLoadFile(this,\'after\')">'
     + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-after\').click()">Seleccionar archivo</button>'
     + '<button class="otb-btn danger" onclick="otbClearFile(\'after\')">Limpiar</button>'
     + '</div>'
-    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 Solo imágenes JPG · OCR automático activado</div>'
+    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 JPG / PNG · OCR automático</div>'
+    + '<button class="otb-manual-btn" onclick="otbOpenManual(event, \'after\')">✏ Ingresar datos manualmente</button>'
     + '</div>'
     + '</div>'
+    + '<div id="otb-manual-before" class="otb-manual-form"></div>'
+    + '<div id="otb-manual-after" class="otb-manual-form"></div>'
     + '<div id="otb-mapping-area"></div>'
     + '<div id="otb-editor-area"></div>'
-    + '<div style="text-align:center;padding:10px 0" id="otb-compare-btn-area" style="display:none">'
+    + '<div id="otb-mode-bar" class="otb-mode-bar">'
+    + '<span class="otb-mode-label">Tipo de comparación:</span>'
+    + '<select class="otb-mode-select" id="otb-mode-select" onchange="OTB_STATE.comparisonMode=this.value">'
+    + '<option value="dayOfMonth">Comparar por día del mes</option>'
+    + '<option value="exactDate">Comparar por fecha exacta</option>'
+    + '<option value="periodIndex">Comparar por posición en período</option>'
+    + '<option value="monthlySummary">Resumen mensual (KPIs globales)</option>'
+    + '</select>'
+    + '</div>'
+    + '<div style="text-align:center;padding:10px 0" id="otb-compare-btn-area">'
     + '<button class="otb-btn primary" style="font-size:.85rem;padding:10px 28px" onclick="otbRunComparison()">▶ Calcular comparativa</button>'
     + '</div>'
     + '<div id="otb-errors" style="margin-top:12px"></div>'
     + '</div>'
     + '<div id="otb-panel-comparison" class="otb-sub-panel">'
+    + '<div id="otb-diagnostics-area" style="display:none"></div>'
     + '<div id="otb-alerts-area"></div>'
     + '<div id="otb-kpi-area"></div>'
     + '<div id="otb-filters-area"></div>'
@@ -1823,8 +1880,8 @@ function otbHandleDrop(e, side) {
   e.preventDefault();
   const file = e.dataTransfer.files[0];
   if (!file) return;
-  if (!file.name.toLowerCase().match(/\.jpe?g$/)) {
-    otbShowError('Solo se aceptan imágenes JPG. Arrastre un archivo .jpg o .jpeg.');
+  if (!file.name.toLowerCase().match(/\.(jpe?g|png)$/)) {
+    otbShowError('Solo se aceptan imágenes JPG o PNG.');
     return;
   }
   otbProcessFile(file, side);
@@ -1852,11 +1909,99 @@ function otbClearFile(side) {
 
 function otbProcessFile(file, side) {
   const name = file.name.toLowerCase();
-  if (!name.match(/\.jpe?g$/)) {
-    otbShowError('Solo se aceptan imágenes JPG. Seleccione un archivo .jpg o .jpeg.');
+  if (!name.match(/\.(jpe?g|png)$/)) {
+    otbShowError('Solo se aceptan imágenes JPG o PNG.');
     return;
   }
+  OTB_STATE[side+'Source'] = 'image';
   otbProcessImageOCR(file, side);
+}
+
+// ── MANUAL ENTRY ─────────────────────────────────────────────────────────────
+function otbOpenManual(e, side) {
+  e.stopPropagation();
+  const label = side === 'before' ? 'OTB ANTES' : 'OTB DESPUÉS';
+  const container = document.getElementById('otb-manual-'+side);
+  if (!container) return;
+  if (container.classList.contains('open')) { container.classList.remove('open'); return; }
+  container.innerHTML = `
+    <h4>✏ Ingresar datos manualmente — ${label}</h4>
+    <div class="otb-manual-grid">
+      <div class="otb-manual-field"><label>Fecha inicio *</label><input type="date" id="otbm-${side}-from"></div>
+      <div class="otb-manual-field"><label>Fecha fin *</label><input type="date" id="otbm-${side}-to"></div>
+      <div class="otb-manual-field"><label>Ocupación % *</label><input type="number" id="otbm-${side}-occ" placeholder="72.39" min="0" max="100" step="0.01"></div>
+      <div class="otb-manual-field"><label>ADR / Tarifa promedio</label><input type="number" id="otbm-${side}-adr" placeholder="195545.88" min="0"></div>
+      <div class="otb-manual-field"><label>RevPAR</label><input type="number" id="otbm-${side}-revpar" placeholder="141558.22" min="0"></div>
+      <div class="otb-manual-field"><label>Ingresos totales</label><input type="number" id="otbm-${side}-rev" placeholder="Opcional" min="0"></div>
+    </div>
+    <div class="otb-manual-daily">
+      <label>Ocupación diaria % (valores separados por coma, en orden del día 1, 2, 3…)</label>
+      <textarea id="otbm-${side}-daily" placeholder="76,76,91,74,65,76,87,91,76,46,54,61,78,89,48,50,91,76,70,41,39,59,65,74,83,80,80,98,74,61"></textarea>
+    </div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="otb-btn primary" onclick="otbSaveManual('${side}')">✓ Guardar y usar estos datos</button>
+      <button class="otb-btn" onclick="document.getElementById('otb-manual-${side}').classList.remove('open')">Cancelar</button>
+    </div>`;
+  container.classList.add('open');
+}
+
+function otbSaveManual(side) {
+  const fromEl  = document.getElementById('otbm-'+side+'-from');
+  const toEl    = document.getElementById('otbm-'+side+'-to');
+  const occEl   = document.getElementById('otbm-'+side+'-occ');
+  const adrEl   = document.getElementById('otbm-'+side+'-adr');
+  const revparEl= document.getElementById('otbm-'+side+'-revpar');
+  const revEl   = document.getElementById('otbm-'+side+'-rev');
+  const dailyEl = document.getElementById('otbm-'+side+'-daily');
+
+  const from = fromEl?.value;
+  const to   = toEl?.value;
+  const occ  = parseFloat(occEl?.value);
+
+  if (!from || !to) { otbShowError('Ingrese fecha inicio y fin.'); return; }
+  if (isNaN(occ))   { otbShowError('Ingrese un valor de ocupación.'); return; }
+
+  // Build summary
+  const summary = {
+    label: (side==='before'?'ANTES':'DESPUÉS') + ' · ' + from.slice(0,7),
+    startDate: from, endDate: to,
+    occ, adr: parseFloat(adrEl?.value)||null,
+    revpar: parseFloat(revparEl?.value)||null,
+    revenue: parseFloat(revEl?.value)||null
+  };
+  OTB_STATE[side+'Summary'] = summary;
+  OTB_STATE[side+'Source'] = 'manual';
+
+  // Build daily records if provided
+  const dailyRaw = dailyEl?.value.trim();
+  if (dailyRaw) {
+    const startD = new Date(from);
+    const dailyVals = dailyRaw.split(/[,;\n]/).map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+    OTB_STATE[side+'Data'] = dailyVals.map((occ, i) => {
+      const d = new Date(startD); d.setDate(d.getDate()+i);
+      return { date: d.toISOString().split('T')[0], dayOfMonth: d.getDate(), periodIndex: i, occ, rooms: null, adr: null, revpar: null, revenue: null };
+    });
+  } else {
+    OTB_STATE[side+'Data'] = [];
+  }
+
+  // Update UI
+  const fnEl = document.getElementById('otb-fname-'+side);
+  const dropEl = document.getElementById('otb-drop-'+side);
+  if (fnEl) fnEl.textContent = `✓ Manual · ${from} → ${to} · Occ ${occ}%`;
+  if (dropEl) dropEl.classList.add('has-file');
+  document.getElementById('otb-manual-'+side).classList.remove('open');
+
+  otbCheckBothLoaded();
+}
+
+function otbCheckBothLoaded() {
+  const hasBefore = OTB_STATE.beforeData !== null || OTB_STATE.beforeSummary !== null;
+  const hasAfter  = OTB_STATE.afterData  !== null || OTB_STATE.afterSummary  !== null;
+  if (hasBefore && hasAfter) {
+    const cmpBtn = document.getElementById('otb-compare-btn-area');
+    if (cmpBtn) cmpBtn.style.display = 'block';
+  }
 }
 
 // ── OCR ENGINE ────────────────────────────────────────────────────────────────
@@ -1878,32 +2023,37 @@ function otbProcessImageOCR(file, side) {
       }
     }
   }).then(function(result) {
-    const text = result.data.text;
-    const rows = otbParseOCRText(text);
+    var text = result.data.text;
+    var rows = otbParseOCRText(text);
+    var summary = otbExtractSummaryFromOCR(text);
 
-    if (!rows.length) {
-      otbShowError('No se detectaron fechas en la imagen. Verifique que sea una tabla OTB clara y legible.');
-      if (fnEl) fnEl.textContent = '⚠ Sin datos detectados';
+    OTB_STATE[side+'Source'] = 'image';
+    OTB_STATE[side+'WB'] = null;
+
+    if (summary) {
+      OTB_STATE[side+'Summary'] = summary;
+    }
+
+    if (rows.length) {
+      OTB_STATE[side+'Data'] = rows;
+      OTB_STATE[side+'Headers'] = ['Fecha','Ocup%','Hab.Vendidas','ADR','RevPAR','Ingresos'];
+      OTB_STATE[side+'Mapping'] = { date:'Fecha', occ:'Ocup%', rooms:'Hab.Vendidas', adr:'ADR', revpar:'RevPAR', revenue:'Ingresos' };
+      if (fnEl) fnEl.textContent = '✓ ' + file.name + ' · ' + rows.length + ' fechas vía OCR';
+    } else if (summary) {
+      OTB_STATE[side+'Data'] = [];
+      if (fnEl) fnEl.textContent = '✓ ' + file.name + ' · KPIs extraídos (sin detalle diario) — use modo Resumen Mensual';
+      OTB_STATE.comparisonMode = 'monthlySummary';
+      var modeEl = document.getElementById('otb-mode-select');
+      if (modeEl) modeEl.value = 'monthlySummary';
+    } else {
+      if (fnEl) fnEl.textContent = '⚠ Sin datos detectados — ingrese manualmente';
+      otbShowError('OCR no detectó datos. Use el botón "Ingresar manualmente" para cargar los KPIs.');
+      if (dropEl) dropEl.classList.remove('has-file');
       return;
     }
 
-    OTB_STATE[side+'Data']    = rows;
-    OTB_STATE[side+'WB']      = null;
-    OTB_STATE[side+'Headers'] = ['Fecha','Ocup%','Hab.Vendidas','ADR','RevPAR','Ingresos'];
-    OTB_STATE[side+'Mapping'] = { date:'Fecha', occ:'Ocup%', rooms:'Hab.Vendidas', adr:'ADR', revpar:'RevPAR', revenue:'Ingresos' };
-
-    if (fnEl)  fnEl.textContent  = '✓ ' + file.name + ' · ' + rows.length + ' fechas vía OCR';
     if (dropEl) dropEl.classList.add('has-file');
-
-    // Show editor for review once both sides are loaded
-    if (OTB_STATE.beforeData && OTB_STATE.afterData) {
-      otbShowEditorUI();
-      var cmpBtn = document.getElementById('otb-compare-btn-area');
-      if (cmpBtn) cmpBtn.style.display = 'block';
-    } else {
-      // Show a partial preview for the loaded side
-      otbShowPartialPreview(side);
-    }
+    otbCheckBothLoaded();
   }).catch(function(err) {
     otbShowError('Error OCR: ' + err.message);
     if (fnEl) fnEl.textContent = '⚠ Error: ' + err.message;
@@ -1920,6 +2070,155 @@ function otbShowPartialPreview(side) {
     + '✓ ' + label + ' cargado — ' + data.length + ' fechas detectadas. '
     + 'Cargue ahora la imagen ' + (side==='before'?'DESPUÉS':'ANTES') + ' para comparar.'
     + '</div></div>';
+}
+
+// ── OCR SUMMARY EXTRACTOR ─────────────────────────────────────────────────────
+function otbExtractSummaryFromOCR(text) {
+  // Extract KPI values like "72,39%" or "195.545,88" or "195,545.88"
+  var reOcc = /(?:ocupaci[oó]n|occ(?:upancy)?|ocup)[^\d]*(\d{1,3}[,\.]\d{1,2})\s*%/i;
+  var reADR = /(?:adr|tarifa\s*promedio|average\s*daily)[^\d]*(\d{1,3}(?:[,\.]\d{3})*[,\.]\d{2})/i;
+  var reRevPAR = /(?:revpar|rev\s*par)[^\d]*(\d{1,3}(?:[,\.]\d{3})*[,\.]\d{2})/i;
+  var reDateRange = /(\d{1,2})[\/\-\s]+(?:de\s+)?([A-Za-záéíóúü]+)[\/\-\s,]+(\d{4})/gi;
+
+  function parseNum(s) {
+    if (!s) return null;
+    // Handle both 72,39 and 72.39 and 195,545.88 and 195.545,88
+    s = s.replace(/\./g,'').replace(',','.');
+    return parseFloat(s);
+  }
+
+  var occ=null, adr=null, revpar=null, label='';
+  var m;
+  m = text.match(reOcc); if (m) occ = parseNum(m[1]);
+  m = text.match(reADR); if (m) adr = parseNum(m[1]);
+  m = text.match(reRevPAR); if (m) revpar = parseNum(m[1]);
+
+  // Try to find month/year label
+  var MONTHS = {enero:1,febrero:2,marzo:3,abril:4,mayo:5,junio:6,julio:7,agosto:8,septiembre:9,octubre:10,noviembre:11,diciembre:12,
+    jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  var reMonthYear = /\b(enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|octubre|noviembre|diciembre|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\w*[\s,]+(\d{4})\b/i;
+  m = text.match(reMonthYear);
+  if (m) {
+    var mo = MONTHS[m[1].toLowerCase().substring(0,3)] || MONTHS[m[1].toLowerCase()];
+    label = m[1].charAt(0).toUpperCase()+m[1].slice(1).toLowerCase()+' '+m[2];
+  }
+
+  if (occ !== null || adr !== null || revpar !== null) {
+    return { occ: occ, adr: adr, revpar: revpar, label: label || 'Período desconocido' };
+  }
+  return null;
+}
+
+// ── COMPARISON MODE FUNCTIONS ─────────────────────────────────────────────────
+function compareOTBByDayOfMonth(before, after) {
+  // Match rows by day-of-month number extracted from date string
+  function dayNum(row) {
+    var d = row.date || row.Fecha || '';
+    var m = d.match(/(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return parseInt(m[3]);
+    m = d.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (m) return parseInt(m[1]);
+    return null;
+  }
+  var afterByDay = {};
+  after.forEach(function(r){ var d=dayNum(r); if(d!==null) afterByDay[d]=r; });
+  var results=[], matched=0, unmatched=0;
+  before.forEach(function(rb){
+    var d=dayNum(rb);
+    var ra = d!==null ? afterByDay[d] : null;
+    if (ra) { matched++; results.push(otbBuildCompRow(rb,ra,'day'+d)); }
+    else { unmatched++; }
+  });
+  return { rows: results, matched: matched, unmatched: unmatched, mode:'dayOfMonth' };
+}
+
+function compareOTBByPeriodIndex(before, after) {
+  var results=[], matched=0;
+  var len = Math.min(before.length, after.length);
+  for (var i=0;i<len;i++) {
+    results.push(otbBuildCompRow(before[i], after[i], 'idx'+i));
+    matched++;
+  }
+  return { rows: results, matched: matched, unmatched: Math.abs(before.length-after.length), mode:'periodIndex' };
+}
+
+function compareOTBMonthlySummary(bSum, aSum) {
+  if (!bSum || !aSum) return null;
+  function delta(a,b){ return (a!=null&&b!=null) ? a-b : null; }
+  function pct(a,b){ return (a!=null&&b!=null&&b!==0) ? ((a-b)/Math.abs(b))*100 : null; }
+  var dOcc = delta(aSum.occ, bSum.occ);
+  var dADR = delta(aSum.adr, bSum.adr);
+  var dRevPAR = delta(aSum.revpar, bSum.revpar);
+  return {
+    before: bSum, after: aSum,
+    deltaOcc: dOcc, deltaADR: dADR, deltaRevPAR: dRevPAR,
+    pctOcc: pct(aSum.occ,bSum.occ), pctADR: pct(aSum.adr,bSum.adr), pctRevPAR: pct(aSum.revpar,bSum.revpar),
+    general: dRevPAR>0?'Positivo':dRevPAR<0?'Negativo':'Estable'
+  };
+}
+
+function otbBuildCompRow(rb, ra, id) {
+  function getV(r,k){ return parseFloat(r[k]||r[k.toLowerCase()]||0)||0; }
+  var occB=getV(rb,'occ')||getV(rb,'Ocup%'), occA=getV(ra,'occ')||getV(ra,'Ocup%');
+  var adrB=getV(rb,'adr')||getV(rb,'ADR'), adrA=getV(ra,'adr')||getV(ra,'ADR');
+  var rpB=getV(rb,'revpar')||getV(rb,'RevPAR'), rpA=getV(ra,'revpar')||getV(ra,'RevPAR');
+  var revB=getV(rb,'revenue')||getV(rb,'Ingresos'), revA=getV(ra,'revenue')||getV(ra,'Ingresos');
+  var roomsB=getV(rb,'rooms')||getV(rb,'Hab.Vendidas'), roomsA=getV(ra,'rooms')||getV(ra,'Hab.Vendidas');
+  var dOcc=occA-occB, dADR=adrA-adrB, dRP=rpA-rpB;
+  var trend = dOcc>0&&dRP>0?'positive':dOcc<0&&dRP<0?'negative':dOcc===0&&dRP===0?'stable':'mixed';
+  return { id:id, date:rb.date||rb.Fecha||id,
+    occB:occB, occA:occA, deltaOcc:dOcc,
+    adrB:adrB, adrA:adrA, deltaADR:dADR,
+    revparB:rpB, revparA:rpA, deltaRevpar:dRP,
+    revenueB:revB, revenueA:revA,
+    roomsB:roomsB, roomsA:roomsA,
+    trend:trend };
+}
+
+function otbRenderDiagnostics(diag) {
+  var el = document.getElementById('otb-diagnostics-area');
+  if (!el || !diag) return;
+  var html = '<div class="otb-diag-card">'
+    + '<div class="otb-card-title">🔍 Diagnóstico de datos</div>'
+    + '<div class="otb-diag-grid">';
+  diag.items.forEach(function(item){
+    html += '<div class="otb-diag-item '+(item.ok?'ok':'warn')+'">'
+      + '<span class="otb-diag-icon">'+(item.ok?'✅':'⚠')+'</span>'
+      + '<span class="otb-diag-text">'+item.text+'</span></div>';
+  });
+  html += '</div>';
+  if (diag.suggestion) {
+    html += '<div class="otb-diag-suggestion">💡 Sugerencia: '+diag.suggestion+'</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  el.style.display = 'block';
+}
+
+function otbRenderMonthlySummary(msum) {
+  function fmtD(v,unit){ if(v===null) return 'N/D'; var s=(v>=0?'+':'')+v.toFixed(2)+' '+unit; return s; }
+  function cls(v){ return v>0?'otb-val-up':v<0?'otb-val-down':'otb-val-same'; }
+  var html = '<div class="otb-card">'
+    + '<div class="otb-card-title">📊 Comparativa Resumen Mensual</div>'
+    + '<table class="otb-summary-table"><thead><tr>'
+    + '<th>Métrica</th><th>Base ('+msum.before.label+')</th><th>Actual ('+msum.after.label+')</th><th>Variación</th></tr></thead><tbody>';
+  if (msum.before.occ!=null||msum.after.occ!=null) {
+    html += '<tr><td>Ocupación</td><td>'+(msum.before.occ!=null?msum.before.occ.toFixed(2)+'%':'N/D')+'</td>'
+      +'<td>'+(msum.after.occ!=null?msum.after.occ.toFixed(2)+'%':'N/D')+'</td>'
+      +'<td class="'+cls(msum.deltaOcc)+'">'+fmtD(msum.deltaOcc,'pp')+'</td></tr>';
+  }
+  if (msum.before.adr!=null||msum.after.adr!=null) {
+    html += '<tr><td>ADR</td><td>'+(msum.before.adr!=null?fmtCOP(msum.before.adr):'N/D')+'</td>'
+      +'<td>'+(msum.after.adr!=null?fmtCOP(msum.after.adr):'N/D')+'</td>'
+      +'<td class="'+cls(msum.deltaADR)+'">'+fmtD(msum.deltaADR,'COP')+'</td></tr>';
+  }
+  if (msum.before.revpar!=null||msum.after.revpar!=null) {
+    html += '<tr><td>RevPAR</td><td>'+(msum.before.revpar!=null?fmtCOP(msum.before.revpar):'N/D')+'</td>'
+      +'<td>'+(msum.after.revpar!=null?fmtCOP(msum.after.revpar):'N/D')+'</td>'
+      +'<td class="'+cls(msum.deltaRevPAR)+'">'+fmtD(msum.deltaRevPAR,'COP')+'</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  return html;
 }
 
 // ── OCR TEXT PARSER ───────────────────────────────────────────────────────────
@@ -2125,24 +2424,109 @@ function otbEditCell(input) {
 }
 
 function otbRunComparison() {
-  if (!OTB_STATE.beforeData || !OTB_STATE.beforeData.length || !OTB_STATE.afterData || !OTB_STATE.afterData.length) {
-    otbShowError('Cargue y mapee ambos archivos antes de comparar'); return;
+  var mode = OTB_STATE.comparisonMode || 'dayOfMonth';
+  var modeEl = document.getElementById('otb-mode-select');
+  if (modeEl) mode = modeEl.value || mode;
+  OTB_STATE.comparisonMode = mode;
+
+  var diagItems = [];
+
+  // Monthly summary mode — doesn't need daily rows
+  if (mode === 'monthlySummary') {
+    var bSum = OTB_STATE.beforeSummary, aSum = OTB_STATE.afterSummary;
+    if (!bSum && OTB_STATE.beforeData && OTB_STATE.beforeData.length) {
+      bSum = buildSummaryFromRows(OTB_STATE.beforeData);
+    }
+    if (!aSum && OTB_STATE.afterData && OTB_STATE.afterData.length) {
+      aSum = buildSummaryFromRows(OTB_STATE.afterData);
+    }
+    if (!bSum || !aSum) {
+      otbShowError('Para Resumen Mensual ingrese los KPIs manualmente o cargue archivos con datos.'); return;
+    }
+    var msum = compareOTBMonthlySummary(bSum, aSum);
+    var compArea = document.getElementById('otb-comparison-area') || document.getElementById('otb-panel-comparison');
+    if (compArea) compArea.innerHTML = otbRenderMonthlySummary(msum);
+    otbRenderConsultantFromSummary(msum);
+    otbSwitchToComparisonTab();
+    return;
   }
-  OTB_STATE.comparison = compareOTB(OTB_STATE.beforeData, OTB_STATE.afterData);
-  OTB_STATE.metrics    = buildSummaryMetrics(OTB_STATE.comparison);
-  OTB_STATE.recs       = generateRecommendations(OTB_STATE.metrics, OTB_STATE.comparison);
+
+  var bData = OTB_STATE.beforeData || [], aData = OTB_STATE.afterData || [];
+  if (!bData.length || !aData.length) {
+    otbShowError('Cargue ambos períodos antes de comparar. Use "Ingresar datos manualmente" si el OCR no detectó filas.'); return;
+  }
+
+  var result;
+  if (mode === 'exactDate') {
+    result = { rows: compareOTB(bData, aData), mode: 'exactDate' };
+    result.matched = result.rows.length;
+    result.unmatched = bData.length - result.rows.length;
+  } else if (mode === 'periodIndex') {
+    result = compareOTBByPeriodIndex(bData, aData);
+  } else {
+    result = compareOTBByDayOfMonth(bData, aData);
+  }
+
+  diagItems.push({ ok: bData.length>0, text: 'Período base: '+bData.length+' filas' });
+  diagItems.push({ ok: aData.length>0, text: 'Período actual: '+aData.length+' filas' });
+  diagItems.push({ ok: result.matched>0, text: 'Coincidencias encontradas: '+result.matched });
+  if (result.unmatched > 0) diagItems.push({ ok: false, text: result.unmatched+' fechas sin coincidencia' });
+
+  var diag = { items: diagItems };
+  if (result.matched === 0) {
+    diag.suggestion = 'Pruebe el modo "Índice de período" o "Resumen Mensual" si los meses no coinciden.';
+  }
+  otbRenderDiagnostics(diag);
+
+  if (!result.rows || !result.rows.length) {
+    otbShowError('No se encontraron coincidencias. Cambie el modo de comparación o ingrese datos manualmente.');
+    return;
+  }
+
+  OTB_STATE.comparison = result.rows;
+  OTB_STATE.metrics    = buildSummaryMetrics(result.rows);
+  OTB_STATE.recs       = generateRecommendations(OTB_STATE.metrics, result.rows);
 
   otbRenderComparison();
   otbRenderCharts();
   otbRenderConsultant();
+  otbSwitchToComparisonTab();
+}
 
-  // Switch to comparison tab
+function otbSwitchToComparisonTab() {
   document.querySelectorAll('.otb-tab-btn').forEach(function(b){ b.classList.remove('active'); });
   document.querySelectorAll('.otb-sub-panel').forEach(function(p){ p.classList.remove('active'); });
-  const compBtn = document.querySelector('.otb-tab-btn[data-tab="comparison"]');
+  var compBtn = document.querySelector('.otb-tab-btn[data-tab="comparison"]');
   if (compBtn) compBtn.classList.add('active');
-  const compPanel = document.getElementById('otb-panel-comparison');
+  var compPanel = document.getElementById('otb-panel-comparison');
   if (compPanel) compPanel.classList.add('active');
+}
+
+function buildSummaryFromRows(rows) {
+  if (!rows || !rows.length) return null;
+  function getV(r,k){ return parseFloat(r[k]||r[k.toLowerCase()]||0)||0; }
+  var totalOcc=0, totalADR=0, totalRevPAR=0, n=0;
+  rows.forEach(function(r){
+    var o=getV(r,'occ')||getV(r,'Ocup%');
+    var a=getV(r,'adr')||getV(r,'ADR');
+    var rp=getV(r,'revpar')||getV(r,'RevPAR');
+    if(o||a||rp){ totalOcc+=o; totalADR+=a; totalRevPAR+=rp; n++; }
+  });
+  if(!n) return null;
+  return { occ: totalOcc/n, adr: totalADR/n, revpar: totalRevPAR/n, label: 'Promedio' };
+}
+
+function otbRenderConsultantFromSummary(msum) {
+  var el = document.getElementById('otb-consultant-area');
+  if (!el) return;
+  var general = msum.general;
+  var recs = [];
+  if (msum.deltaOcc !== null && msum.deltaOcc < -5) recs.push('Ocupación bajó '+Math.abs(msum.deltaOcc).toFixed(1)+'pp. Revisar estrategia de precios y promociones.');
+  if (msum.deltaADR !== null && msum.deltaADR < 0) recs.push('ADR disminuyó. Evalúe si los descuentos están erosionando el ingreso promedio.');
+  if (msum.deltaRevPAR !== null && msum.deltaRevPAR > 0) recs.push('RevPAR mejoró '+fmtCOP(msum.deltaRevPAR)+'. Continúe la estrategia actual.');
+  if (!recs.length) recs.push('Rendimiento estable. Monitoree la evolución semanal.');
+  el.innerHTML = '<div class="otb-card"><div class="otb-card-title">🤖 Análisis Revenue Manager</div>'
+    + '<div class="otb-actions-list"><ul>'+recs.map(function(r){ return '<li>'+r+'</li>'; }).join('')+'</ul></div></div>';
 }
 
 function otbRenderComparison() {
