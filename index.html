@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GEH Suites — Simulador de Tarifas OTA</title>
+<style>
+  :root {
+    --gold:#CE7E1F; --gold-dark:#AF762B; --gold-pale:#faf0e0;
+    --gold-subtle:#fdf8f0; --gold-border:#e8c88a; --white:#ffffff;
+    --off-white:#f7f4f0; --gray1:#f2f2f2; --gray2:#e4e4e4;
+    --gray3:#999; --gray4:#666; --text:#2a2a2a;
+    --green:#1a6e3c; --green-bg:#d4edda; --blue:#14427a;
+    --blue-bg:#d0e4f7; --border:#e0d8cc; --radius:8px;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:var(--off-white);color:var(--text);min-height:100vh;}
+
+  /* HEADER */
+  header{background:var(--white);display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:64px;border-bottom:2px solid var(--gold-border);box-shadow:0 2px 10px rgba(175,118,43,.10);position:sticky;top:0;z-index:200;}
+  .header-logo{display:flex;align-items:center;gap:16px;}
+  .logo-svg{height:40px;width:auto;}
+  .header-title{border-left:1.5px solid var(--gold-border);padding-left:16px;}
+  .header-title h1{color:var(--gold-dark);font-size:.95rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+  .header-title p{color:var(--gray3);font-size:.68rem;letter-spacing:.5px;margin-top:2px;}
+  .header-badge{background:var(--gold-pale);border:1.5px solid var(--gold-border);border-radius:20px;padding:4px 12px;color:var(--gold-dark);font-size:.68rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}
+
+  /* HOTEL SIDEBAR */
+  .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:300;opacity:0;pointer-events:none;transition:opacity .25s;}
+  .sidebar-overlay.open{opacity:1;pointer-events:all;}
+  .hotel-sidebar{position:fixed;top:0;left:0;height:100vh;width:280px;background:var(--white);border-right:2px solid var(--gold-border);box-shadow:4px 0 24px rgba(175,118,43,.18);z-index:400;display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+  .hotel-sidebar.open{transform:translateX(0);}
+  .sidebar-head{background:var(--gold-pale);border-bottom:2px solid var(--gold-border);padding:18px 18px 14px;display:flex;align-items:center;justify-content:space-between;}
+  .sidebar-head-title{font-size:.8rem;font-weight:800;color:var(--gold-dark);letter-spacing:1.2px;text-transform:uppercase;}
+  .sidebar-close{width:28px;height:28px;border:none;background:var(--gold-border);border-radius:50%;cursor:pointer;font-size:.9rem;color:var(--gold-dark);display:flex;align-items:center;justify-content:center;transition:background .15s;}
+  .sidebar-close:hover{background:var(--gold);}
+  .sidebar-list{overflow-y:auto;flex:1;padding:10px 10px;}
+  .sidebar-list::-webkit-scrollbar{width:4px;}
+  .sidebar-list::-webkit-scrollbar-thumb{background:var(--gold-border);border-radius:4px;}
+  .hotel-item{display:block;width:100%;text-align:left;padding:10px 14px;border:none;border-radius:8px;background:none;font-size:.82rem;font-weight:600;color:var(--gray4);cursor:pointer;transition:all .15s;margin-bottom:3px;}
+  .hotel-item:hover{background:var(--gold-subtle);color:var(--gold-dark);}
+  .hotel-item.active{background:var(--gold-pale);color:var(--gold-dark);font-weight:800;border-left:3px solid var(--gold);padding-left:11px;}
+  /* toggle button in header */
+  .hotel-toggle-btn{display:flex;align-items:center;gap:8px;padding:7px 14px;background:var(--gold-pale);border:1.5px solid var(--gold-border);border-radius:20px;cursor:pointer;transition:all .15s;color:var(--gold-dark);}
+  .hotel-toggle-btn:hover{background:var(--gold-subtle);border-color:var(--gold);}
+  .hotel-toggle-btn .htb-icon{font-size:1rem;}
+  .hotel-toggle-btn .htb-name{font-size:.74rem;font-weight:700;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .hotel-toggle-btn .htb-arrow{font-size:.65rem;opacity:.7;}
+
+  /* CHANNEL TABS */
+  .channel-tabs{background:var(--white);display:flex;overflow-x:auto;border-bottom:2px solid var(--gold-border);scrollbar-width:none;box-shadow:0 2px 6px rgba(175,118,43,.06);position:sticky;top:64px;z-index:100;}
+  .channel-tabs::-webkit-scrollbar{display:none;}
+  .channel-tab{padding:12px 22px;border:none;background:none;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;color:var(--gray4);transition:all .2s;letter-spacing:.8px;text-transform:uppercase;margin-bottom:-2px;}
+  .channel-tab:hover{color:var(--gold);background:var(--gold-subtle);}
+  .channel-tab.active{color:var(--gold);border-bottom-color:var(--gold);background:var(--gold-subtle);}
+
+  /* CONTENT */
+  .content{padding:20px 24px;max-width:1600px;margin:0 auto;}
+  .channel-page{display:none;}
+  .channel-page.active{display:block;}
+
+  /* INPUT BAR */
+  .input-bar{background:var(--white);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 8px rgba(175,118,43,.08);border:1.5px solid var(--gold-border);}
+  .input-group{display:flex;flex-direction:column;gap:3px;}
+  .input-group label{color:var(--gold-dark);font-size:.68rem;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;}
+  .input-group input[type=number],.input-group input[type=text]{background:var(--off-white);border:1.5px solid var(--gold-border);border-radius:6px;padding:7px 12px;font-size:1rem;font-weight:700;color:var(--text);transition:border-color .2s,box-shadow .2s;}
+  .input-group input[type=number]{width:180px;}
+  .input-group input[type=text]{width:200px;}
+  .input-group input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(206,126,31,.15);}
+  .commission-input{width:72px!important;font-size:.92rem!important;}
+  .input-divider{width:1.5px;height:44px;background:var(--gold-border);}
+  .base-rates{display:flex;gap:8px;flex-wrap:wrap;flex:1;}
+  .base-rate-chip{background:var(--gold-pale);border:1px solid var(--gold-border);border-radius:16px;padding:5px 12px;display:flex;flex-direction:column;gap:1px;}
+  .chip-label{color:var(--gold-dark);font-size:.6rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;}
+  .chip-val{color:var(--text);font-weight:700;font-size:.84rem;}
+
+  /* LEGEND + ADD PROMO */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
+  .legend{display:flex;gap:16px;font-size:.74rem;flex-wrap:wrap;color:var(--gray4);align-items:center;}
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+  .add-promo-btn{padding:6px 16px;background:var(--gold-pale);border:1.5px dashed var(--gold);border-radius:20px;color:var(--gold-dark);font-size:.76rem;font-weight:700;cursor:pointer;transition:all .15s;}
+  .add-promo-btn:hover{background:var(--gold-subtle);border-style:solid;}
+
+  /* SECTIONS GRID */
+  .sections-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
+
+  /* SECTION CARD */
+  .section-card{background:var(--white);border-radius:var(--radius);box-shadow:0 2px 8px rgba(175,118,43,.07);overflow:hidden;border:1px solid var(--gold-border);}
+  .section-card.pt-full{grid-column:1/-1;}
+
+  /* SECTION HEADER */
+  .section-header{background:var(--white);border-bottom:2px solid var(--gold-border);padding:9px 14px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .section-header::before{content:'';display:block;width:4px;height:13px;background:var(--gold);border-radius:2px;flex-shrink:0;}
+  .section-title{flex:1;font-size:.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--gold-dark);min-width:80px;outline:none;border-bottom:1px dashed transparent;cursor:text;padding:1px 2px;}
+  .section-title:focus{border-bottom-color:var(--gold);}
+  .promo-ctrl{display:flex;align-items:center;gap:5px;background:rgba(206,126,31,.10);border:1px solid var(--gold-border);border-radius:20px;padding:2px 9px;}
+  .promo-ctrl label{font-size:.63rem;font-weight:700;color:var(--gold-dark);letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;}
+  .promo-input{width:48px;border:none;border-bottom:1.5px solid var(--gold);background:transparent;font-size:.85rem;font-weight:800;color:var(--gold-dark);text-align:center;padding:1px 2px;outline:none;-moz-appearance:textfield;}
+  .promo-input::-webkit-inner-spin-button,.promo-input::-webkit-outer-spin-button{-webkit-appearance:none;}
+  .promo-pct{font-size:.8rem;font-weight:700;color:var(--gold-dark);}
+  .icon-btn{width:24px;height:24px;border:none;border-radius:50%;background:var(--gray1);color:var(--gray4);font-size:.75rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0;}
+  .icon-btn:hover{background:var(--gold-border);color:var(--gold-dark);}
+  .icon-btn.del:hover{background:#fde;color:#c00;}
+
+  /* CONFIG PANEL */
+  .cfg-panel{border-top:1.5px solid var(--gold-border);background:#fffcf5;padding:10px 14px;display:none;}
+  .cfg-panel.open{display:block;}
+  .cfg-row{display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--gray2);}
+  .cfg-row:last-of-type{border-bottom:none;}
+  .cfg-row-label{flex:1;font-size:.78rem;}
+  .cfg-row-label input{width:100%;border:none;border-bottom:1px solid var(--gold-border);background:transparent;font-size:.78rem;color:var(--text);padding:1px 3px;outline:none;}
+  .cfg-row-label input:focus{border-bottom-color:var(--gold);}
+  .cfg-pct{display:flex;align-items:center;gap:3px;}
+  .cfg-pct input{width:48px;border:1px solid var(--gold-border);border-radius:4px;background:var(--off-white);font-size:.78rem;font-weight:700;text-align:center;padding:2px 4px;color:var(--gold-dark);outline:none;-moz-appearance:textfield;}
+  .cfg-pct input::-webkit-inner-spin-button,.cfg-pct input::-webkit-outer-spin-button{-webkit-appearance:none;}
+  .cfg-pct span{font-size:.72rem;color:var(--gold-dark);}
+  .cfg-add-btn{margin-top:8px;width:100%;padding:5px;background:none;border:1.5px dashed var(--gold-border);border-radius:6px;color:var(--gold-dark);font-size:.74rem;font-weight:600;cursor:pointer;transition:all .15s;}
+  .cfg-add-btn:hover{background:var(--gold-pale);border-color:var(--gold);}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{width:100%;min-width:360px;border-collapse:collapse;font-size:.76rem;}
+  thead th{background:var(--gold-pale);padding:5px 7px;text-align:right;font-size:.63rem;font-weight:800;color:var(--gold-dark);border-bottom:1.5px solid var(--gold-border);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase;}
+  thead th:first-child{text-align:left;}
+  tbody tr:nth-child(even){background:#fdfaf6;}
+  tbody tr:hover{background:var(--gold-subtle);}
+  td{padding:5px 7px;text-align:right;color:#444;white-space:nowrap;}
+  td:first-child{text-align:left;color:#333;font-size:.73rem;font-weight:500;max-width:130px;white-space:normal;line-height:1.3;}
+  .td-base{color:#aaa;font-size:.78rem;}
+  .td-mid{color:#888;font-size:.78rem;}
+  .td-ota{background:var(--green-bg);color:var(--green);font-weight:800;cursor:pointer;border-radius:4px;font-size:.83rem;transition:filter .15s,transform .1s;user-select:none;}
+  .td-ota::after{content:'⧉';font-size:.6rem;margin-left:4px;opacity:.5;}
+  .td-ota:hover{filter:brightness(.93);transform:scale(1.02);}
+  .td-net{background:var(--blue-bg);color:var(--blue);font-weight:800;font-size:.83rem;}
+  tr.pair-sep td{border-bottom:2px solid var(--gold-border)!important;}
+
+  /* PRICE TRAVEL MERGED */
+  .pt-merged-body{padding:0 14px 14px;}
+  .pt-comparison{background:linear-gradient(135deg,#fffbf0,#fdf5e0);border:1.5px solid var(--gold-border);border-radius:8px;padding:10px 14px;margin:10px 0;display:flex;gap:20px;flex-wrap:wrap;align-items:center;}
+  .pt-cmp-item{display:flex;flex-direction:column;gap:2px;}
+  .pt-cmp-label{font-size:.62rem;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;}
+  .pt-cmp-val{font-size:.9rem;font-weight:800;color:var(--text);}
+  .pt-cmp-diff{font-size:.82rem;font-weight:700;color:#c00;}
+  .pt-tables{display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow-x:auto;}
+  .pt-tables>div{overflow-x:auto;}
+  .pt-sub-label{font-size:.67rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;padding:6px 0 4px;border-bottom:1.5px solid var(--gold-border);margin-bottom:4px;}
+  @media(max-width:900px){.pt-tables{grid-template-columns:1fr;}}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--white);border:1.5px solid var(--gold);color:var(--gold-dark);padding:9px 20px;border-radius:24px;font-size:.82rem;font-weight:700;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:9999;box-shadow:0 4px 20px rgba(175,118,43,.18);}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  @media(max-width:640px){.sections-grid{grid-template-columns:1fr;}.content{padding:12px;}.pt-tables{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-logo">
+    <svg class="logo-svg" viewBox="0 0 230 72" xmlns="http://www.w3.org/2000/svg">
+      <text x="2" y="54" font-family="'Segoe UI',Arial,sans-serif" font-size="54" font-weight="900" fill="#CE7E1F">g</text>
+      <text x="36" y="54" font-family="'Segoe UI',Arial,sans-serif" font-size="54" font-weight="900" fill="#AF762B">e</text>
+      <text x="70" y="54" font-family="'Segoe UI',Arial,sans-serif" font-size="54" font-weight="900" fill="#CE7E1F">h</text>
+      <text x="110" y="46" font-family="'Segoe UI',Arial,sans-serif" font-size="32" font-weight="400" fill="#CE7E1F">suites</text>
+      <text x="115" y="64" font-family="'Segoe UI',Arial,sans-serif" font-size="15" font-weight="400" fill="#AF762B" letter-spacing="3">Hotels</text>
+    </svg>
+    <div class="header-title">
+      <h1>Simulador de Tarifas</h1>
+      <p>Canales OTA · Revenue Management</p>
+    </div>
+  </div>
+  <button class="hotel-toggle-btn" id="hotel-toggle-btn" onclick="openSidebar()">
+    <span class="htb-icon">🏨</span>
+    <span class="htb-name" id="hotel-badge">GEH Suites Hotels</span>
+    <span class="htb-arrow">▼</span>
+  </button>
+</header>
+
+<!-- HOTEL SIDEBAR -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+<div class="hotel-sidebar" id="hotel-sidebar">
+  <div class="sidebar-head">
+    <span class="sidebar-head-title">Seleccionar Hotel</span>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <div class="sidebar-list" id="hotel-list"></div>
+</div>
+
+<div class="channel-tabs" id="tabs"></div>
+<div class="content"><div id="pages"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── HOTELS ──────────────────────────────────────────────────────────────────
+const HOTELS = [
+  'Hotel Madison Inn','Hotel Windsor House','Hotel Sansiraka',
+  'Hotel Playa Salguero','Hotel Axis Inn','Hotel Rodadero Inn',
+  'Hotel Aixo Suites','Hotel Abi Inn','Hotel Boquilla Suites',
+  'Hotel Marina Suites','Hotel Avexi Suites','Hotel Azuan Suites',
+  'Hotel El Marques'
+];
+let currentHotel = HOTELS[0];
+let currentChannelKey = '';
+const hotelBaseInputs = {};
+const hotelRoomNames  = {};
+
+// ── UTILS ───────────────────────────────────────────────────────────────────
+const fmt = n => '$ ' + Math.round(n).toLocaleString('es-CO');
+
+function applySteps(base, discounts) {
+  let v = base; const vals = [base];
+  for (const d of discounts) { v = v*(1-d); vals.push(v); }
+  return vals;
+}
+
+function effectiveDiscounts(row, promoDisc) {
+  const discs = [...row.discounts];
+  const idx = row.promoIdx !== undefined ? row.promoIdx : discs.length-1;
+  discs[idx] = promoDisc + (row.promoAdd||0) + (row.nocheAdd||0);
+  return discs;
+}
+
+function copyValue(val) {
+  const text = String(Math.round(val));
+  if (navigator.clipboard) navigator.clipboard.writeText(text);
+  else { const ta=document.createElement('textarea'); ta.value=text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); }
+  const toast = document.getElementById('toast');
+  toast.textContent = '✓  Copiado  '+fmt(val);
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),2200);
+}
+
+function getPromoVal(sec) {
+  if (!sec._promoVals) sec._promoVals = {};
+  if (sec._promoVals[currentHotel] === undefined) sec._promoVals[currentHotel] = sec.promoDefault;
+  return sec._promoVals[currentHotel];
+}
+function setPromoVal(sec, v) {
+  if (!sec._promoVals) sec._promoVals = {};
+  sec._promoVals[currentHotel] = v;
+}
+
+// ── CHANNEL PLAN ROW HELPERS ─────────────────────────────────────────────────
+function despRows(base, withCupos) {
+  const rows = [
+    { label:'Opaco 15%',          base, discounts:[0.15,0], planPct:15 },
+    { label:'Opaco 15% + País',   base, discounts:[0.15,0], planPct:15, promoAdd:0.05 },
+    { label:'Paquete 22%',        base, discounts:[0.22,0], planPct:22 },
+    { label:'Paquete 22% + País', base, discounts:[0.22,0], planPct:22, promoAdd:0.05 },
+    { label:'B2B 16%',            base, discounts:[0.16,0], planPct:16 },
+    { label:'B2B 16% + País',     base, discounts:[0.16,0], planPct:16, promoAdd:0.05 },
+  ];
+  if (withCupos) {
+    rows.push({ label:'Cupos 31%',          base, discounts:[0.31,0], planPct:31 });
+    rows.push({ label:'Cupos 31% + País',   base, discounts:[0.31,0], planPct:31, promoAdd:0.05 });
+  }
+  return rows;
+}
+const despHdrs = ['Plan Tarifario','Base','Después Canal','Cargar OTA ▼','Neto Hotel ▼'];
+
+function expRows(base) {
+  return [
+    { label:'Tarifa Base',        base, discounts:[0],       planPct:0  },
+    { label:'Tarifa Base + Mem',  base, discounts:[0],       planPct:0,  promoAdd:0.10 },
+    { label:'Package (−10%)',     base, discounts:[0.10,0],  planPct:10 },
+    { label:'Package + Mem',      base, discounts:[0.10,0],  planPct:10, promoAdd:0.10 },
+    { label:'Móvil (−10%)',       base, discounts:[0.10,0],  planPct:10 },
+    { label:'Móvil + Mem',        base, discounts:[0.10,0],  planPct:10, promoAdd:0.10 },
+    { label:'País (−5%)',         base, discounts:[0.05,0],  planPct:5  },
+    { label:'País + Mem',         base, discounts:[0.05,0],  planPct:5,  promoAdd:0.10 },
+  ];
+}
+const expHdrs = ['Plan','Base','Mod. Canal','Promo','Cargar OTA ▼','Neto Hotel ▼'];
+
+function bookRows() {
+  return [
+    { label:'No Reembolsable',  base:'nr',   discounts:[0,0.20], promoIdx:0 },
+    { label:'Mín 2 noches',     base:'min2', discounts:[0,0.20], promoIdx:0 },
+    { label:'Mín 3 noches',     base:'min3', discounts:[0,0.20], promoIdx:0 },
+  ];
+}
+const bookHdrs = ['Tarifa','Base','Después Promo','Cargar OTA ▼','Neto Hotel ▼'];
+
+function ptRowsSin() {
+  return [
+    { label:'Breakfast Plan',         base:'std', discounts:[0],       planPct:0  },
+    { label:'Non-refundable',         base:'nr',  discounts:[0],       planPct:0  },
+    { label:'PKG 18%',                base:'std', discounts:[0.18,0],  planPct:18 },
+    { label:'PKG 18% + NR',           base:'std', discounts:[0.30,0],  planPct:30 },
+    { label:'B2B 20%',                base:'std', discounts:[0.20,0],  planPct:20 },
+    { label:'B2B 20% + NR',           base:'std', discounts:[0.32,0],  planPct:32 },
+    { label:'Cupos 27%',              base:'std', discounts:[0.27,0],  planPct:27 },
+    { label:'Cupos 27% + NR',         base:'std', discounts:[0.38,0],  planPct:38 },
+  ];
+}
+function ptRowsCon() {
+  return [
+    { label:'Breakfast Plan',         base:'stdC', discounts:[0],       planPct:0  },
+    { label:'Non-refundable',         base:'nrC',  discounts:[0],       planPct:0  },
+    { label:'PKG 18%',                base:'stdC', discounts:[0.18,0],  planPct:18 },
+    { label:'PKG 18% + NR',           base:'stdC', discounts:[0.30,0],  planPct:30 },
+    { label:'B2B 20%',                base:'stdC', discounts:[0.20,0],  planPct:20 },
+    { label:'B2B 20% + NR',           base:'stdC', discounts:[0.32,0],  planPct:32 },
+    { label:'Cupos 27%',              base:'stdC', discounts:[0.27,0],  planPct:27 },
+    { label:'Cupos 27% + NR',         base:'stdC', discounts:[0.38,0],  planPct:38 },
+  ];
+}
+
+// ── CHANNELS DATA ─────────────────────────────────────────────────────────────
+const CHANNELS = [
+  /* DESPEGAR */
+  {
+    key:'despegar', name:'Despegar', color:'#0070b8', gridCols:4,
+    factor:2.49, commission:0.23,
+    baseLabels:['Estándar ×2.49','NR −12%','Mín 2N −14%','Mín 3N −16%'],
+    baseKeys:  ['std','nr','min2','min3'],
+    baseFactors:[1,0.88,0.86,0.84],
+    sections:[
+      {title:'OCULTA — Estándar',        promoDefault:43,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('std',false)},
+      {title:'OCULTA — No Reembolsable', promoDefault:43,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('nr',true)},
+      {title:'OCULTA — Mín 2 Noches',    promoDefault:43,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('min2',true)},
+      {title:'OCULTA — Mín 3 Noches',    promoDefault:43,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('min3',true)},
+      {title:'ANTICIPADA 90d — Estándar',        promoDefault:42,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('std',false)},
+      {title:'ANTICIPADA 90d — No Reembolsable', promoDefault:42,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('nr',true)},
+      {title:'ANTICIPADA 90d — Mín 2 Noches',    promoDefault:42,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('min2',true)},
+      {title:'ANTICIPADA 90d — Mín 3 Noches',    promoDefault:42,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('min3',true)},
+      {title:'PROMO GENERAL — Estándar',        promoDefault:36,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('std',false)},
+      {title:'PROMO GENERAL — No Reembolsable', promoDefault:36,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('nr',true)},
+      {title:'PROMO GENERAL — Mín 2 Noches',    promoDefault:36,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('min2',true)},
+      {title:'PROMO GENERAL — Mín 3 Noches',    promoDefault:36,colHeaders:[...despHdrs],pairGroup:2,rows:despRows('min3',true)},
+    ]
+  },
+
+  /* EXPEDIA */
+  {
+    key:'expedia', name:'Expedia', color:'#1b3a6b', gridCols:4,
+    factor:2.49, commission:0.22,
+    baseLabels:['Estándar ×2.49','NR −12%','Mín 2N −14%','Mín 3N −16%'],
+    baseKeys:  ['std','nr','min2','min3'],
+    baseFactors:[1,0.88,0.86,0.84],
+    sections:[
+      {title:'PROMO GENERAL — Estándar',    promoDefault:36,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('std')},
+      {title:'PROMO GENERAL — No Reembolsable',promoDefault:36,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('nr')},
+      {title:'PROMO GENERAL — Mín 2 Noches',promoDefault:36,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('min2')},
+      {title:'PROMO GENERAL — Mín 3 Noches',promoDefault:36,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('min3')},
+      {title:'ANTICIPADA 60d — Estándar',   promoDefault:40,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('std')},
+      {title:'ANTICIPADA 60d — No Reembolsable',promoDefault:40,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('nr')},
+      {title:'ANTICIPADA 60d — Mín 2 Noches',promoDefault:40,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('min2')},
+      {title:'ANTICIPADA 60d — Mín 3 Noches',promoDefault:40,colHeaders:[...expHdrs],pairGroup:2,rows:expRows('min3')},
+    ]
+  },
+
+  /* PRICE TRAVEL */
+  {
+    key:'pricetravel', name:'Price Travel', color:'#c0392b',
+    factor:1.8675, commission:0,
+    priceTravel:true,
+    baseLabels:['Estándar SIN COMI','NR SIN COMI −12%','Estándar CON COMI ÷0.75','NR CON COMI'],
+    baseKeys:  ['std','nr','stdC','nrC'],
+    baseFactors:[1,0.88,null,null],
+    sections:[
+      {title:'PROMO GENERAL',   promoDefault:36,ptMerged:true,pairGroup:2,rowsSin:ptRowsSin(),rowsCon:ptRowsCon()},
+      {title:'ANTICIPADA 60d',  promoDefault:40,ptMerged:true,pairGroup:2,rowsSin:ptRowsSin(),rowsCon:ptRowsCon()},
+      {title:'ESPECIAL',        promoDefault:43,ptMerged:true,pairGroup:2,rowsSin:ptRowsSin(),rowsCon:ptRowsCon()},
+      {title:'CAMPAÑA',         promoDefault:49,ptMerged:true,pairGroup:2,rowsSin:ptRowsSin(),rowsCon:ptRowsCon()},
+    ]
+  },
+
+  /* HOTELBEDS */
+  {
+    key:'hotelbeds', name:'HotelBeds', color:'#007a74',
+    factor:2.49, commission:0.20,
+    baseLabels:['Estándar ×2.49','NR −12%'],
+    baseKeys:  ['std','nr'],
+    baseFactors:[1,0.88],
+    sections:[
+      {title:'CAMPAÑA GETAWAY',promoDefault:43,colHeaders:['Plan','Base','Promo+Noches','Opaque 10%','Cargar OTA ▼','Neto Hotel ▼'],pairGroup:2,rows:[
+        {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
+        {label:'No Reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
+        {label:'Mín 2 Noches Std (+2%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 2 Noches NR (+2%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 3 Noches Std (+4%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+        {label:'Mín 3 Noches NR (+4%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+      ]},
+      {title:'OCULTA',promoDefault:36,colHeaders:['Plan','Base','Promo+Noches','Opaque 10%','Cargar OTA ▼','Neto Hotel ▼'],pairGroup:2,rows:[
+        {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
+        {label:'No Reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
+        {label:'Mín 2 Noches Std (+2%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 2 Noches NR (+2%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 3 Noches Std (+4%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+        {label:'Mín 3 Noches NR (+4%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+      ]},
+      {title:'ANTICIPADA 90 DÍAS',promoDefault:35,colHeaders:['Plan','Base','Promo+Noches','Opaque 10%','Cargar OTA ▼','Neto Hotel ▼'],pairGroup:2,rows:[
+        {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
+        {label:'No Reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
+        {label:'Mín 2 Noches Std (+2%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 2 Noches NR (+2%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 3 Noches Std (+4%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+        {label:'Mín 3 Noches NR (+4%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+      ]},
+      {title:'PROMO GENERAL',promoDefault:29,colHeaders:['Plan','Base','Promo+Noches','Opaque 10%','Cargar OTA ▼','Neto Hotel ▼'],pairGroup:2,rows:[
+        {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
+        {label:'No Reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
+        {label:'Mín 2 Noches Std (+2%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 2 Noches NR (+2%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
+        {label:'Mín 3 Noches Std (+4%)',       base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+        {label:'Mín 3 Noches NR (+4%)',        base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
+      ]},
+    ]
+  },
+
+  /* EDREAMS */
+  {
+    key:'edreams', name:'eDreams', color:'#4a148c',
+    factor:2.49, commission:0.20,
+    baseLabels:['Estándar ×2.49','NR −12%','Mín 2N −14%','Mín 3N −16%'],
+    baseKeys:  ['std','nr','min2','min3'],
+    baseFactors:[1,0.88,0.86,0.84],
+    sections:[
+      {title:'CAMPAÑA — Sin Prime',       promoDefault:43,colHeaders:['Tarifa','Base','Campaña','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'CAMPAÑA — Con Prime (+10%)',promoDefault:53,colHeaders:['Tarifa','Base','Campaña+Prime','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'OCULTA — Sin Prime',        promoDefault:36,colHeaders:['Tarifa','Base','Oculta','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'OCULTA — Con Prime (+10%)', promoDefault:46,colHeaders:['Tarifa','Base','Oculta+Prime','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'ANTICIPADA 90d — Sin Prime',promoDefault:35,colHeaders:['Tarifa','Base','Anti 90d','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'ANTICIPADA 90d — Con Prime',promoDefault:45,colHeaders:['Tarifa','Base','Anti+Prime','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'PROMO GENERAL — Sin Prime', promoDefault:29,colHeaders:['Tarifa','Base','Promo','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+      {title:'PROMO GENERAL — Con Prime', promoDefault:39,colHeaders:['Tarifa','Base','Promo+Prime','Cargar OTA ▼','Neto Hotel ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín 2 noches',base:'min2',discounts:[0]},{label:'Mín 3 noches',base:'min3',discounts:[0]}]},
+    ]
+  },
+
+  /* BOOKING */
+  {
+    key:'booking', name:'Booking.com', color:'#003580',
+    factor:2.49, commission:0.15,
+    baseLabels:['NR −12%','Mín 2N −14%','Mín 3N −16%'],
+    baseKeys:  ['nr','min2','min3'],
+    baseFactors:[0.88,0.86,0.84],
+    sections:[
+      {title:'CAMPAÑA GETAWAY',  promoDefault:40,colHeaders:bookHdrs,rows:bookRows()},
+      {title:'OCULTA',           promoDefault:36,colHeaders:bookHdrs,rows:bookRows()},
+      {title:'ANTICIPADA 90 DÍAS',promoDefault:35,colHeaders:bookHdrs,rows:bookRows()},
+      {title:'PROMO GENERAL',    promoDefault:29,colHeaders:bookHdrs,rows:bookRows()},
+    ]
+  },
+];
+
+// ── BASE RATE COMPUTATION ────────────────────────────────────────────────────
+function getBaseRates(ch, input) {
+  const pub = input * ch.factor;
+  const rates = {};
+  ch.baseKeys.forEach((key, i) => {
+    if (ch.priceTravel && key==='stdC') rates[key] = pub / 0.75;
+    else if (ch.priceTravel && key==='nrC') rates[key] = (pub*0.88)/0.75;
+    else rates[key] = pub * ch.baseFactors[i];
+  });
+  return rates;
+}
+
+// ── RENDER TABLE ─────────────────────────────────────────────────────────────
+function renderTable(card, sec, baseRates, commission, promoDisc) {
+  const old = card.querySelector('table');
+  if (old) old.remove();
+
+  const effRows = sec.rows || [];
+  const maxDisc = Math.max(...effRows.map(r => effectiveDiscounts(r, promoDisc).length));
+  const table = document.createElement('table');
+  const colH = sec.colHeaders || [];
+
+  // thead
+  const thead = document.createElement('thead');
+  const trh = document.createElement('tr');
+  addTh(trh, colH[0]||'Plan', '', colH, 0);
+  addTh(trh, colH[1]||'Base', '', colH, 1);
+  for (let i=1; i<maxDisc; i++) addTh(trh, colH[1+i]||`Paso ${i+1}`, '', colH, 1+i);
+  const otaIdx = colH.length-(commission>0?2:1);
+  addTh(trh, colH[otaIdx], 'color:var(--green);font-weight:900', colH, otaIdx);
+  if (commission>0) addTh(trh, colH[colH.length-1], 'color:var(--blue);font-weight:900', colH, colH.length-1);
+  thead.appendChild(trh); table.appendChild(thead);
+
+  // tbody
+  const tbody = document.createElement('tbody');
+  effRows.forEach((row, ri) => {
+    const bv = baseRates[row.base]||0;
+    const discs = effectiveDiscounts(row, promoDisc);
+    const vals = applySteps(bv, discs);
+    const otaVal = vals[vals.length-1];
+    const netVal = commission>0 ? otaVal*(1-commission) : null;
+
+    const trow = document.createElement('tr');
+    if (sec.pairGroup && (ri+1)%sec.pairGroup===0) trow.classList.add('pair-sep');
+
+    addTd(trow, row.label, '');
+    addTd(trow, fmt(bv), 'td-base');
+    for (let i=1; i<discs.length; i++) addTd(trow, fmt(vals[i]), 'td-mid');
+    for (let i=discs.length; i<maxDisc; i++) addTd(trow, '—', 'td-mid');
+
+    const tdOta = addTd(trow, fmt(otaVal), 'td-ota');
+    tdOta.title='Clic para copiar';
+    tdOta.addEventListener('click', ()=>copyValue(otaVal));
+    if (commission>0 && netVal!==null) addTd(trow, fmt(netVal), 'td-net');
+
+    tbody.appendChild(trow);
+  });
+  table.appendChild(tbody);
+  const wrap=document.createElement('div');wrap.className='table-wrap';
+  wrap.appendChild(table);card.appendChild(wrap);
+}
+
+// ── RENDER PRICE TRAVEL MERGED ───────────────────────────────────────────────
+function renderPTMerged(card, sec, baseRates, promoDisc) {
+  const old = card.querySelector('.pt-merged-body');
+  if (old) old.remove();
+
+  const body = document.createElement('div');
+  body.className = 'pt-merged-body';
+
+  // Comparison box: STD SIN COMI vs NR SIN COMI
+  const sinRows = sec.rowsSin||[];
+  const stdRow = sinRows.find(r=>r.base==='std');
+  const nrRow  = sinRows.find(r=>r.base==='nr');
+  if (stdRow && nrRow) {
+    const stdVals = applySteps(baseRates['std']||0, effectiveDiscounts(stdRow, promoDisc));
+    const nrVals  = applySteps(baseRates['nr']||0,  effectiveDiscounts(nrRow,  promoDisc));
+    const stdTar  = stdVals[stdVals.length-1];
+    const nrTar   = nrVals[nrVals.length-1];
+    const diff    = stdTar > 0 ? ((nrTar/stdTar)-1)*100 : 0;
+
+    const sinStdC = applySteps(baseRates['stdC']||0, effectiveDiscounts({...stdRow,base:'stdC'}, promoDisc));
+    const sinNrC  = applySteps(baseRates['nrC']||0,  effectiveDiscounts({...nrRow,base:'nrC'},   promoDisc));
+
+    body.innerHTML = `
+      <div class="pt-comparison">
+        <div class="pt-cmp-item"><div class="pt-cmp-label">STD sin comi</div><div class="pt-cmp-val">${fmt(stdTar)}</div></div>
+        <div class="pt-cmp-item"><div class="pt-cmp-label">NR sin comi</div><div class="pt-cmp-val">${fmt(nrTar)}</div></div>
+        <div class="pt-cmp-item"><div class="pt-cmp-label">Diferencia</div><div class="pt-cmp-diff">${diff.toFixed(1)}%</div></div>
+        <div class="pt-cmp-item"><div class="pt-cmp-label">STD con comi</div><div class="pt-cmp-val">${fmt(sinStdC[sinStdC.length-1])}</div></div>
+        <div class="pt-cmp-item"><div class="pt-cmp-label">NR con comi</div><div class="pt-cmp-val">${fmt(sinNrC[sinNrC.length-1])}</div></div>
+      </div>`;
+  }
+
+  // Two tables side by side
+  const tables = document.createElement('div');
+  tables.className = 'pt-tables';
+
+  function makeSubTable(rows, label) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `<div class="pt-sub-label">${label}</div>`;
+    const tbl = document.createElement('table');
+    const th = document.createElement('thead');
+    const trh = document.createElement('tr');
+    const ptH=['Plan','Base','Tarifa ▼']; addTh(trh,ptH[0],'',ptH,0); addTh(trh,ptH[1],'',ptH,1); addTh(trh,ptH[2],'color:var(--green);font-weight:900',ptH,2);
+    th.appendChild(trh); tbl.appendChild(th);
+    const tb = document.createElement('tbody');
+    rows.forEach((row, ri) => {
+      const bv = baseRates[row.base]||0;
+      const discs = effectiveDiscounts(row, promoDisc);
+      const vals = applySteps(bv, discs);
+      const tarVal = vals[vals.length-1];
+      const trow = document.createElement('tr');
+      if (sec.pairGroup && (ri+1)%sec.pairGroup===0) trow.classList.add('pair-sep');
+      addTd(trow, row.label, '');
+      addTd(trow, fmt(bv), 'td-base');
+      const tdT = addTd(trow, fmt(tarVal), 'td-ota');
+      tdT.title='Clic para copiar';
+      tdT.addEventListener('click', ()=>copyValue(tarVal));
+      tb.appendChild(trow);
+    });
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    return wrap;
+  }
+
+  tables.appendChild(makeSubTable(sec.rowsSin||[], 'SIN COMISIÓN'));
+  tables.appendChild(makeSubTable(sec.rowsCon||[], 'CON COMISIÓN (÷0.75)'));
+  body.appendChild(tables);
+  card.appendChild(body);
+}
+
+// ── CONFIG PANEL ─────────────────────────────────────────────────────────────
+function buildCfgPanel(sec, card, ch, baseRates, commission) {
+  const panel = document.createElement('div');
+  panel.className = 'cfg-panel';
+
+  function buildRowList(rows, label) {
+    if (label) { const h=document.createElement('div'); h.style.cssText='font-size:.68rem;font-weight:700;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;margin:6px 0 4px;'; h.textContent=label; panel.appendChild(h); }
+    rows.forEach((row, ri) => {
+      const rowEl = document.createElement('div');
+      rowEl.className = 'cfg-row';
+      const labelWrap = document.createElement('div');
+      labelWrap.className = 'cfg-row-label';
+      const labelInp = document.createElement('input');
+      labelInp.type='text'; labelInp.value=row.label;
+      labelInp.addEventListener('change', ()=>{ row.label=labelInp.value; reRender(card,sec,baseRates,commission,ch); });
+      labelWrap.appendChild(labelInp);
+      rowEl.appendChild(labelWrap);
+      // plan %
+      if (row.discounts && row.discounts.length>1) {
+        const pp = document.createElement('div'); pp.className='cfg-pct';
+        const pIn = document.createElement('input'); pIn.type='number'; pIn.value=Math.round((row.planPct||row.discounts[0]*100)); pIn.min=0; pIn.max=100; pIn.step=1;
+        pIn.addEventListener('change', ()=>{
+          const pct = parseFloat(pIn.value)||0;
+          row.planPct = pct;
+          row.discounts[0] = pct/100;
+          reRender(card,sec,baseRates,commission,ch);
+        });
+        const sp=document.createElement('span'); sp.textContent='%';
+        pp.appendChild(pIn); pp.appendChild(sp); rowEl.appendChild(pp);
+      }
+      const del=document.createElement('button'); del.className='icon-btn del'; del.textContent='✕';
+      del.addEventListener('click',()=>{ rows.splice(ri,1); rebuildCfgPanel(panel,sec,card,ch,baseRates,commission); reRender(card,sec,baseRates,commission,ch); });
+      rowEl.appendChild(del);
+      panel.appendChild(rowEl);
+    });
+  }
+
+  if (sec.ptMerged) {
+    buildRowList(sec.rowsSin,'SIN COMISIÓN');
+    const addSin=document.createElement('button'); addSin.className='cfg-add-btn'; addSin.textContent='+ Añadir plan SIN COMI';
+    addSin.addEventListener('click',()=>{ sec.rowsSin.push({label:'Nuevo Plan',base:'std',discounts:[0],planPct:0}); sec.rowsCon.push({label:'Nuevo Plan',base:'stdC',discounts:[0],planPct:0}); rebuildCfgPanel(panel,sec,card,ch,baseRates,commission); reRender(card,sec,baseRates,commission,ch); });
+    panel.appendChild(addSin);
+  } else {
+    buildRowList(sec.rows,'');
+    const addBtn=document.createElement('button'); addBtn.className='cfg-add-btn'; addBtn.textContent='+ Añadir plan tarifario';
+    addBtn.addEventListener('click',()=>{ sec.rows.push({label:'Nuevo Plan',base:ch.baseKeys[0],discounts:[0],planPct:0}); rebuildCfgPanel(panel,sec,card,ch,baseRates,commission); reRender(card,sec,baseRates,commission,ch); });
+    panel.appendChild(addBtn);
+  }
+  return panel;
+}
+
+function rebuildCfgPanel(panel, sec, card, ch, baseRates, commission) {
+  panel.innerHTML='';
+  const newP = buildCfgPanel(sec, card, ch, baseRates, commission);
+  panel.appendChild(...newP.childNodes);
+}
+
+function reRender(card, sec, baseRates, commission, ch) {
+  if (sec.ptMerged) {
+    renderPTMerged(card, sec, baseRates, getPromoVal(sec)/100);
+  } else {
+    renderTable(card, sec, baseRates, commission, getPromoVal(sec)/100);
+  }
+}
+
+// ── BUILD SECTION CARD ───────────────────────────────────────────────────────
+function buildSectionCard(ch, sec, baseRates, hotel) {
+  const commission = ch._commission !== undefined ? ch._commission : ch.commission;
+  const card = document.createElement('div');
+  card.className = 'section-card' + (sec.ptMerged?' pt-full':'');
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.className = 'section-header';
+
+  const bar = document.createElement('div'); bar.style.cssText='width:4px;height:13px;background:var(--gold);border-radius:2px;flex-shrink:0;';
+  hdr.appendChild(bar);
+
+  const titleEl = document.createElement('span');
+  titleEl.className = 'section-title';
+  titleEl.contentEditable = 'true';
+  titleEl.textContent = sec.title;
+  titleEl.addEventListener('blur', ()=>{ sec.title=titleEl.textContent.trim(); });
+  hdr.appendChild(titleEl);
+
+  const promoVal = getPromoVal(sec);
+  const ctrl = document.createElement('div'); ctrl.className='promo-ctrl';
+  ctrl.innerHTML = `<label>% Promo</label><input type="number" class="promo-input" value="${promoVal}" min="0" max="100" step="1"><span class="promo-pct">%</span>`;
+  hdr.appendChild(ctrl);
+
+  const cfgBtn = document.createElement('button'); cfgBtn.className='icon-btn'; cfgBtn.textContent='✏'; cfgBtn.title='Editar planes';
+  hdr.appendChild(cfgBtn);
+
+  const delBtn = document.createElement('button'); delBtn.className='icon-btn del'; delBtn.textContent='✕'; delBtn.title='Eliminar promoción';
+  hdr.appendChild(delBtn);
+  card.appendChild(hdr);
+
+  // Config panel (hidden)
+  const cfgPanel = buildCfgPanel(sec, card, ch, baseRates, commission);
+  card.appendChild(cfgPanel);
+
+  // Table / PT merged
+  if (sec.ptMerged) renderPTMerged(card, sec, baseRates, promoVal/100);
+  else renderTable(card, sec, baseRates, commission, promoVal/100);
+
+  // Events
+  ctrl.querySelector('.promo-input').addEventListener('input', e => {
+    const v = parseFloat(e.target.value)||0;
+    setPromoVal(sec, v);
+    if (sec.ptMerged) renderPTMerged(card, sec, baseRates, v/100);
+    else renderTable(card, sec, baseRates, commission, v/100);
+  });
+
+  cfgBtn.addEventListener('click', ()=>{ cfgPanel.classList.toggle('open'); });
+
+  delBtn.addEventListener('click', ()=>{
+    const idx = ch.sections.indexOf(sec);
+    if (idx>=0) ch.sections.splice(idx,1);
+    card.remove();
+  });
+
+  return card;
+}
+
+// ── BUILD CHANNEL PAGE ───────────────────────────────────────────────────────
+function buildChannelPage(ch) {
+  const page = document.createElement('div');
+  page.className = 'channel-page';
+  page.id = 'page-'+ch.key;
+
+  const commission = ch._commission !== undefined ? ch._commission : ch.commission;
+
+  page.innerHTML = `
+    <div class="input-bar">
+      <div class="input-group">
+        <label>Habitación / Tipo</label>
+        <input type="text" id="room-${ch.key}" value="Doble Estándar" placeholder="Ej: Suite Deluxe">
+      </div>
+      <div class="input-divider"></div>
+      <div class="input-group">
+        <label>Tarifa base mínima (noche)</label>
+        <input type="number" id="inp-${ch.key}" value="240000" min="0" step="1000">
+      </div>
+      <div class="input-group">
+        <label>Comisión %</label>
+        <input type="number" class="commission-input" id="com-${ch.key}" value="${Math.round(commission*100)}" min="0" max="100" step="1">
+      </div>
+      <div class="input-divider"></div>
+      <div class="base-rates" id="br-${ch.key}"></div>
+    </div>
+    <div class="toolbar">
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#d4edda;border:1.5px solid #1a6e3c"></div><span><strong>Tarifa a cargar en OTA</strong> — clic para copiar</span></div>
+        <div class="legend-item"><div class="legend-dot" style="background:#d0e4f7;border:1.5px solid #14427a"></div><span><strong>Neto hotel</strong></span></div>
+      </div>
+      <button class="add-promo-btn" id="add-promo-${ch.key}">+ Añadir promoción</button>
+    </div>
+    <div class="sections-grid" id="grid-${ch.key}"></div>
+  `;
+  return page;
+}
+
+// ── RENDER SECTIONS ──────────────────────────────────────────────────────────
+function renderSections(ch) {
+  const inp = document.getElementById('inp-'+ch.key);
+  if (!inp) return;
+  const inputVal = parseFloat(inp.value)||0;
+  hotelBaseInputs[currentHotel] = hotelBaseInputs[currentHotel]||{};
+  hotelBaseInputs[currentHotel][ch.key] = inputVal;
+
+  const commission = ch._commission !== undefined ? ch._commission : ch.commission;
+  const baseRates = getBaseRates(ch, inputVal);
+
+  // Chips
+  const brEl = document.getElementById('br-'+ch.key);
+  if (brEl) brEl.innerHTML = ch.baseLabels.map((lbl,i)=>{
+    const v = baseRates[ch.baseKeys[i]];
+    return `<div class="base-rate-chip"><span class="chip-label">${lbl}</span><span class="chip-val">${fmt(v)}</span></div>`;
+  }).join('');
+
+  const grid = document.getElementById('grid-'+ch.key);
+  if (!grid) return;
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = ch.gridCols ? `repeat(${ch.gridCols},minmax(0,1fr))` : 'repeat(auto-fill,minmax(480px,1fr))';
+
+  ch.sections.forEach(sec => {
+    grid.appendChild(buildSectionCard(ch, sec, baseRates, currentHotel));
+  });
+}
+
+// ── SIDEBAR ──────────────────────────────────────────────────────────────────
+function openSidebar() {
+  document.getElementById('hotel-sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('hotel-sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ── SWITCH HOTEL ─────────────────────────────────────────────────────────────
+function switchHotel(name) {
+  currentHotel = name;
+  document.querySelectorAll('.hotel-item').forEach(b=>b.classList.toggle('active', b.dataset.hotel===name));
+  document.getElementById('hotel-badge').textContent = name;
+  closeSidebar();
+  // Load saved inputs for this hotel, re-render active channel
+  const ch = CHANNELS.find(c=>c.key===currentChannelKey);
+  if (ch) {
+    const saved = (hotelBaseInputs[name]||{})[ch.key];
+    const inp = document.getElementById('inp-'+ch.key);
+    if (inp && saved!==undefined) inp.value = saved;
+    renderSections(ch);
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+function addTh(parent,text,style,colArr,colIdx){
+  const th=document.createElement('th');
+  th.contentEditable='true';
+  th.textContent=text;
+  if(style)th.setAttribute('style',style+';outline:none;');
+  if(colArr!==undefined && colIdx!==undefined){
+    th.addEventListener('blur',()=>{ colArr[colIdx]=th.textContent; });
+    th.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();th.blur();} });
+  }
+  parent.appendChild(th);return th;
+}
+function addTd(parent,text,cls){const td=document.createElement('td');td.textContent=text;if(cls)td.className=cls;parent.appendChild(td);return td;}
+
+function init() {
+  HOTELS.forEach(h=>{hotelBaseInputs[h]={};CHANNELS.forEach(c=>{hotelBaseInputs[h][c.key]=240000;});});
+
+  // Hotel sidebar list
+  const hotelList = document.getElementById('hotel-list');
+  HOTELS.forEach((hotel,i)=>{
+    const btn=document.createElement('button');
+    btn.className='hotel-item'+(i===0?' active':'');
+    btn.dataset.hotel=hotel; btn.textContent=hotel;
+    btn.addEventListener('click',()=>switchHotel(hotel));
+    hotelList.appendChild(btn);
+  });
+
+  // Channel tabs & pages
+  const tabsEl=document.getElementById('tabs');
+  const pagesEl=document.getElementById('pages');
+  CHANNELS.forEach((ch,idx)=>{
+    const btn=document.createElement('button');
+    btn.className='channel-tab'+(idx===0?' active':'');
+    btn.dataset.key=ch.key; btn.textContent=ch.name;
+    btn.addEventListener('click',()=>{
+      currentChannelKey=ch.key;
+      document.querySelectorAll('.channel-tab').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.channel-page').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('page-'+ch.key).classList.add('active');
+      renderSections(ch);
+    });
+    tabsEl.appendChild(btn);
+
+    const page=buildChannelPage(ch);
+    if(idx===0)page.classList.add('active');
+    pagesEl.appendChild(page);
+
+    // Wire inputs
+    document.getElementById('inp-'+ch.key).addEventListener('input',()=>renderSections(ch));
+    document.getElementById('com-'+ch.key).addEventListener('input',e=>{
+      ch._commission=(parseFloat(e.target.value)||0)/100;
+      renderSections(ch);
+    });
+    document.getElementById('add-promo-'+ch.key).addEventListener('click',()=>{
+      ch.sections.push({
+        title:'NUEVA PROMOCIÓN', promoDefault:30,
+        colHeaders:ch.sections[0]?.colHeaders||['Plan','Base','Promo','Tarifa ▼'],
+        pairGroup:ch.sections[0]?.pairGroup,
+        ptMerged:ch.sections[0]?.ptMerged||false,
+        rows:ch.sections[0]?.ptMerged?undefined:[{label:'Nuevo Plan',base:ch.baseKeys[0],discounts:[0],planPct:0}],
+        rowsSin:ch.sections[0]?.ptMerged?[{label:'Nuevo Plan',base:'std',discounts:[0],planPct:0}]:undefined,
+        rowsCon:ch.sections[0]?.ptMerged?[{label:'Nuevo Plan',base:'stdC',discounts:[0],planPct:0}]:undefined,
+      });
+      renderSections(ch);
+    });
+  });
+
+  currentChannelKey = CHANNELS[0].key;
+  renderSections(CHANNELS[0]);
+  document.getElementById('hotel-badge').textContent = HOTELS[0];
+}
+
+init();
+</script>
+</body>
+</html>
