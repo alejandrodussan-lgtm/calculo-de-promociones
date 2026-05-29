@@ -86,7 +86,9 @@
   .sections-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;}
 
   /* SECTION CARD */
-  .section-card{background:var(--white);border-radius:var(--radius);box-shadow:0 2px 8px rgba(175,118,43,.07);overflow:hidden;border:1px solid var(--gold-border);}
+  .section-card{background:var(--white);border-radius:var(--radius);box-shadow:0 2px 8px rgba(175,118,43,.07);overflow:visible;border:1px solid var(--gold-border);}
+  .section-card .section-header{border-radius:var(--radius) var(--radius) 0 0;}
+  .section-card .table-wrap{border-radius:0 0 var(--radius) var(--radius);}
   .section-card.pt-full{grid-column:1/-1;}
 
   /* SECTION HEADER */
@@ -257,7 +259,7 @@ function despRows(base, withCupos) {
   }
   return rows;
 }
-const despHdrs = ['Estrategia tarifaria','Tarifa visible OTA','Neto hotel','Tarifa sugerida OTA ▼','Ingreso neto ▼'];
+const despHdrs = ['Estrategia','Base OTA','Neto','Sugerida OTA ▼','Ingreso ▼'];
 
 function expRows(base) {
   return [
@@ -271,7 +273,7 @@ function expRows(base) {
     { label:'País + Mem',         base, discounts:[0.05,0],  planPct:5,  promoAdd:0.10 },
   ];
 }
-const expHdrs = ['Plan','Base','Mod. Canal','Promo','Tarifa sugerida OTA ▼','Ingreso neto ▼'];
+const expHdrs = ['Plan','Base','Mod. Canal','Promo','Sugerida OTA ▼','Ingreso ▼'];
 
 function bookRows() {
   return [
@@ -280,7 +282,7 @@ function bookRows() {
     { label:'Mín 3 noches',     base:'min3', discounts:[0,0.20], promoIdx:0 },
   ];
 }
-const bookHdrs = ['Estrategia tarifaria','Tarifa visible OTA','Después promo','Tarifa sugerida OTA ▼','Ingreso neto ▼'];
+const bookHdrs = ['Estrategia','Base OTA','Después promo','Sugerida OTA ▼','Ingreso ▼'];
 
 function ptRowsSin() {
   return [
@@ -375,7 +377,7 @@ const CHANNELS = [
     baseKeys:  ['std','nr'],
     baseFactors:[1,0.88],
     sections:[
-      {title:'CAMPAÑA GETAWAY',promoDefault:43,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Promo+Noches','Opaque 10%','Tarifa sugerida OTA ▼','Ingreso neto ▼'],pairGroup:2,rows:[
+      {title:'CAMPAÑA GETAWAY',promoDefault:43,colHeaders:['Estrategia','Base OTA','Promo+Noches','Opaque 10%','Sugerida OTA ▼','Ingreso ▼'],pairGroup:2,rows:[
         {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
         {label:'No reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
         {label:'Mín. 2 noches Std (+2%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
@@ -383,7 +385,7 @@ const CHANNELS = [
         {label:'Mín. 3 noches Std (+4%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
         {label:'Mín. 3 noches NR (+4%)',       base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
       ]},
-      {title:'OPACA',promoDefault:36,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Promo+Noches','Opaque 10%','Tarifa sugerida OTA ▼','Ingreso neto ▼'],pairGroup:2,rows:[
+      {title:'OPACA',promoDefault:36,colHeaders:['Estrategia','Base OTA','Promo+Noches','Opaque 10%','Sugerida OTA ▼','Ingreso ▼'],pairGroup:2,rows:[
         {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
         {label:'No reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
         {label:'Mín. 2 noches Std (+2%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
@@ -391,7 +393,7 @@ const CHANNELS = [
         {label:'Mín. 3 noches Std (+4%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
         {label:'Mín. 3 noches NR (+4%)',       base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
       ]},
-      {title:'COMPRA ANTICIPADA 90 DÍAS',promoDefault:35,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Promo+Noches','Opaque 10%','Tarifa sugerida OTA ▼','Ingreso neto ▼'],pairGroup:2,rows:[
+      {title:'COMPRA ANTICIPADA 90 DÍAS',promoDefault:35,colHeaders:['Estrategia','Base OTA','Promo+Noches','Opaque 10%','Sugerida OTA ▼','Ingreso ▼'],pairGroup:2,rows:[
         {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
         {label:'No reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
         {label:'Mín. 2 noches Std (+2%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
@@ -399,7 +401,7 @@ const CHANNELS = [
         {label:'Mín. 3 noches Std (+4%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
         {label:'Mín. 3 noches NR (+4%)',       base:'nr', discounts:[0,0.10],promoIdx:0,nocheAdd:0.04},
       ]},
-      {title:'PROMO GENERAL',promoDefault:29,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Promo+Noches','Opaque 10%','Tarifa sugerida OTA ▼','Ingreso neto ▼'],pairGroup:2,rows:[
+      {title:'PROMO GENERAL',promoDefault:29,colHeaders:['Estrategia','Base OTA','Promo+Noches','Opaque 10%','Sugerida OTA ▼','Ingreso ▼'],pairGroup:2,rows:[
         {label:'Estándar',                     base:'std',discounts:[0,0.10],promoIdx:0},
         {label:'No reembolsable',              base:'nr', discounts:[0,0.10],promoIdx:0},
         {label:'Mín. 2 noches Std (+2%)',      base:'std',discounts:[0,0.10],promoIdx:0,nocheAdd:0.02},
@@ -418,14 +420,14 @@ const CHANNELS = [
     baseKeys:  ['std','nr','min2','min3'],
     baseFactors:[1,0.88,0.86,0.84],
     sections:[
-      {title:'CAMPAÑA · Sin Prime',            promoDefault:43,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Campaña','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'CAMPAÑA · Con Prime (+10%)',      promoDefault:53,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Campaña+Prime','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'OPACA · Sin Prime',               promoDefault:36,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Opaca','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'OPACA · Con Prime (+10%)',         promoDefault:46,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Opaca+Prime','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'COMPRA ANTICIPADA 90D · Sin Prime',promoDefault:35,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Anti. 90d','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'COMPRA ANTICIPADA 90D · Con Prime',promoDefault:45,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Anti+Prime','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'PROMO GENERAL · Sin Prime',        promoDefault:29,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Promo','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
-      {title:'PROMO GENERAL · Con Prime',        promoDefault:39,colHeaders:['Estrategia tarifaria','Tarifa visible OTA','Promo+Prime','Tarifa sugerida OTA ▼','Ingreso neto ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'CAMPAÑA · Sin Prime',            promoDefault:43,colHeaders:['Estrategia','Base OTA','Campaña','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'CAMPAÑA · Con Prime (+10%)',      promoDefault:53,colHeaders:['Estrategia','Base OTA','Campaña+Prime','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'OPACA · Sin Prime',               promoDefault:36,colHeaders:['Estrategia','Base OTA','Opaca','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'OPACA · Con Prime (+10%)',         promoDefault:46,colHeaders:['Estrategia','Base OTA','Opaca+Prime','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'COMPRA ANTICIPADA 90D · Sin Prime',promoDefault:35,colHeaders:['Estrategia','Base OTA','Anti. 90d','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'COMPRA ANTICIPADA 90D · Con Prime',promoDefault:45,colHeaders:['Estrategia','Base OTA','Anti+Prime','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'PROMO GENERAL · Sin Prime',        promoDefault:29,colHeaders:['Estrategia','Base OTA','Promo','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
+      {title:'PROMO GENERAL · Con Prime',        promoDefault:39,colHeaders:['Estrategia','Base OTA','Promo+Prime','Sugerida OTA ▼','Ingreso ▼'],rows:[{label:'Estándar',base:'std',discounts:[0]},{label:'Mín. 2 noches',base:'min2',discounts:[0]},{label:'Mín. 3 noches',base:'min3',discounts:[0]}]},
     ]
   },
 
