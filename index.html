@@ -159,6 +159,9 @@
   .td-ota.td-min-alert{background:#fde!important;color:#c00!important;}
   .td-ota.td-min-alert::after{content:'⚠'!important;color:#c00;}
   .td-net{background:var(--blue-bg);color:var(--blue);font-weight:800;font-size:.83rem;}
+  .td-mobile{background:#f3e8ff;color:#7c3aed;font-weight:800;cursor:pointer;border-radius:4px;font-size:.83rem;transition:filter .15s,transform .1s;user-select:none;}
+  .td-mobile::after{content:'⧉';font-size:.6rem;margin-left:4px;opacity:.5;}
+  .td-mobile:hover{filter:brightness(.93);transform:scale(1.02);}
   tr.pair-sep td{border-bottom:2px solid var(--gold-border)!important;}
 
   /* PRICE TRAVEL MERGED */
@@ -647,7 +650,7 @@ function bookRows() {
     { label:'Mín 3 noches',     base:'min3', discounts:[0,0.20], promoIdx:0 },
   ];
 }
-const bookHdrs = ['Estrategia','Base OTA','Después promo','Sugerida OTA ▼','Ingreso ▼'];
+const bookHdrs = ['Estrategia','Base OTA','Después promo','GENIUS ▼','MOBILE ▼','Ingreso ▼'];
 
 function ptRowsSin() {
   return [
@@ -831,10 +834,11 @@ function getBaseRates(ch, input) {
 }
 
 // ── RENDER TABLE ─────────────────────────────────────────────────────────────
-function renderTable(card, sec, baseRates, commission, promoDisc) {
+function renderTable(card, sec, baseRates, commission, promoDisc, ch) {
   const old = card.querySelector('table');
   if (old) old.remove();
 
+  const isBooking = ch && ch.key === 'booking';
   const effRows = sec.rows || [];
   const maxDisc = Math.max(...effRows.map((r, ri) => effectiveDiscounts(r, promoDisc, sec, ri).length));
   const table = document.createElement('table');
@@ -846,9 +850,18 @@ function renderTable(card, sec, baseRates, commission, promoDisc) {
   addTh(trh, colH[0]||'Plan', '', colH, 0);
   addTh(trh, colH[1]||'Base', '', colH, 1);
   for (let i=1; i<maxDisc; i++) addTh(trh, colH[1+i]||`Paso ${i+1}`, '', colH, 1+i);
-  const otaIdx = colH.length-(commission>0?2:1);
-  addTh(trh, colH[otaIdx], 'color:var(--green);font-weight:900', colH, otaIdx);
-  if (commission>0) addTh(trh, colH[colH.length-1], 'color:var(--blue);font-weight:900', colH, colH.length-1);
+
+  if (isBooking) {
+    // Booking.com: GENIUS | MOBILE | INGRESO
+    const geniusLabel = ch.geniusLabel || 'GENIUS ▼';
+    addTh(trh, geniusLabel, 'color:var(--green);font-weight:900', colH, colH.length-3);
+    addTh(trh, 'MOBILE ▼', 'color:#7c3aed;font-weight:900', colH, colH.length-2);
+    if (commission > 0) addTh(trh, colH[colH.length-1], 'color:var(--blue);font-weight:900', colH, colH.length-1);
+  } else {
+    const otaIdx = colH.length-(commission>0?2:1);
+    addTh(trh, colH[otaIdx], 'color:var(--green);font-weight:900', colH, otaIdx);
+    if (commission>0) addTh(trh, colH[colH.length-1], 'color:var(--blue);font-weight:900', colH, colH.length-1);
+  }
   thead.appendChild(trh); table.appendChild(thead);
 
   // tbody
@@ -858,7 +871,6 @@ function renderTable(card, sec, baseRates, commission, promoDisc) {
     const discs = effectiveDiscounts(row, promoDisc, sec, ri);
     const vals = applySteps(bv, discs);
     const otaVal = vals[vals.length-1];
-    const netVal = commission>0 ? otaVal*(1-commission) : null;
 
     const trow = document.createElement('tr');
     if (sec.pairGroup && (ri+1)%sec.pairGroup===0) trow.classList.add('pair-sep');
@@ -873,7 +885,19 @@ function renderTable(card, sec, baseRates, commission, promoDisc) {
     const tdOta = addTd(trow, fmt(otaVal), 'td-ota' + (otaAlert ? ' td-min-alert' : ''));
     tdOta.title = otaAlert ? `⚠ Tarifa en mínimo permitido (${fmt(minRate)}) — Clic para copiar` : 'Clic para copiar';
     tdOta.addEventListener('click', ()=>copyValue(otaVal));
-    if (commission>0 && netVal!==null) addTd(trow, fmt(netVal), 'td-net');
+
+    if (isBooking) {
+      const mobPct = ch.mobilePct || 0;
+      const mobVal = otaVal * (1 - mobPct / 100);
+      const netVal = commission > 0 ? mobVal * (1 - commission) : null;
+      const tdMob = addTd(trow, fmt(mobVal), 'td-mobile');
+      tdMob.title = 'Clic para copiar';
+      tdMob.addEventListener('click', ()=>copyValue(mobVal));
+      if (commission > 0 && netVal !== null) addTd(trow, fmt(netVal), 'td-net');
+    } else {
+      const netVal = commission>0 ? otaVal*(1-commission) : null;
+      if (commission>0 && netVal!==null) addTd(trow, fmt(netVal), 'td-net');
+    }
 
     tbody.appendChild(trow);
   });
@@ -1022,9 +1046,8 @@ function reRender(card, sec, baseRates, commission, ch) {
   if (sec.ptMerged) {
     renderPTMerged(card, sec, baseRates, v);
   } else {
-    renderTable(card, sec, baseRates, commission, v);
+    renderTable(card, sec, baseRates, commission, v, ch);
   }
-  if (ch && ch.geniusPcts) renderGeniusMobile(card, sec, baseRates, commission, v, ch);
 }
 
 // ── GENIUS & MOBILE RENDERER ─────────────────────────────────────────────────
@@ -1150,18 +1173,14 @@ function buildSectionCard(ch, sec, baseRates, hotel) {
 
   // Table / PT merged
   if (sec.ptMerged) renderPTMerged(card, sec, baseRates, promoVal/100);
-  else renderTable(card, sec, baseRates, commission, promoVal/100);
-
-  // Genius & Mobile sub-table (Booking.com only)
-  if (ch.geniusPcts) renderGeniusMobile(card, sec, baseRates, commission, promoVal/100, ch);
+  else renderTable(card, sec, baseRates, commission, promoVal/100, ch);
 
   // Events
   ctrl.querySelector('.promo-input').addEventListener('input', e => {
     const v = parseFloat(e.target.value)||0;
     setPromoVal(sec, v);
     if (sec.ptMerged) renderPTMerged(card, sec, baseRates, v/100);
-    else renderTable(card, sec, baseRates, commission, v/100);
-    if (ch.geniusPcts) renderGeniusMobile(card, sec, baseRates, commission, v/100, ch);
+    else renderTable(card, sec, baseRates, commission, v/100, ch);
   });
 
   cfgBtn.addEventListener('click', ()=>{ cfgPanel.classList.toggle('open'); });
@@ -1228,30 +1247,15 @@ function buildChannelPage(ch) {
       </div>
       <button class="add-promo-btn" id="add-promo-${ch.key}">+ Crear nueva estrategia</button>
     </div>
-    ${ch.geniusPcts ? `
+    ${ch.key === 'booking' ? `
     <div class="genius-config-bar" id="genius-cfg-${ch.key}">
-      <label>🔵 Genius &amp; Mobile — descuentos Booking.com</label>
+      <label>🔵 Booking.com — descuento Mobile</label>
       <div class="genius-cfg-group">
-        <span>Genius L1</span>
-        <input type="number" id="genius-l1-${ch.key}" value="${ch.geniusPcts[0]}" min="0" max="50" step="1">
-        <span>%</span>
-      </div>
-      <div class="genius-cfg-group">
-        <span>Genius L2</span>
-        <input type="number" id="genius-l2-${ch.key}" value="${ch.geniusPcts[1]}" min="0" max="50" step="1">
-        <span>%</span>
-      </div>
-      <div class="genius-cfg-group">
-        <span>Genius L3</span>
-        <input type="number" id="genius-l3-${ch.key}" value="${ch.geniusPcts[2]}" min="0" max="50" step="1">
-        <span>%</span>
-      </div>
-      <div class="genius-cfg-group">
-        <span>Mobile</span>
+        <span>Descuento Mobile</span>
         <input type="number" id="genius-mob-${ch.key}" value="${ch.mobilePct||0}" min="0" max="50" step="1">
         <span>%</span>
       </div>
-      <span style="font-size:.65rem;color:#7a6500;font-style:italic">Ajuste los % y vea el impacto en tiempo real en cada tarjeta.</span>
+      <span style="font-size:.65rem;color:#7a6500;font-style:italic">MOBILE = GENIUS × (1 − descuento%). Ajuste el % para ver el impacto en tiempo real.</span>
     </div>` : ''}
     <div class="sections-grid" id="grid-${ch.key}"></div>
   `;
@@ -1285,26 +1289,20 @@ function renderSections(ch) {
     grid.appendChild(buildSectionCard(ch, sec, baseRates, currentHotel));
   });
 
-  // Wire Genius & Mobile config inputs (Booking only)
-  if (ch.geniusPcts) {
-    function wireGeniusInput(id, setter) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('input', () => {
-        setter(parseFloat(el.value)||0);
-        // Re-render all genius panels across all section cards
+  // Wire Mobile discount config input (Booking.com only)
+  if (ch.key === 'booking') {
+    const mobEl = document.getElementById('genius-mob-'+ch.key);
+    if (mobEl) {
+      mobEl.addEventListener('input', () => {
+        ch.mobilePct = parseFloat(mobEl.value)||0;
         const commission2 = ch._commission !== undefined ? ch._commission : ch.commission;
         grid.querySelectorAll('.section-card').forEach((card, i) => {
           const sec2 = ch.sections[i];
           if (!sec2) return;
-          renderGeniusMobile(card, sec2, baseRates, commission2, getPromoVal(sec2)/100, ch);
+          renderTable(card, sec2, baseRates, commission2, getPromoVal(sec2)/100, ch);
         });
       });
     }
-    wireGeniusInput('genius-l1-'+ch.key, v => ch.geniusPcts[0] = v);
-    wireGeniusInput('genius-l2-'+ch.key, v => ch.geniusPcts[1] = v);
-    wireGeniusInput('genius-l3-'+ch.key, v => ch.geniusPcts[2] = v);
-    wireGeniusInput('genius-mob-'+ch.key, v => ch.mobilePct = v);
   }
 }
 
@@ -3460,382 +3458,436 @@ function buildSummaryFromRows(rows) {
   return { occ: totalOcc/n, adr: totalADR/n, revpar: totalRevPAR/n, label: 'Promedio' };
 }
 
-// ── REVENUE MANAGER RECOMMENDATIONS ENGINE ────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════
+// RM RECOMMENDATIONS & INLINE CHART
+// ═══════════════════════════════════════════════════════════════
 
 function generateRMRecommendations(metrics, rows, weeklyData) {
-  var m = metrics || {};
-  var allRows = rows || [];
-  var wc = weeklyData || [];
-  var dbc = OTB_STATE.daysBetweenCutoffs;
-
-  // Categorize dates
-  var opportunityDates = allRows.filter(function(r){ return r.status === 'strong-up' || r.status === 'moderate-up'; });
-  var riskDates        = allRows.filter(function(r){ return r.status === 'strong-down' || r.status === 'moderate-down'; });
-  var stagnantDates    = allRows.filter(function(r){ return r.status === 'stable' && (r.occAfter||100) < 55; });
-  var criticalDates    = allRows.filter(function(r){ return r.status === 'strong-down'; });
-  var criticalWeeks    = wc.filter(function(w){ return (w.avgPickup||0) < -3 || (w.totalRoomPickup||0) < -5; });
-
-  // Opportunity date detail
-  var opDetails = opportunityDates.map(function(r) {
-    var actions = [];
-    if (r.status === 'strong-up') {
-      actions.push('📈 Evaluar incremento tarifario del 5–10%');
-      actions.push('🔒 Cerrar tarifas con descuento agresivo');
-      if ((r.occAfter||0) > 75) actions.push('⏱ Aplicar mínimo de estancia (2–3 noches)');
-      actions.push('📦 Proteger inventario en canales OTA');
-    } else {
-      actions.push('📊 Revisar oportunidad de mejora tarifaria gradual');
-      actions.push('👁 Mantener visibilidad y monitorear evolución');
-    }
-    return { date: r.stayDate||r.afterDate||'', occ: r.occAfter, roomPickup: r.roomPickup, pickupPP: r.pickup, velocity: r.velocityHabs, status: r.status, actions: actions };
-  });
-
-  // Risk date detail
-  var riskDetails = riskDates.map(function(r) {
-    var actions = [];
-    if (r.status === 'strong-down') {
-      actions.push('🚨 Revisar tarifa vs competidores inmediatamente');
-      actions.push('📉 Activar promoción táctica urgente');
-      actions.push('📣 Mejorar visibilidad en OTAs principales');
-      actions.push('🔍 Revisar restricciones activas (mín noches, CTA, CTD)');
-    } else {
-      actions.push('🔍 Revisar competitividad tarifaria frente al compset');
-      actions.push('📣 Activar campaña por mercado clave');
-      actions.push('👁 Mejorar contenido y disponibilidad en canales');
-    }
-    return { date: r.stayDate||r.afterDate||'', occ: r.occAfter, roomPickup: r.roomPickup, pickupPP: r.pickup, velocity: r.velocityHabs, status: r.status, actions: actions };
-  });
-
-  // Stagnant date detail
-  var stagnantDetails = stagnantDates.map(function(r) {
-    return { date: r.stayDate||r.afterDate||'', occ: r.occAfter, actions: ['👁 Monitorear y evaluar estímulo de demanda', '📝 Revisar contenido y calidad de ficha en OTAs'] };
-  });
-
-  // Critical week detail
-  var critWeekDetails = criticalWeeks.map(function(w) {
-    return { weekLabel: w.weekLabel, avgPickup: w.avgPickup, roomPickup: w.totalRoomPickup,
-      actions: ['📅 Crear campaña focalizada para esa ventana de estancia', '💲 Revisar tarifas frente al compset para esas fechas', '🔧 Ajustar promociones por canal', '📉 Revisar mínimos de noches', '📣 Aumentar exposición en canales con mayor conversión'] };
-  });
-
-  // General diagnosis
-  var total = m.total || 1;
-  var pctPos = Math.round((m.up||0) / total * 100);
-  var pctNeg = Math.round((m.down||0) / total * 100);
-  var pctStb = Math.round((m.stable||0) / total * 100);
-  var generalClass = m.general === 'Positivo' ? 'positive' : m.general === 'Negativo' ? 'negative' : m.general === 'Mixto' ? 'mixed' : 'stable';
-  var totalHabsStr = m.hasRooms ? ' Pickup neto: '+(m.totalRoomPickup>0?'+':'')+Math.round(m.totalRoomPickup)+' habitaciones.' : '';
-  var velStr = m.avgVelocityHabs !== null && m.avgVelocityHabs !== undefined
-    ? ' Velocidad promedio: '+(m.avgVelocityHabs>0?'+':'')+m.avgVelocityHabs.toFixed(2)+' habs/día'+(dbc?' (entre '+dbc+' días)':'')+'. '
-    : '';
-  var diagText;
-  if (generalClass === 'positive') {
-    diagText = 'El mes presenta una tendencia positiva de pickup. '+pctPos+'% de las fechas muestran crecimiento frente al corte base.'+totalHabsStr+velStr+'Las fechas con pickup fuerte son oportunidad para ajuste tarifario al alza y protección de inventario.';
-  } else if (generalClass === 'negative') {
-    diagText = 'El mes presenta una tendencia negativa de pickup. '+pctNeg+'% de las fechas muestran caída.'+totalHabsStr+velStr+'Se requiere revisión urgente de competitividad tarifaria e intervención comercial en fechas críticas.';
-  } else if (generalClass === 'mixed') {
-    diagText = 'El mes presenta un comportamiento mixto. '+pctPos+'% de fechas con pickup positivo, '+pctNeg+'% con caída.'+totalHabsStr+velStr+'Se recomienda gestión diferenciada: proteger tarifa donde el pickup es positivo y activar estímulos donde es negativo.';
-  } else {
-    diagText = 'El mes está estancado. '+pctStb+'% de fechas sin variación relevante.'+totalHabsStr+velStr+'Monitoree la evolución semanal y evalúe visibilidad y competitividad tarifaria antes de actuar.';
-  }
-
-  // Priority actions
+  var opportunityDates = [];
+  var riskDates = [];
+  var stagnantDates = [];
+  var criticalWeeks = [];
   var priorityActions = [];
-  if (criticalDates.length > 0) {
-    priorityActions.push({ priority:'high', title:'Fechas con caída fuerte de pickup', body:'Revisar tarifa y activar estímulo táctico urgente. Verificar restricciones activas.', dates: criticalDates.map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+  var DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  function dayLabel(row) {
+    if (row.stayDate) {
+      var parts = row.stayDate.split('-');
+      if (parts.length === 3) {
+        var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return DAYS_ES[d.getDay()] + ' ' + parts[2] + '/' + parts[1];
+      }
+      return row.stayDate;
+    }
+    return 'D' + row.day;
   }
-  if (riskDates.length > criticalDates.length) {
-    var modDates = riskDates.filter(function(r){return r.status==='moderate-down';});
-    if (modDates.length) priorityActions.push({ priority:'medium', title:'Fechas con caída moderada', body:'Revisar competitividad tarifaria frente al compset. Activar estímulo táctico y mejorar visibilidad en OTAs.', dates: modDates.map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+
+  (rows || []).forEach(function(row) {
+    if (row.pickup === null || row.pickup === undefined) return;
+    var st = row.status || pickupStatus(row.pickup);
+    var label = dayLabel(row);
+    var occ = (row.occAfter !== null && row.occAfter !== undefined) ? Math.round(row.occAfter * 100) : null;
+    var rp = (row.roomPickup !== null && row.roomPickup !== undefined) ? row.roomPickup : null;
+    var vel = (row.velocityHabs !== null && row.velocityHabs !== undefined) ? row.velocityHabs
+            : (row.velocityPP !== null && row.velocityPP !== undefined) ? row.velocityPP : null;
+    var actions;
+    if (st === 'strong-up' || st === 'moderate-up') {
+      actions = [];
+      if (st === 'strong-up') {
+        actions.push('📈 Evaluar incremento tarifario del 8–15%');
+        actions.push('🔒 Cerrar tarifas con descuento inmediatamente');
+        actions.push('🛡 Proteger inventario; evitar canales de bajo valor');
+      } else {
+        actions.push('📈 Evaluar incremento tarifario del 5–10%');
+        actions.push('🔒 Cerrar promociones activas en esta fecha');
+      }
+      actions.push('📢 Revisar paridad tarifaria en todos los canales');
+      if (vel !== null) actions.push('⚡ Velocidad actual: ' + (typeof vel === 'number' ? vel.toFixed(2) : vel) + ' habs/día — mantener monitoreo');
+      opportunityDates.push({ date: label, reason: pickupLabel(st), occ: occ, roomPickup: rp, velocity: vel, actions: actions });
+    } else if (st === 'strong-down' || st === 'moderate-down') {
+      actions = [];
+      if (st === 'strong-down') {
+        actions.push('📉 Activar promoción táctica urgente (descuento 10–20%)');
+        actions.push('👁 Mejorar visibilidad en OTAs (foto principal, descripción)');
+        actions.push('🔍 Revisar tarifas vs compset — posible sobrecoste');
+        actions.push('⚙ Revisar restricciones de estancia mínima');
+      } else {
+        actions.push('📉 Considerar oferta de último momento o paquete');
+        actions.push('👁 Revisar posicionamiento en OTAs');
+        actions.push('🔍 Comparar con tarifa de competencia');
+      }
+      actions.push('📊 Analizar segmentos — corporativo, grupos, leisure');
+      if (vel !== null) actions.push('⚡ Velocidad: ' + (typeof vel === 'number' ? vel.toFixed(2) : vel) + ' habs/día — por debajo de lo esperado');
+      riskDates.push({ date: label, reason: pickupLabel(st), occ: occ, roomPickup: rp, velocity: vel, actions: actions });
+    } else if (st === 'stable' && occ !== null && occ < 50) {
+      actions = [
+        '📣 Estimular demanda con campaña de email/metabuscadores',
+        '🖼 Revisar contenido y fotos del establecimiento en OTAs',
+        '💬 Responder reseñas para mejorar ranking'
+      ];
+      stagnantDates.push({ date: label, reason: 'Estable con ocupación baja (' + occ + '%)', occ: occ, actions: actions });
+    }
+  });
+
+  (weeklyData || []).forEach(function(w) {
+    if (w.avgPickup < -3 || w.totalRoomPickup < -5) {
+      criticalWeeks.push({
+        weekLabel: w.weekLabel, pickup: w.avgPickup, roomPickup: w.totalRoomPickup,
+        actions: [
+          '🚨 Revisión inmediata de estrategia tarifaria para la semana',
+          '📉 Activar promotions en todos los canales',
+          '📞 Contactar cuentas corporativas y grupos potenciales'
+        ]
+      });
+    }
+  });
+
+  var highItems = [], medItems = [], lowItems = [];
+  var strongDownDates = [], modDownDates = [];
+  (rows || []).forEach(function(row) {
+    if (row.pickup === null || row.pickup === undefined) return;
+    var st = row.status || pickupStatus(row.pickup);
+    var label = dayLabel(row);
+    if (st === 'strong-down') strongDownDates.push(label);
+    else if (st === 'moderate-down') modDownDates.push(label);
+  });
+
+  if (strongDownDates.length > 0) {
+    highItems.push({ priority: 'high', title: '🚨 Riesgo Crítico de Pickup',
+      body: 'Fechas con caída fuerte de reservas que requieren acción inmediata: activar promociones, revisar tarifas vs compset y mejorar visibilidad OTA.',
+      dates: strongDownDates });
   }
   if (criticalWeeks.length > 0) {
-    priorityActions.push({ priority:'medium', title:'Semanas con pickup negativo', body:'Crear campaña focalizada para esa ventana. Revisar mínimos de noches y aumentar exposición en canales clave.', dates: criticalWeeks.map(function(w){return w.weekLabel;}) });
+    highItems.push({ priority: 'high', title: '🔴 Semanas Críticas Detectadas',
+      body: 'Semanas con pickup semanal muy negativo (' + criticalWeeks.map(function(w){ return w.weekLabel; }).join(', ') + '). Revisión urgente de estrategia.',
+      dates: criticalWeeks.map(function(w){ return w.weekLabel; }) });
+  }
+  if (modDownDates.length > 0) {
+    medItems.push({ priority: 'medium', title: '⚠ Riesgo Moderado de Pickup',
+      body: 'Fechas con pickup negativo moderado: considerar ofertas de último momento y revisar posicionamiento en canales.',
+      dates: modDownDates });
   }
   if (stagnantDates.length > 0) {
-    priorityActions.push({ priority:'low', title:'Fechas estables con baja ocupación', body:'Monitorear evolución. Evaluar visibilidad de contenido y distribución en OTAs.', dates: stagnantDates.slice(0,5).map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+    medItems.push({ priority: 'medium', title: '😐 Fechas Estancadas con Baja Ocupación',
+      body: 'Fechas estables pero con ocupación baja (<50%). Estimular demanda con campañas y mejorar contenido.',
+      dates: stagnantDates.map(function(d){ return d.date; }) });
   }
   if (opportunityDates.length > 0) {
-    priorityActions.push({ priority:'medium', title:'Fechas con oportunidad tarifaria', body:'Evaluar incremento gradual de tarifa y proteger inventario. Revisar posibles descuentos vigentes.', dates: opportunityDates.slice(0,5).map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+    lowItems.push({ priority: 'low', title: '✅ Monitorear Oportunidades Tarifarias',
+      body: 'Fechas con pickup positivo: mantener vigilancia, no bajar tarifas y evaluar incrementos adicionales si la demanda sigue.',
+      dates: opportunityDates.map(function(d){ return d.date; }) });
+  }
+  lowItems.push({ priority: 'low', title: '📋 Revisión Semanal de Estrategia',
+    body: 'Revisar esta comparativa al menos 2 veces por semana para anticipar cambios de demanda.', dates: [] });
+
+  priorityActions = highItems.concat(medItems).concat(lowItems);
+
+  var totalRisk = riskDates.length, totalOpp = opportunityDates.length;
+  var generalClass, diagText;
+  if (totalRisk > totalOpp && totalRisk > 0) {
+    generalClass = 'negative';
+    diagText = 'El período analizado muestra una tendencia negativa de pickup con ' + totalRisk + ' fecha(s) en riesgo comercial' + (criticalWeeks.length > 0 ? ' y ' + criticalWeeks.length + ' semana(s) crítica(s)' : '') + '. Se requieren acciones correctivas inmediatas para sostener la ocupación.';
+  } else if (totalOpp > totalRisk && totalOpp > 0) {
+    generalClass = 'positive';
+    diagText = 'El período muestra una tendencia positiva con ' + totalOpp + ' fecha(s) de oportunidad tarifaria. Aproveche el momentum para optimizar ingresos mediante incrementos controlados.';
+  } else if (totalOpp > 0 && totalRisk > 0) {
+    generalClass = 'mixed';
+    diagText = 'Panorama mixto: ' + totalOpp + ' fecha(s) con oportunidad y ' + totalRisk + ' fecha(s) con riesgo. Gestión diferenciada por fecha recomendada.';
+  } else {
+    generalClass = 'stable';
+    diagText = 'Pickup estable en el período. Mantener vigilancia y aprovechar para preparar estrategias de medio plazo.';
+  }
+  if (metrics && metrics.avgPickup !== undefined && metrics.avgPickup !== null) {
+    diagText += ' Pickup promedio del período: ' + (typeof metrics.avgPickup === 'number' ? metrics.avgPickup.toFixed(2) : metrics.avgPickup) + ' pp.';
   }
 
   return {
-    generalClass: generalClass, diagText: diagText,
-    opportunityDates: opDetails, riskDates: riskDetails, stagnantDates: stagnantDetails, criticalWeeks: critWeekDetails, criticalDates: criticalDates,
-    priorityActions: priorityActions,
-    stats: { total: total, pctPos: pctPos, pctNeg: pctNeg, pctStb: pctStb }
+    generalDiagnosis: { text: diagText, generalClass: generalClass },
+    opportunityDates: opportunityDates,
+    riskDates: riskDates,
+    stagnantDates: stagnantDates,
+    criticalWeeks: criticalWeeks,
+    priorityActions: priorityActions
   };
 }
 
 function otbRenderRMRecommendations(containerId, recs, metrics) {
-  var el = document.getElementById(containerId);
-  if (!el || !recs) return;
+  var container = document.getElementById(containerId);
+  if (!container) return;
+  var diagColors = {
+    positive: { bg: '#e8f5e9', border: '#4caf50', text: '#1b5e20', icon: '✅' },
+    negative: { bg: '#ffebee', border: '#f44336', text: '#b71c1c', icon: '🚨' },
+    mixed:    { bg: '#fff8e1', border: '#ff9800', text: '#e65100', icon: '⚠' },
+    stable:   { bg: '#f3f3f3', border: '#9e9e9e', text: '#424242', icon: '📋' }
+  };
+  var gc = recs.generalDiagnosis.generalClass || 'stable';
+  var dc = diagColors[gc] || diagColors.stable;
+  var html = '';
 
-  var DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-  function dayLabel(dateStr) {
-    if (!dateStr || dateStr.length < 10) return '';
-    var d = new Date(dateStr + 'T12:00:00');
-    return DAYS_ES[d.getDay()];
-  }
-  function fmt(n, unit, plus) { if (n===null||n===undefined) return '—'; return (plus&&n>0?'+':'')+n+' '+(unit||''); }
-  function fmtPP(n) { if (n===null||n===undefined) return '—'; return (n>0?'+':'')+n.toFixed(1)+' pp'; }
-
-  var bannerColor = { positive:'#e8f5e9', negative:'#ffebee', mixed:'#fff8e1', stable:'#f5f5f5' }[recs.generalClass]||'#f5f5f5';
-  var bannerBorder = { positive:'#4caf50', negative:'#f44336', mixed:'#ff9800', stable:'#9e9e9e' }[recs.generalClass]||'#9e9e9e';
-  var bannerIcon = { positive:'✅', negative:'🔴', mixed:'⚠️', stable:'⚫' }[recs.generalClass]||'⚫';
-
-  var html = '<div style="background:#fff;border:1.5px solid #e8d88a;border-radius:12px;padding:20px 22px;margin:10px 0">'
-    + '<div style="font-size:.78rem;font-weight:800;color:#2c1a00;letter-spacing:.04em;margin-bottom:14px;text-transform:uppercase">🤖 Recomendaciones Revenue Manager</div>'
-
-    // Diagnostic banner
-    + '<div style="background:'+bannerColor+';border-left:4px solid '+bannerBorder+';padding:12px 16px;border-radius:6px;margin-bottom:16px">'
-    + '<div style="font-size:.8rem;font-weight:800;color:#222;margin-bottom:4px">'+bannerIcon+' Diagnóstico General del Mes</div>'
-    + '<div style="font-size:.78rem;color:#333;line-height:1.6">'+recs.diagText+'</div>'
-    + '<div style="font-size:.72rem;color:#666;margin-top:6px">'
-    + '📊 <strong>'+recs.stats.pctPos+'%</strong> positivo · '
-    + '📉 <strong>'+recs.stats.pctNeg+'%</strong> negativo · '
-    + '⚫ <strong>'+recs.stats.pctStb+'%</strong> estable'
-    + (metrics && metrics.hasRooms && metrics.totalRoomPickup !== undefined ? ' · Pickup total: <strong>'+(metrics.totalRoomPickup>0?'+':'')+Math.round(metrics.totalRoomPickup)+' habs</strong>' : '')
-    + '</div></div>';
-
-  // Priority actions
-  var high   = (recs.priorityActions||[]).filter(function(a){return a.priority==='high';});
-  var medium = (recs.priorityActions||[]).filter(function(a){return a.priority==='medium';});
-  var low    = (recs.priorityActions||[]).filter(function(a){return a.priority==='low';});
-
-  if (recs.priorityActions && recs.priorityActions.length) {
-    html += '<div style="font-size:.76rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">⚡ Acciones por Prioridad</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px">';
-    function renderPriority(items, label, bg, border, dot) {
-      var h = '<div style="background:'+bg+';border:1px solid '+border+';border-radius:8px;padding:12px 14px">'
-        + '<div style="font-size:.72rem;font-weight:800;color:'+dot+';margin-bottom:8px">'+label+'</div>';
-      if (!items.length) { h += '<div style="font-size:.72rem;color:#aaa;font-style:italic">Sin acciones en esta prioridad</div>'; }
-      items.forEach(function(a) {
-        h += '<div style="background:rgba(255,255,255,.7);border-radius:5px;padding:7px 9px;margin-bottom:6px;font-size:.72rem">'
-          + '<div style="font-weight:700;color:#222;margin-bottom:2px">'+a.title+'</div>'
-          + '<div style="color:#555;line-height:1.5">'+a.body+'</div>'
-          + (a.dates&&a.dates.length?'<div style="color:'+dot+';margin-top:4px;font-size:.68rem">'+a.dates.slice(0,4).join(' · ')+(a.dates.length>4?' + '+(a.dates.length-4)+' más':'')+'</div>':'')
-          + '</div>';
-      });
-      return h + '</div>';
-    }
-    html += renderPriority(high,   '🔴 Prioridad Alta',   '#fff5f5', '#f44336', '#c62828');
-    html += renderPriority(medium, '🟡 Prioridad Media',  '#fff8e1', '#ff9800', '#e65100');
-    html += renderPriority(low,    '⚪ Prioridad Baja',   '#f5f5f5', '#9e9e9e', '#616161');
+  html += '<div style="background:' + dc.bg + ';border:2px solid ' + dc.border + ';border-radius:12px;padding:18px 20px;margin-bottom:16px;">';
+  html += '<div style="font-size:.85rem;font-weight:800;color:' + dc.text + ';margin-bottom:8px;letter-spacing:.02em">' + dc.icon + ' DIAGNÓSTICO GENERAL</div>';
+  html += '<div style="font-size:.82rem;color:' + dc.text + ';line-height:1.6">' + recs.generalDiagnosis.text + '</div>';
+  if (metrics) {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;">';
+    if (metrics.avgPickup !== undefined && metrics.avgPickup !== null)
+      html += '<span style="background:rgba(0,0,0,.07);padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700;color:' + dc.text + '">Pickup promedio: ' + (typeof metrics.avgPickup === 'number' ? metrics.avgPickup.toFixed(2) : metrics.avgPickup) + ' pp</span>';
+    if (metrics.totalRoomPickup !== undefined && metrics.totalRoomPickup !== null)
+      html += '<span style="background:rgba(0,0,0,.07);padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700;color:' + dc.text + '">Pickup habs: ' + metrics.totalRoomPickup + '</span>';
+    if (metrics.daysCompared !== undefined && metrics.daysCompared !== null)
+      html += '<span style="background:rgba(0,0,0,.07);padding:4px 10px;border-radius:20px;font-size:.72rem;font-weight:700;color:' + dc.text + '">Días analizados: ' + metrics.daysCompared + '</span>';
     html += '</div>';
   }
-
-  // Opportunity dates
-  html += '<div style="font-size:.76rem;font-weight:800;color:#2e7d32;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">📈 Fechas con Oportunidad de Subida Tarifaria ('+recs.opportunityDates.length+')</div>';
-  if (!recs.opportunityDates.length) {
-    html += '<div style="font-size:.76rem;color:#aaa;margin-bottom:12px">Sin fechas con pickup fuerte en este corte.</div>';
-  } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">';
-    recs.opportunityDates.slice(0, 10).forEach(function(d) {
-      var isFuerte = d.status === 'strong-up';
-      html += '<div style="background:#e8f5e9;border:1px solid #'+(isFuerte?'4caf50':'a5d6a7')+';border-radius:8px;padding:10px 12px">'
-        + '<div style="font-weight:800;color:#1b5e20;font-size:.78rem">'+d.date+(d.date&&dayLabel(d.date)?' · '+dayLabel(d.date):'')+'</div>'
-        + '<div style="font-size:.7rem;color:#555;margin-top:3px">'
-        + 'Occ actual: <strong>'+(d.occ!==null?d.occ.toFixed(1)+'%':'—')+'</strong>'
-        + (d.roomPickup!==null?' · Pickup: <strong>+'+(Math.round(d.roomPickup))+' habs</strong>':'')
-        + (d.pickupPP!==null?' (<strong>'+fmtPP(d.pickupPP)+'</strong>)':'')
-        + (d.velocity!==null?' · Vel: <strong>'+(d.velocity>0?'+':'')+d.velocity.toFixed(2)+'</strong>':'')
-        + '</div>'
-        + '<ul style="margin:6px 0 0 0;padding-left:14px;font-size:.7rem;color:#2e7d32;line-height:1.7">'
-        + d.actions.map(function(a){return '<li>'+a+'</li>';}).join('')
-        + '</ul></div>';
-    });
-    html += '</div>';
-  }
-
-  // Risk dates
-  html += '<div style="font-size:.76rem;font-weight:800;color:#c62828;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">⚠️ Fechas con Riesgo Comercial ('+recs.riskDates.length+')</div>';
-  if (!recs.riskDates.length) {
-    html += '<div style="font-size:.76rem;color:#aaa;margin-bottom:12px">Sin fechas con pickup negativo significativo.</div>';
-  } else {
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">';
-    recs.riskDates.slice(0, 10).forEach(function(d) {
-      var isFuerte = d.status === 'strong-down';
-      html += '<div style="background:#ffebee;border:1px solid #'+(isFuerte?'f44336':'ef9a9a')+';border-radius:8px;padding:10px 12px">'
-        + '<div style="font-weight:800;color:#b71c1c;font-size:.78rem">'+d.date+(d.date&&dayLabel(d.date)?' · '+dayLabel(d.date):'')+'</div>'
-        + '<div style="font-size:.7rem;color:#555;margin-top:3px">'
-        + 'Occ actual: <strong>'+(d.occ!==null?d.occ.toFixed(1)+'%':'—')+'</strong>'
-        + (d.roomPickup!==null?' · Pickup: <strong>'+(d.roomPickup>0?'+':'')+Math.round(d.roomPickup)+' habs</strong>':'')
-        + (d.pickupPP!==null?' (<strong>'+fmtPP(d.pickupPP)+'</strong>)':'')
-        + (d.velocity!==null?' · Vel: <strong>'+d.velocity.toFixed(2)+'</strong>':'')
-        + '</div>'
-        + '<ul style="margin:6px 0 0 0;padding-left:14px;font-size:.7rem;color:#b71c1c;line-height:1.7">'
-        + d.actions.map(function(a){return '<li>'+a+'</li>';}).join('')
-        + '</ul></div>';
-    });
-    html += '</div>';
-  }
-
-  // Critical weeks
-  if (recs.criticalWeeks.length) {
-    html += '<div style="font-size:.76rem;font-weight:800;color:#e65100;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">📅 Semanas Críticas ('+recs.criticalWeeks.length+')</div>'
-      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">';
-    recs.criticalWeeks.forEach(function(w) {
-      html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px 12px">'
-        + '<div style="font-weight:800;color:#bf360c;font-size:.78rem">'+w.weekLabel+'</div>'
-        + '<div style="font-size:.7rem;color:#555;margin-top:3px">'
-        + 'Pickup prom: <strong>'+(w.avgPickup!==null?(w.avgPickup>0?'+':'')+w.avgPickup.toFixed(1)+' pp':'—')+'</strong>'
-        + (w.roomPickup!==null?' · Habs: <strong>'+(w.roomPickup>0?'+':'')+Math.round(w.roomPickup)+'</strong>':'')
-        + '</div>'
-        + '<ul style="margin:6px 0 0 0;padding-left:14px;font-size:.7rem;color:#e65100;line-height:1.7">'
-        + w.actions.map(function(a){return '<li>'+a+'</li>';}).join('')
-        + '</ul></div>';
-    });
-    html += '</div>';
-  }
-
-  // AI section (stub)
-  html += '<div style="margin-top:14px;padding:10px 14px;background:#f3f4f6;border:1px dashed #bbb;border-radius:8px;font-size:.72rem;color:#888">'
-    + '🤖 <strong>Recomendaciones con IA</strong> — Disponible para activación. '
-    + 'Configure el endpoint seguro <code>OTB_AI_ENDPOINT</code> en su backend para recibir análisis avanzado de Revenue Management generado por IA. '
-    + 'Las claves nunca se exponen en el frontend. '
-    + '<span style="color:#4caf50;font-weight:700">● Recomendaciones por reglas activas</span> | '
-    + '<span style="color:#9e9e9e">● IA no configurada</span></div>';
-
   html += '</div>';
-  el.innerHTML = html;
+
+  function renderDateCards(dateArr, cardBg, cardBorder, titleColor, bodyColor) {
+    var s = '<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+    dateArr.forEach(function(d) {
+      s += '<div style="background:' + cardBg + ';border:1.5px solid ' + cardBorder + ';border-radius:10px;padding:14px 16px;min-width:220px;flex:1 1 220px;">';
+      s += '<div style="font-size:.82rem;font-weight:800;color:' + titleColor + ';margin-bottom:4px">' + d.date + '</div>';
+      s += '<div style="font-size:.72rem;color:' + bodyColor + ';margin-bottom:6px">' + d.reason + '</div>';
+      s += '<div style="font-size:.72rem;color:' + titleColor + ';margin-bottom:8px">';
+      if (d.occ !== null && d.occ !== undefined) s += '<span style="margin-right:10px">🏨 Occ: <strong>' + d.occ + '%</strong></span>';
+      if (d.roomPickup !== null && d.roomPickup !== undefined) s += '<span style="margin-right:10px">🛏 Pickup: <strong>' + (d.roomPickup > 0 ? '+' : '') + d.roomPickup + ' habs</strong></span>';
+      if (d.velocity !== null && d.velocity !== undefined) s += '<span>⚡ Vel: <strong>' + (typeof d.velocity === 'number' ? d.velocity.toFixed(2) : d.velocity) + '</strong></span>';
+      s += '</div><ul style="padding-left:14px;margin:0;">';
+      (d.actions || []).forEach(function(a) { s += '<li style="font-size:.72rem;color:' + titleColor + ';margin-bottom:3px"><strong>' + a + '</strong></li>'; });
+      s += '</ul></div>';
+    });
+    return s + '</div>';
+  }
+
+  html += '<div style="margin-bottom:16px;">';
+  html += '<div style="font-size:.8rem;font-weight:800;color:#1b5e20;margin-bottom:8px;letter-spacing:.02em">📈 Fechas con Oportunidad de Subida Tarifaria (' + recs.opportunityDates.length + ' fechas)</div>';
+  html += recs.opportunityDates.length === 0
+    ? '<div style="background:#e8f5e9;border:1px solid #4caf50;border-radius:8px;padding:12px 16px;font-size:.78rem;color:#388e3c">✅ Sin fechas en esta categoría</div>'
+    : renderDateCards(recs.opportunityDates, '#e8f5e9', '#4caf50', '#1b5e20', '#388e3c');
+  html += '</div>';
+
+  html += '<div style="margin-bottom:16px;">';
+  html += '<div style="font-size:.8rem;font-weight:800;color:#b71c1c;margin-bottom:8px;letter-spacing:.02em">📉 Fechas con Riesgo Comercial (' + recs.riskDates.length + ' fechas)</div>';
+  html += recs.riskDates.length === 0
+    ? '<div style="background:#ffebee;border:1px solid #f44336;border-radius:8px;padding:12px 16px;font-size:.78rem;color:#c62828">✅ Sin fechas en esta categoría</div>'
+    : renderDateCards(recs.riskDates, '#ffebee', '#f44336', '#b71c1c', '#c62828');
+  html += '</div>';
+
+  if (recs.stagnantDates && recs.stagnantDates.length > 0) {
+    html += '<div style="margin-bottom:16px;">';
+    html += '<div style="font-size:.8rem;font-weight:800;color:#e65100;margin-bottom:8px;letter-spacing:.02em">😐 Fechas Estancadas con Baja Ocupación (' + recs.stagnantDates.length + ' fechas)</div>';
+    html += renderDateCards(recs.stagnantDates, '#fff8e1', '#ff9800', '#e65100', '#ef6c00');
+    html += '</div>';
+  }
+
+  html += '<div style="margin-bottom:16px;">';
+  html += '<div style="font-size:.8rem;font-weight:800;color:#e65100;margin-bottom:8px;letter-spacing:.02em">🗓 Semanas Críticas (' + recs.criticalWeeks.length + ')</div>';
+  if (recs.criticalWeeks.length === 0) {
+    html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:12px 16px;font-size:.78rem;color:#ef6c00">✅ Sin semanas críticas detectadas</div>';
+  } else {
+    html += '<div style="display:flex;flex-wrap:wrap;gap:10px;">';
+    recs.criticalWeeks.forEach(function(w) {
+      html += '<div style="background:#fff3e0;border:1.5px solid #ff9800;border-radius:10px;padding:14px 16px;min-width:220px;flex:1 1 220px;">';
+      html += '<div style="font-size:.82rem;font-weight:800;color:#e65100;margin-bottom:4px">' + w.weekLabel + '</div>';
+      html += '<div style="font-size:.72rem;color:#ef6c00;margin-bottom:8px">';
+      if (w.pickup !== null && w.pickup !== undefined) html += '<span style="margin-right:10px">📊 Pickup avg: <strong>' + (typeof w.pickup === 'number' ? w.pickup.toFixed(2) : w.pickup) + ' pp</strong></span>';
+      if (w.roomPickup !== null && w.roomPickup !== undefined) html += '<span>🛏 Pickup habs: <strong>' + w.roomPickup + '</strong></span>';
+      html += '</div><ul style="padding-left:14px;margin:0;">';
+      w.actions.forEach(function(a) { html += '<li style="font-size:.72rem;color:#e65100;margin-bottom:3px"><strong>' + a + '</strong></li>'; });
+      html += '</ul></div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += '<div style="margin-bottom:8px;">';
+  html += '<div style="font-size:.8rem;font-weight:800;color:#2c1a00;margin-bottom:10px;letter-spacing:.02em">⚡ Acciones por Prioridad</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:12px;">';
+  var priGroups = { high: [], medium: [], low: [] };
+  (recs.priorityActions || []).forEach(function(p) { if (priGroups[p.priority]) priGroups[p.priority].push(p); });
+  var priCfg = [
+    { key: 'high',   label: '🔴 Alta',  bg: '#ffebee', border: '#f44336', text: '#b71c1c' },
+    { key: 'medium', label: '🟠 Media', bg: '#fff8e1', border: '#ff9800', text: '#e65100' },
+    { key: 'low',    label: '⚪ Baja',  bg: '#f5f5f5', border: '#9e9e9e', text: '#424242' }
+  ];
+  priCfg.forEach(function(cfg) {
+    html += '<div style="background:' + cfg.bg + ';border:1.5px solid ' + cfg.border + ';border-radius:10px;padding:14px 16px;flex:1 1 200px;min-width:200px;">';
+    html += '<div style="font-size:.78rem;font-weight:800;color:' + cfg.text + ';margin-bottom:10px;border-bottom:1px solid ' + cfg.border + ';padding-bottom:6px">' + cfg.label + '</div>';
+    if (priGroups[cfg.key].length === 0) {
+      html += '<div style="font-size:.72rem;color:' + cfg.text + ';opacity:.6">Sin acciones en esta prioridad</div>';
+    } else {
+      priGroups[cfg.key].forEach(function(item) {
+        html += '<div style="margin-bottom:10px;">';
+        html += '<div style="font-size:.75rem;font-weight:700;color:' + cfg.text + ';margin-bottom:3px">' + item.title + '</div>';
+        html += '<div style="font-size:.7rem;color:' + cfg.text + ';line-height:1.5;margin-bottom:4px">' + item.body + '</div>';
+        if (item.dates && item.dates.length > 0)
+          html += '<div style="font-size:.68rem;color:' + cfg.text + ';opacity:.75">Fechas: ' + item.dates.slice(0, 5).join(', ') + (item.dates.length > 5 ? '...' : '') + '</div>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+  });
+  html += '</div></div>';
+  container.innerHTML = html;
 }
 
 function otbRenderInlinePickupChart() {
-  var area = document.getElementById('otb-inline-chart-area');
-  if (!area) return;
-
-  // Destroy existing chart
-  if (OTB_STATE.charts['ch-inline-pickup']) {
-    try { OTB_STATE.charts['ch-inline-pickup'].destroy(); } catch(e){}
-    delete OTB_STATE.charts['ch-inline-pickup'];
+  var areaDiv = document.getElementById('otb-inline-chart-area');
+  if (!areaDiv) return;
+  var rows = (OTB_STATE.comparison || []).filter(function(r) {
+    return r.pickup !== null && r.pickup !== undefined;
+  });
+  if (rows.length === 0) {
+    areaDiv.innerHTML = '<div style="text-align:center;color:#999;font-size:.78rem;padding:24px">Sin datos de pickup disponibles</div>';
+    return;
   }
-
-  var allRows = OTB_STATE.comparison || [];
-  var rows = allRows.filter(function(r){ return r.pickup !== null || r.roomPickup !== null; });
-  if (rows.length < 2) { area.innerHTML = ''; return; }
-
-  var isExcel = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
-  var useRooms = isExcel && rows.some(function(r){ return r.roomPickup !== null; });
+  var STATUS_COLORS = {
+    'strong-up':    'rgba(22,120,60,0.85)',
+    'moderate-up':  'rgba(76,175,80,0.8)',
+    'stable':       'rgba(150,150,150,0.75)',
+    'moderate-down':'rgba(230,74,25,0.8)',
+    'strong-down':  'rgba(183,28,28,0.85)'
+  };
   var DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
-  function dateLabel(r) {
-    var s = r.stayDate || r.afterDate || '';
-    if (s && s.length >= 10) {
-      var d = new Date(s + 'T12:00:00');
-      return d.getDate()+'/'+(d.getMonth()+1) + ' ' + DAYS_ES[d.getDay()];
+  function fmtDate(row) {
+    if (row.stayDate) {
+      var parts = row.stayDate.split('-');
+      if (parts.length === 3) return parts[2] + '/' + parts[1];
+      return row.stayDate;
     }
-    return 'D'+r.day;
+    return 'D' + row.day;
   }
 
-  var STATUS_COLORS = {
-    'strong-up':    { fill:'rgba(27,94,32,0.85)',  border:'#1b5e20' },
-    'moderate-up':  { fill:'rgba(76,175,80,0.80)', border:'#388e3c' },
-    'stable':       { fill:'rgba(158,158,158,0.70)',border:'#757575' },
-    'moderate-down':{ fill:'rgba(230,81,0,0.80)',  border:'#bf360c' },
-    'strong-down':  { fill:'rgba(183,28,28,0.85)', border:'#b71c1c' },
-    'unknown':      { fill:'rgba(189,189,189,0.6)', border:'#9e9e9e' }
-  };
+  function dayName(row) {
+    if (row.stayDate) {
+      var parts = row.stayDate.split('-');
+      if (parts.length === 3) {
+        var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+        return DAYS_ES[d.getDay()];
+      }
+    }
+    return '';
+  }
 
-  function clr(r, prop) { return (STATUS_COLORS[r.status]||STATUS_COLORS['unknown'])[prop]; }
-
-  var dataValues = rows.map(function(r) {
-    return useRooms ? (r.roomPickup !== null ? Math.round(r.roomPickup) : 0) : (r.pickup !== null ? parseFloat(r.pickup.toFixed(1)) : 0);
+  var useRooms = rows.some(function(r) { return r.roomPickup !== null && r.roomPickup !== undefined; });
+  var labels = rows.map(fmtDate);
+  var dataVals = rows.map(function(r) {
+    return useRooms ? (r.roomPickup !== null && r.roomPickup !== undefined ? r.roomPickup : r.pickup) : r.pickup;
+  });
+  var bgColors = rows.map(function(r) {
+    var st = r.status || pickupStatus(r.pickup);
+    return STATUS_COLORS[st] || STATUS_COLORS['stable'];
   });
 
-  var yLabel = useRooms ? 'Pickup (habitaciones)' : 'Pickup (puntos porcentuales)';
-  var dbc = OTB_STATE.daysBetweenCutoffs;
+  if (OTB_STATE.charts && OTB_STATE.charts['ch-inline-pickup']) {
+    try { OTB_STATE.charts['ch-inline-pickup'].destroy(); } catch(e) {}
+    OTB_STATE.charts['ch-inline-pickup'] = null;
+  }
 
-  area.innerHTML = '<div style="background:#fff;border:1.5px solid #e8d88a;border-radius:12px;padding:18px 20px;margin:10px 0">'
-    + '<div style="font-size:.8rem;font-weight:800;color:#2c1a00;margin-bottom:2px;letter-spacing:.02em">📊 COMPORTAMIENTO DIARIO DEL PICKUP</div>'
-    + '<div style="font-size:.69rem;color:#888;margin-bottom:10px">'
-    + (useRooms ? 'Barras = habitaciones ganadas o perdidas' : 'Barras = puntos porcentuales de ocupación')
-    + ' · Verde = ganó pickup · Rojo = perdió pickup · Gris = estable'
-    + (dbc ? ' · Entre cortes: '+dbc+' días' : '')
-    + '</div>'
-    + '<div style="position:relative;height:280px"><canvas id="ch-inline-pickup"></canvas></div>'
-    + '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:.69rem;color:#555">'
-    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#1b5e20;display:inline-block"></span>Pickup fuerte</span>'
-    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#4caf50;display:inline-block"></span>Pickup moderado</span>'
-    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#9e9e9e;display:inline-block"></span>Estable</span>'
-    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#e65100;display:inline-block"></span>Caída moderada</span>'
-    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#b71c1c;display:inline-block"></span>Caída fuerte</span>'
-    + '</div></div>';
+  areaDiv.innerHTML = '<div style="background:#fff;border:1.5px solid #e8d88a;border-radius:12px;padding:18px 20px;margin:12px 0">'
+    + '<div style="font-size:.8rem;font-weight:800;color:#2c1a00;margin-bottom:4px;letter-spacing:.02em">📊 COMPORTAMIENTO DIARIO DEL PICKUP</div>'
+    + '<div style="font-size:.7rem;color:#888;margin-bottom:12px">Verde = ganó pickup · Rojo = perdió pickup · Gris = estable</div>'
+    + '<div style="position:relative;height:300px;"><canvas id="ch-inline-pickup"></canvas></div>'
+    + '<div id="ch-inline-pickup-legend" style="display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;justify-content:center;"></div>'
+    + '</div>';
 
   var canvas = document.getElementById('ch-inline-pickup');
   if (!canvas) return;
 
-  OTB_STATE.charts['ch-inline-pickup'] = new Chart(canvas, {
+  var chart = new Chart(canvas, {
     type: 'bar',
+    plugins: [ChartDataLabels],
     data: {
-      labels: rows.map(dateLabel),
+      labels: labels,
       datasets: [{
-        label: yLabel,
-        data: dataValues,
-        backgroundColor: rows.map(function(r){ return clr(r,'fill'); }),
-        borderColor:     rows.map(function(r){ return clr(r,'border'); }),
-        borderWidth: 1,
-        borderRadius: 3,
+        label: useRooms ? 'Pickup Habitaciones' : 'Pickup pp',
+        data: dataVals,
+        backgroundColor: bgColors,
+        borderRadius: 4,
         borderSkipped: false
       }]
     },
     options: {
-      responsive: true, maintainAspectRatio: false,
-      interaction: { mode:'index', intersect:false },
+      responsive: true,
+      maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
+        title: {
+          display: true,
+          text: 'Comportamiento Diario del Pickup',
+          font: { size: 13, weight: 'bold' },
+          color: '#2c1a00',
+          padding: { bottom: 10 }
+        },
         datalabels: {
-          display: rows.length <= 40,
-          formatter: function(v) { return (v>0?'+':'')+v; },
-          font: { size: rows.length > 25 ? 7 : 9, weight: 'bold' },
           anchor: function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start'; },
-          align:  function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom'; },
-          color: function(ctx) { var v = ctx.dataset.data[ctx.dataIndex]; return v > 0 ? '#1b5e20' : v < 0 ? '#b71c1c' : '#666'; }
+          align: function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom'; },
+          formatter: function(val) { return val > 0 ? '+' + val : val; },
+          font: { size: 10, weight: 'bold' },
+          color: function(ctx) {
+            var v = ctx.dataset.data[ctx.dataIndex];
+            return v > 0 ? '#1b5e20' : v < 0 ? '#b71c1c' : '#555';
+          }
         },
         tooltip: {
-          backgroundColor: 'rgba(20,20,20,.93)',
-          titleFont: { size: 12, weight: 'bold' },
-          bodyFont: { size: 11 },
-          padding: 12,
           callbacks: {
             title: function(items) {
-              var r = rows[items[0].dataIndex];
-              var s = r.stayDate || r.afterDate || '';
-              var dayStr = '';
-              if (s && s.length >= 10) {
-                var d2 = new Date(s + 'T12:00:00'); dayStr = ' · ' + DAYS_ES[d2.getDay()];
-              }
-              return 'Fecha: ' + (s || 'Día '+r.day) + dayStr;
+              var idx = items[0].dataIndex;
+              var row = rows[idx];
+              return fmtDate(row) + (dayName(row) ? ' (' + dayName(row) + ')' : '');
             },
             label: function(item) {
-              var r = rows[item.dataIndex];
+              var idx = item.dataIndex;
+              var row = rows[idx];
+              var st = row.status || pickupStatus(row.pickup);
               var lines = [];
-              if (r.roomsBefore !== null) lines.push('  Reservadas base: ' + Math.round(r.roomsBefore) + ' habs');
-              if (r.roomsAfter  !== null) lines.push('  Reservadas actual: ' + Math.round(r.roomsAfter) + ' habs');
-              if (r.roomPickup  !== null) lines.push('  Pickup habs: ' + (r.roomPickup>0?'+':'') + Math.round(r.roomPickup) + ' habs');
-              if (r.occBefore   !== null) lines.push('  Occ base: ' + r.occBefore.toFixed(1) + '%');
-              if (r.occAfter    !== null) lines.push('  Occ actual: ' + r.occAfter.toFixed(1) + '%');
-              if (r.pickup      !== null) lines.push('  Pickup occ: ' + (r.pickup>0?'+':'') + r.pickup.toFixed(1) + ' pp');
-              if (r.velocityHabs !== null) lines.push('  Velocidad: ' + (r.velocityHabs>0?'+':'') + r.velocityHabs.toFixed(2) + ' habs/día');
-              lines.push('  Estado: ' + pickupLabel(r.status));
-              lines.push('  Acción: ' + pickupAction(r.status));
+              if (row.roomsBefore !== null && row.roomsBefore !== undefined) lines.push('Habs base: ' + row.roomsBefore);
+              if (row.roomsAfter !== null && row.roomsAfter !== undefined) lines.push('Habs actual: ' + row.roomsAfter);
+              if (row.roomPickup !== null && row.roomPickup !== undefined) lines.push('Pickup habs: ' + (row.roomPickup > 0 ? '+' : '') + row.roomPickup);
+              if (row.occBefore !== null && row.occBefore !== undefined) lines.push('Occ base: ' + Math.round(row.occBefore * 100) + '%');
+              if (row.occAfter !== null && row.occAfter !== undefined) lines.push('Occ actual: ' + Math.round(row.occAfter * 100) + '%');
+              if (row.pickup !== null && row.pickup !== undefined) lines.push('Pickup pp: ' + (row.pickup > 0 ? '+' : '') + row.pickup);
+              if (row.velocityHabs !== null && row.velocityHabs !== undefined) lines.push('Velocidad habs: ' + (typeof row.velocityHabs === 'number' ? row.velocityHabs.toFixed(2) : row.velocityHabs));
+              else if (row.velocityPP !== null && row.velocityPP !== undefined) lines.push('Velocidad pp: ' + (typeof row.velocityPP === 'number' ? row.velocityPP.toFixed(2) : row.velocityPP));
+              lines.push('Estado: ' + pickupLabel(st));
+              lines.push('Acción: ' + pickupAction(st));
               return lines;
             }
           }
         }
       },
       scales: {
-        x: {
-          grid: { color:'rgba(0,0,0,.04)' },
-          ticks: { font:{ size: rows.length > 25 ? 7 : 9 }, maxRotation: rows.length > 20 ? 45 : 0 }
-        },
+        x: { ticks: { font: { size: 10 }, maxRotation: 45 }, grid: { display: false } },
         y: {
-          grid: { color:'rgba(0,0,0,.06)' },
-          ticks: { callback: function(v){ return (v>0?'+':'')+v+(useRooms?' habs':' pp'); }, font:{size:9} },
-          title: { display: true, text: yLabel, font:{size:9} }
+          title: { display: true, text: useRooms ? 'Pickup (Habitaciones)' : 'Pickup (pp)', font: { size: 10 }, color: '#666' },
+          grid: { color: 'rgba(0,0,0,.06)' },
+          ticks: { font: { size: 10 } }
         }
       }
     }
   });
+
+  if (!OTB_STATE.charts) OTB_STATE.charts = {};
+  OTB_STATE.charts['ch-inline-pickup'] = chart;
+
+  var legendDiv = document.getElementById('ch-inline-pickup-legend');
+  if (legendDiv) {
+    var legendItems = [
+      { color: 'rgba(22,120,60,0.85)',   label: '⬆ Pickup fuerte' },
+      { color: 'rgba(76,175,80,0.8)',    label: '↑ Pickup moderado' },
+      { color: 'rgba(150,150,150,0.75)', label: '→ Estable' },
+      { color: 'rgba(230,74,25,0.8)',    label: '↓ Caída moderada' },
+      { color: 'rgba(183,28,28,0.85)',   label: '⬇ Caída fuerte' }
+    ];
+    var legHTML = '';
+    legendItems.forEach(function(li) {
+      legHTML += '<div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:#444;">'
+        + '<span style="display:inline-block;width:14px;height:14px;border-radius:3px;background:' + li.color + ';flex-shrink:0"></span>'
+        + '<span>' + li.label + '</span></div>';
+    });
+    legendDiv.innerHTML = legHTML;
+  }
 }
+
+
 
 function otbRenderConsultantFromSummary(msum) {
   var el = document.getElementById('otb-consultant-area');
@@ -4918,7 +4970,6 @@ function otbExportExcel() {
 
   XLSX.writeFile(wb, 'OTB_Comparativa_'+currentHotel.replace(/ /g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
-
 // ═══════════════════════════════════════════════════════════════
 // END OTB MODULE
 // ═══════════════════════════════════════════════════════════════
