@@ -218,10 +218,12 @@
 .ind-same{color:#888;}
 .otb-card{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);padding:16px;margin-bottom:16px;}
 .otb-card-title{font-size:.78rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;border-bottom:1.5px solid var(--gold-border);padding-bottom:6px;}
-.otb-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.otb-chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
 @media(max-width:900px){.otb-chart-grid{grid-template-columns:1fr;}}
-.otb-chart-box{background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);padding:16px;}
-.otb-chart-title{font-size:.74rem;font-weight:800;color:var(--gold-dark);margin-bottom:12px;text-transform:uppercase;letter-spacing:.6px;}
+.otb-chart-box{background:var(--white);border:1.5px solid var(--gold-border);border-radius:var(--radius);padding:18px 20px;box-shadow:0 1px 6px rgba(0,0,0,.06);}
+.otb-chart-box[style*="grid-column"]{border-left:4px solid var(--gold);}
+.otb-chart-title{font-size:.76rem;font-weight:800;color:var(--gold-dark);margin-bottom:6px;text-transform:uppercase;letter-spacing:.6px;}
+.otb-chart-box canvas{display:block;}
 .otb-rec{border-left:4px solid var(--gold);padding:10px 14px;margin-bottom:10px;background:var(--gold-subtle);border-radius:0 var(--radius) var(--radius) 0;}
 .otb-rec.positive{border-color:#1a6e3c;background:#f0faf4;}
 .otb-rec.negative{border-color:#c00;background:#fff5f5;}
@@ -2779,6 +2781,354 @@ function otbRenderCharts() {
 
   Object.values(OTB_STATE.charts).forEach(function(c){ try { c.destroy(); } catch(e){} });
   OTB_STATE.charts = {};
+
+  var inv = OTB_STATE.inventory;
+  var labels = rows.map(function(r){ return String(r.day); });
+
+  // Color helpers (same palette everywhere)
+  function barColor(pickup, alpha) {
+    alpha = alpha || 1;
+    if (pickup > 10)   return 'rgba(22,120,60,'+alpha+')';
+    if (pickup > 2)    return 'rgba(60,170,90,'+alpha+')';
+    if (pickup >= -2)  return 'rgba(150,150,150,'+alpha+')';
+    if (pickup >= -10) return 'rgba(210,90,20,'+alpha+')';
+    return 'rgba(195,0,0,'+alpha+')';
+  }
+
+  // Box builders
+  function mkFull(id, title, subtitle) {
+    var box = document.createElement('div');
+    box.className = 'otb-chart-box';
+    box.style.cssText = 'grid-column:1/-1';
+    box.innerHTML = '<div class="otb-chart-title">'+title+'</div>'
+      +(subtitle?'<div style="font-size:.68rem;color:#888;margin-bottom:8px">'+subtitle+'</div>':'')
+      +'<div style="position:relative"><canvas id="'+id+'"></canvas></div>';
+    area.appendChild(box); return id;
+  }
+  function mkHalf(id, title) {
+    var box = document.createElement('div'); box.className = 'otb-chart-box';
+    box.innerHTML = '<div class="otb-chart-title">'+title+'</div>'
+      +'<div style="position:relative"><canvas id="'+id+'"></canvas></div>';
+    area.appendChild(box); return id;
+  }
+
+  var noDataLabels = { plugins: { datalabels: { display: false } } };
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 1 — PICKUP VISUAL POR FECHA
+  // Barras = ocupación actual (como el OTB original) coloreadas por pickup
+  // Línea  = ocupación base superpuesta (referencia del período anterior)
+  // ─────────────────────────────────────────────────────────────────────────────
+  var g1id = mkFull('ch-otb-main',
+    'Pickup visual por fecha — OTB Actual vs OTB Base',
+    'Barras = ocupación actual coloreadas por pickup · Línea = ocupación base (referencia) · Verde = ganó pickup · Rojo = perdió pickup · Gris = estable'
+  );
+  document.getElementById(g1id).parentElement.style.height = '360px';
+  var g1labels = rows.map(function(r){ return String(r.day); });
+  OTB_STATE.charts['ch-otb-main'] = new Chart(document.getElementById(g1id), {
+    type: 'bar',
+    data: {
+      labels: g1labels,
+      datasets: [
+        {
+          // Bars: actual occupancy, colored by pickup status
+          type: 'bar',
+          label: 'Occ Actual',
+          data: rows.map(function(r){ return r.occAfter !== null ? parseFloat(r.occAfter.toFixed(1)) : null; }),
+          backgroundColor: rows.map(function(r){ return barColor(r.pickup, 0.78); }),
+          borderColor:     rows.map(function(r){ return barColor(r.pickup, 1); }),
+          borderWidth: 1,
+          borderRadius: 3,
+          yAxisID: 'y',
+          order: 2,
+          datalabels: {
+            display: true,
+            anchor: 'end', align: 'top',
+            formatter: function(v, ctx) {
+              var pu = rows[ctx.dataIndex].pickup;
+              return (pu > 0 ? '+' : '') + parseFloat(pu.toFixed(0));
+            },
+            font: { size: 9, weight: 'bold' },
+            color: function(ctx) {
+              var pu = rows[ctx.dataIndex].pickup;
+              return pu > 2 ? '#0e5a30' : pu < -2 ? '#a00' : '#555';
+            }
+          }
+        },
+        {
+          // Line: base occupancy (reference)
+          type: 'line',
+          label: 'Occ Base (referencia)',
+          data: rows.map(function(r){ return r.occBefore !== null ? parseFloat(r.occBefore.toFixed(1)) : null; }),
+          borderColor: 'rgba(30,80,180,0.75)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          pointRadius: 2,
+          pointBackgroundColor: 'rgba(30,80,180,0.9)',
+          tension: 0.3,
+          yAxisID: 'y',
+          order: 1,
+          datalabels: { display: false }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 14 } },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,20,.9)',
+          titleFont: { size: 12 },
+          bodyFont: { size: 11 },
+          padding: 10,
+          callbacks: {
+            title: function(items) {
+              var r = rows[items[0].dataIndex];
+              return 'Día '+r.day+' | '+r.afterDate;
+            },
+            label: function(item) {
+              var r = rows[item.dataIndex];
+              if (item.dataset.label === 'Occ Base (referencia)')
+                return '  OTB Base: '+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'N/D');
+              var lines = [
+                '  OTB Actual: '+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'N/D'),
+                '  Pickup: '+(r.pickup>0?'+':'')+r.pickup.toFixed(1)+' pp  · '+pickupLabel(r.status)
+              ];
+              if (inv && r.roomPickup !== null) {
+                lines.push('  Habs: '+Math.round(r.roomsBefore||0)+' → '+Math.round(r.roomsAfter||0)+' ('+(r.roomPickup>0?'+':'')+Math.round(r.roomPickup)+' habs)');
+              }
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color:'rgba(0,0,0,.05)' }, ticks: { font:{size:10} },
+          title: { display:true, text:'Día del período', font:{size:10} } },
+        y: { min:0, max:100, grid:{ color:'rgba(0,0,0,.06)' },
+          ticks: { callback:function(v){return v+'%'}, font:{size:10} },
+          title: { display:true, text:'Ocupación (%)', font:{size:10} } }
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 2 — PICKUP DIARIO (pp) — barras centradas en cero
+  // ─────────────────────────────────────────────────────────────────────────────
+  var g2id = mkFull('ch-pickup-pp',
+    'Pickup diario por fecha (puntos porcentuales)',
+    '▲ Verde = ganó pickup  ▼ Rojo = perdió pickup  ● Gris = estable'
+  );
+  document.getElementById(g2id).parentElement.style.height = '280px';
+  OTB_STATE.charts['ch-pickup-pp'] = new Chart(document.getElementById(g2id), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Pickup (pp)',
+        data: rows.map(function(r){ return parseFloat(r.pickup.toFixed(1)); }),
+        backgroundColor: rows.map(function(r){ return barColor(r.pickup, 0.8); }),
+        borderColor:     rows.map(function(r){ return barColor(r.pickup, 1); }),
+        borderWidth: 1, borderRadius: 3, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display:false },
+        datalabels: {
+          display: true,
+          anchor: function(ctx){ return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start'; },
+          align:  function(ctx){ return ctx.dataset.data[ctx.dataIndex]>=0?'top':'bottom'; },
+          formatter: function(v){ return (v>0?'+':'')+v; },
+          font: { size:9, weight:'bold' },
+          color: function(ctx){ var v=ctx.dataset.data[ctx.dataIndex]; return v>2?'#0e5a30':v<-2?'#a00':'#555'; }
+        },
+        tooltip: {
+          callbacks: {
+            title: function(items){ var r=rows[items[0].dataIndex]; return 'Día '+r.day+' | '+r.afterDate; },
+            label: function(item){
+              var r=rows[item.dataIndex];
+              return ['  Base: '+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'N/D'),
+                      '  Actual: '+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'N/D'),
+                      '  Pickup: '+(r.pickup>0?'+':'')+r.pickup.toFixed(1)+' pp',
+                      '  Estado: '+pickupLabel(r.status)];
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:10}},
+          title:{display:true,text:'Día del período',font:{size:10}} },
+        y: { grid:{color:'rgba(0,0,0,.06)'},
+          ticks:{ callback:function(v){return (v>0?'+':'')+v+'pp'}, font:{size:10} },
+          title:{display:true,text:'Pickup (pp)',font:{size:10}} }
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 3 — OCUPACIÓN DIARIA: BASE vs ACTUAL (dos líneas)
+  // ─────────────────────────────────────────────────────────────────────────────
+  var g3id = mkFull('ch-occ-compare',
+    'Ocupación diaria: OTB Base vs OTB Actual (%)',
+    'Línea azul discontinua = OTB base  ·  Línea verde sólida = OTB actual  ·  La brecha entre líneas refleja el pickup'
+  );
+  document.getElementById(g3id).parentElement.style.height = '280px';
+  OTB_STATE.charts['ch-occ-compare'] = new Chart(document.getElementById(g3id), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        { label:'OTB Base (%)',   data:rows.map(function(r){return r.occBefore;}),
+          borderColor:'rgba(30,80,180,.8)', backgroundColor:'rgba(30,80,180,.07)',
+          borderDash:[5,3], borderWidth:2, tension:.35, fill:true,
+          pointRadius:3, pointBackgroundColor:'rgba(30,80,180,.9)', datalabels:{display:false} },
+        { label:'OTB Actual (%)', data:rows.map(function(r){return r.occAfter;}),
+          borderColor:'rgba(22,120,60,.9)', backgroundColor:'rgba(22,120,60,.08)',
+          borderWidth:2.5, tension:.35, fill:true,
+          pointRadius:3, pointBackgroundColor:'rgba(22,120,60,1)', datalabels:{display:false} }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{ mode:'index', intersect:false },
+      plugins: {
+        legend:{ position:'top', labels:{font:{size:11},boxWidth:14} },
+        datalabels:{ display:false },
+        tooltip:{ callbacks:{
+          title:function(items){ var r=rows[items[0].dataIndex]; return 'Día '+r.day+' | '+r.afterDate; },
+          label:function(item){
+            var r=rows[item.dataIndex];
+            if(item.dataset.label==='OTB Base (%)') return '  Base: '+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'N/D');
+            return ['  Actual: '+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'N/D'),
+                    '  Pickup: '+(r.pickup>0?'+':'')+r.pickup.toFixed(1)+' pp · '+pickupLabel(r.status)];
+          }
+        }}
+      },
+      scales:{
+        x:{grid:{color:'rgba(0,0,0,.04)'},ticks:{font:{size:10}}},
+        y:{min:0,max:100,grid:{color:'rgba(0,0,0,.06)'},ticks:{callback:function(v){return v+'%'},font:{size:10}},
+          title:{display:true,text:'Ocupación (%)',font:{size:10}}}
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 4 — PICKUP SEMANAL
+  // ─────────────────────────────────────────────────────────────────────────────
+  var wc = OTB_STATE.weeklyComparison;
+  if (wc && wc.length) {
+    var g4id = mkHalf('ch-weekly','Pickup semanal');
+    OTB_STATE.charts['ch-weekly'] = new Chart(document.getElementById(g4id), {
+      type: 'bar',
+      data: {
+        labels: wc.map(function(w){ return w.weekLabel; }),
+        datasets: [{
+          label:'Pickup prom. (pp)',
+          data: wc.map(function(w){ return w.avgPickup!==null?parseFloat(w.avgPickup.toFixed(1)):0; }),
+          backgroundColor: wc.map(function(w){ return barColor(w.avgPickup||0, 0.8); }),
+          borderColor:     wc.map(function(w){ return barColor(w.avgPickup||0, 1); }),
+          borderWidth:1, borderRadius:4
+        }]
+      },
+      options: {
+        responsive:true,
+        plugins:{ legend:{display:false},
+          datalabels:{ display:true, formatter:function(v){return (v>0?'+':'')+v+' pp';}, font:{size:11,weight:'bold'},
+            anchor:'end', align:'top',
+            color:function(ctx){ var v=ctx.dataset.data[ctx.dataIndex]; return v>0?'#0e5a30':'#a00'; } },
+          tooltip:{ callbacks:{ label:function(item){
+            var w=wc[item.dataIndex];
+            return ['  Pickup: '+(w.avgPickup>0?'+':'')+w.avgPickup.toFixed(1)+' pp',
+                    '  Días: '+w.daysCompared, '  Estado: '+pickupLabel(w.status)];
+          }}}
+        },
+        scales:{ y:{ ticks:{callback:function(v){return (v>0?'+':'')+v+'pp'},font:{size:10}}, grid:{color:'rgba(0,0,0,.05)'} } }
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 5 — DISTRIBUCIÓN DEL PICKUP
+  // ─────────────────────────────────────────────────────────────────────────────
+  var m = OTB_STATE.metrics;
+  var g5id = wc && wc.length ? mkHalf('ch-dist','Distribución del pickup') : mkHalf('ch-dist','Distribución del pickup');
+  OTB_STATE.charts['ch-dist'] = new Chart(document.getElementById(g5id), {
+    type:'doughnut',
+    data:{
+      labels:['Pickup fuerte','Pickup moderado','Estable','Caída moderada','Caída fuerte'],
+      datasets:[{ data:[m.strongUp,m.modUp,m.stable,m.modDown,m.strongDown],
+        backgroundColor:['#1a6e3c','#5ab88a','#aaa','#e08000','#c00'], borderWidth:2, borderColor:'#fff' }]
+    },
+    options:{ responsive:true, cutout:'50%',
+      plugins:{ legend:{position:'bottom',labels:{font:{size:10},boxWidth:12}}, datalabels:{display:false} } }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 6 — FECHAS CON MAYOR CRECIMIENTO Y MAYOR CAÍDA (horizontal)
+  // ─────────────────────────────────────────────────────────────────────────────
+  var valid = rows.filter(function(r){return r.pickup!==null;});
+  var top5up   = valid.slice().sort(function(a,b){return b.pickup-a.pickup;}).slice(0,5);
+  var top5down = valid.slice().sort(function(a,b){return a.pickup-b.pickup;}).slice(0,5);
+  var g6id = mkFull('ch-ranking','Fechas con mayor crecimiento vs mayor caída de pickup',
+    'Verde = días que más crecieron · Rojo = días que más cayeron');
+  OTB_STATE.charts['ch-ranking'] = new Chart(document.getElementById(g6id), {
+    type:'bar',
+    data:{
+      labels: top5up.map(function(r){return 'Día '+r.day;}).concat(top5down.map(function(r){return 'Día '+r.day;})),
+      datasets:[{ label:'Pickup (pp)',
+        data: top5up.map(function(r){return parseFloat(r.pickup.toFixed(1));}).concat(top5down.map(function(r){return parseFloat(r.pickup.toFixed(1));})),
+        backgroundColor: top5up.map(function(r){return barColor(r.pickup,0.8);}).concat(top5down.map(function(r){return barColor(r.pickup,0.8);})),
+        borderColor:     top5up.map(function(r){return barColor(r.pickup,1);}).concat(top5down.map(function(r){return barColor(r.pickup,1);})),
+        borderWidth:1, borderRadius:4
+      }]
+    },
+    options:{
+      indexAxis:'y', responsive:true,
+      plugins:{ legend:{display:false},
+        datalabels:{ display:true, formatter:function(v){return (v>0?'+':'')+v+' pp';}, font:{size:10,weight:'bold'},
+          color:function(ctx){ var v=ctx.dataset.data[ctx.dataIndex]; return v>0?'#0e5a30':'#a00'; } },
+        tooltip:{ callbacks:{ label:function(item){
+          var idx=item.dataIndex; var r=idx<5?top5up[idx]:top5down[idx-5];
+          return ['  Base: '+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'N/D'),
+                  '  Actual: '+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'N/D'),
+                  '  Pickup: '+(r.pickup>0?'+':'')+r.pickup.toFixed(1)+' pp · '+pickupLabel(r.status)];
+        }}}
+      },
+      scales:{ x:{ ticks:{callback:function(v){return (v>0?'+':'')+v+'pp'},font:{size:10}}, grid:{color:'rgba(0,0,0,.05)'} } }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 7 — PICKUP EN HABITACIONES (solo si hay inventario)
+  // ─────────────────────────────────────────────────────────────────────────────
+  if (m.hasRooms) {
+    var g7id = mkFull('ch-rooms','Pickup en habitaciones (ganadas o perdidas por fecha)',
+      'Solo disponible cuando se configuró el inventario del hotel');
+    OTB_STATE.charts['ch-rooms'] = new Chart(document.getElementById(g7id), {
+      type:'bar',
+      data:{ labels:labels, datasets:[{ label:'Pickup habs',
+        data:rows.map(function(r){return r.roomPickup!==null?Math.round(r.roomPickup):0;}),
+        backgroundColor:rows.map(function(r){return barColor(r.pickup,0.78);}),
+        borderColor:rows.map(function(r){return barColor(r.pickup,1);}),
+        borderWidth:1, borderRadius:3
+      }]},
+      options:{ responsive:true,
+        plugins:{ legend:{display:false},
+          datalabels:{ display:true, formatter:function(v){return (v>0?'+':'')+v;}, font:{size:9,weight:'bold'},
+            anchor:'end', align:function(ctx){return ctx.dataset.data[ctx.dataIndex]>=0?'top':'bottom';},
+            color:function(ctx){var v=ctx.dataset.data[ctx.dataIndex]; return v>=0?'#0e5a30':'#a00';} }
+        },
+        scales:{ y:{ ticks:{callback:function(v){return (v>0?'+':'')+v+' habs'},font:{size:10}}, grid:{color:'rgba(0,0,0,.06)'} } }
+      }
+    });
+  }
+}
 
   var labels = rows.map(function(r){ return 'D'+r.day; });
   var inv = OTB_STATE.inventory;
