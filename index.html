@@ -1799,11 +1799,13 @@ const OTB_STATE = {
   beforeCols: null, afterCols: null,
   beforeSummary: null, afterSummary: null,   // {label,startDate,endDate,occ,adr,revpar,revenue}
   beforeSource: null, afterSource: null,     // 'excel'|'image'|'manual'
+  beforeCutoff: null, afterCutoff: null,     // cutoff date strings YYYY-MM-DD
+  beforeMeta: null, afterMeta: null,         // {filename, sheet, dateRange, roomTypes, totalFechaRows, warnings}
   comparison: null, metrics: null, recs: null,
   weeklyComparison: null, weeklyMetrics: null,
-  comparisonMode: 'dayOfMonth',              // 'exactDate'|'dayOfMonth'|'periodIndex'|'monthlySummary'
+  comparisonMode: 'exactDate',               // 'exactDate'|'dayOfMonth'|'periodIndex'|'monthlySummary'
   diagnostics: null,
-  inventory: null,                           // hotel room count for pickup-in-rooms calculation
+  inventory: null,                           // hotel room count (overridden by excel Totales)
   charts: {},
   history: JSON.parse(localStorage.getItem('otb_history')||'[]'),
   analysisStatus: 'empty' // 'empty'|'loaded'|'processing'|'active'|'stale'|'pending'
@@ -1866,7 +1868,9 @@ function resetFullOTBAnalysis() {
   OTB_STATE.beforeSource = null; OTB_STATE.afterSource = null;
   OTB_STATE.comparison = null; OTB_STATE.metrics = null; OTB_STATE.recs = null;
   OTB_STATE.weeklyComparison = null; OTB_STATE.weeklyMetrics = null;
-  OTB_STATE.diagnostics = null;
+  OTB_STATE.diagnostics = null; OTB_STATE.rmRecs = null;
+  OTB_STATE.daysBetweenCutoffs = null;
+  OTB_STATE.beforeCutoff = null; OTB_STATE.afterCutoff = null;
   OTB_STATE.charts = {};
   OTB_STATE.history = history;
   OTB_STATE.inventory = inventory;
@@ -1889,6 +1893,7 @@ function resetFullOTBAnalysis() {
     if (mf) { mf.innerHTML = ''; mf.classList.remove('open'); }
   });
   const ids = ['otb-mapping-area','otb-editor-area','otb-alerts-area','otb-kpi-area',
+                'otb-inline-chart-area','otb-recs-area',
                 'otb-filters-area','otb-table-area','otb-weekly-area','otb-charts-area',
                 'otb-consultant-area','otb-errors'];
   ids.forEach(function(id) { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
@@ -1914,9 +1919,9 @@ function clearOTBResultsOnly() {
   OTB_STATE.weeklyComparison = null; OTB_STATE.weeklyMetrics = null;
   OTB_STATE.diagnostics = null; OTB_STATE.charts = {};
 
-  const ids = ['otb-alerts-area','otb-kpi-area','otb-filters-area','otb-table-area',
-                'otb-weekly-area','otb-charts-area','otb-consultant-area'];
-  ids.forEach(function(id) { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const ids2 = ['otb-alerts-area','otb-kpi-area','otb-inline-chart-area','otb-recs-area',
+                'otb-filters-area','otb-table-area','otb-weekly-area','otb-charts-area','otb-consultant-area'];
+  ids2.forEach(function(id) { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
   const diagArea = document.getElementById('otb-diagnostics-area');
   if (diagArea) { diagArea.innerHTML = ''; diagArea.style.display = 'none'; }
 
@@ -2045,7 +2050,7 @@ function pickupIcon(pp) {
 }
 
 // ── CORE PICKUP ROW BUILDER ───────────────────────────────────────────────────
-function buildPickupRow(dayNum, bRow, aRow, inventory) {
+function buildPickupRow(dayNum, bRow, aRow, inventory, daysBetweenCutoffs) {
   function getOcc(r) {
     if (!r) return null;
     var v = r.occ !== undefined ? r.occ : r['Ocup%'] !== undefined ? r['Ocup%'] : null;
@@ -2059,22 +2064,43 @@ function buildPickupRow(dayNum, bRow, aRow, inventory) {
   var occB = getOcc(bRow), occA = getOcc(aRow);
   var pickup = (occB !== null && occA !== null) ? occA - occB : null;
   var pctChange = (pickup !== null && occB && occB !== 0) ? (pickup / occB) * 100 : null;
-  var status = pickupStatus(pickup);
 
+  // Use rooms from Excel data directly (preferred), fallback to occ * inventory
   var invCount = inventory || OTB_STATE.inventory;
-  var roomsB = (occB !== null && invCount) ? Math.round(occB / 100 * invCount) : (getField(bRow,'rooms','Hab.Vendidas'));
-  var roomsA = (occA !== null && invCount) ? Math.round(occA / 100 * invCount) : (getField(aRow,'rooms','Hab.Vendidas'));
+  var roomsB = getField(bRow,'rooms','Hab.Vendidas') !== null ? getField(bRow,'rooms','Hab.Vendidas')
+             : (occB !== null && invCount) ? Math.round(occB / 100 * invCount) : null;
+  var roomsA = getField(aRow,'rooms','Hab.Vendidas') !== null ? getField(aRow,'rooms','Hab.Vendidas')
+             : (occA !== null && invCount) ? Math.round(occA / 100 * invCount) : null;
+
+  // Rooms-based pickup (primary for Excel)
   var roomPickup = (roomsB !== null && roomsA !== null) ? roomsA - roomsB : null;
+  if (pickup === null && roomPickup !== null && invCount) {
+    pickup = (roomPickup / invCount) * 100;
+  }
+
+  var status = pickupStatus(pickup);
+  var pctRel = (pickup !== null && occB && occB !== 0) ? (pickup / occB) * 100 : pctChange;
+
+  // Velocity = rooms pickup / days between cutoffs
+  var velocityHabs = (roomPickup !== null && daysBetweenCutoffs && daysBetweenCutoffs > 0)
+    ? roomPickup / daysBetweenCutoffs : null;
+  var velocityPP = (pickup !== null && daysBetweenCutoffs && daysBetweenCutoffs > 0)
+    ? pickup / daysBetweenCutoffs : null;
+
+  var totalesB = getField(bRow,'totales',null);
+  var totalesA = getField(aRow,'totales',null);
 
   return {
     day: dayNum,
+    stayDate: bRow ? (bRow.date || bRow.Fecha || '') : (aRow ? (aRow.date || aRow.Fecha || '') : ''),
     beforeDate: bRow ? (bRow.date || bRow.Fecha || 'Día '+dayNum) : '—',
     afterDate:  aRow ? (aRow.date || aRow.Fecha || 'Día '+dayNum) : '—',
     occBefore: occB, occAfter: occA,
-    pickup: pickup, pctChange: pctChange,
+    pickup: pickup, pctChange: pctRel,
     status: status,
     roomsBefore: roomsB, roomsAfter: roomsA, roomPickup: roomPickup,
-    // context metrics only
+    totalesBefore: totalesB, totalesAfter: totalesA,
+    velocityHabs: velocityHabs, velocityPP: velocityPP,
     adrBefore:    getField(bRow,'adr','ADR'),
     adrAfter:     getField(aRow,'adr','ADR'),
     revparBefore: getField(bRow,'revpar','RevPAR'),
@@ -2084,12 +2110,16 @@ function buildPickupRow(dayNum, bRow, aRow, inventory) {
 
 // ── COMPARE BY EXACT DATE ─────────────────────────────────────────────────────
 function compareOTB(before, after) {
+  return compareOTBExact(before, after, null);
+}
+
+function compareOTBExact(before, after, daysBetween) {
   var bMap = {}, aMap = {};
   before.forEach(function(r){ if (r.date) bMap[r.date] = r; });
   after.forEach(function(r){ if (r.date) aMap[r.date] = r; });
   var allDates = Object.keys(Object.assign({}, bMap, aMap)).sort();
   return allDates.map(function(date, i) {
-    return buildPickupRow(i+1, bMap[date]||null, aMap[date]||null, null);
+    return buildPickupRow(i+1, bMap[date]||null, aMap[date]||null, null, daysBetween);
   });
 }
 
@@ -2116,9 +2146,19 @@ function buildSummaryMetrics(rows) {
   else if (up > 0 && down > 0) general = 'Mixto';
   else general = 'Estable';
 
+  var avgVelocityHabs = null;
+  var vRows = valid.filter(function(r){ return r.velocityHabs !== null; });
+  if (vRows.length) avgVelocityHabs = vRows.reduce(function(s,r){ return s + r.velocityHabs; }, 0) / vRows.length;
+
+  // Best/worst by roomPickup (Excel mode)
+  var roomRows = valid.filter(function(r){ return r.roomPickup !== null; });
+  var bestRoomDay  = roomRows.length ? roomRows.reduce(function(a,b){ return b.roomPickup > a.roomPickup ? b : a; }) : null;
+  var worstRoomDay = roomRows.length ? roomRows.reduce(function(a,b){ return b.roomPickup < a.roomPickup ? b : a; }) : null;
+
   return { total: rows.length, up, down, stable, strongUp, modUp, modDown, strongDown,
     avgPickup, bestDay, worstDay, totalRoomPickup, criticalDays, oppDays,
     hasRooms: rows.some(function(r){ return r.roomPickup !== null; }),
+    avgVelocityHabs, bestRoomDay, worstRoomDay,
     general };
 }
 
@@ -2183,39 +2223,44 @@ function initOTB(page) {
     + '<button class="otb-tab-btn" data-tab="history">Histórico</button>'
     + '</div>'
     + '<div id="otb-panel-upload" class="otb-sub-panel active">'
-    // State message
-    + '<div id="otb-state-msg" style="padding:10px 0;font-size:.8rem;color:var(--gray3)">Cargue OTB Antes y OTB Después para iniciar una nueva comparativa.</div>'
+    + '<div id="otb-state-msg" style="padding:10px 0;font-size:.8rem;color:var(--gray3)">Cargue los archivos Excel del reporte rptForecastNew para iniciar una nueva comparativa.</div>'
     + '<div class="otb-upload-grid">'
     // --- OTB ANTES ---
     + '<div class="otb-upload-card" id="otb-drop-before" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'before\')">'
-    + '<div class="otb-upload-icon">🖼</div>'
-    + '<div class="otb-upload-title">OTB ANTES</div>'
-    + '<div class="otb-upload-hint">Imagen JPG/PNG — línea base del On the Book</div>'
+    + '<div class="otb-upload-icon">📊</div>'
+    + '<div class="otb-upload-title">CORTE BASE</div>'
+    + '<div class="otb-upload-hint">Excel rptForecastNew · Fecha de corte anterior</div>'
+    + '<div style="margin:8px 0 4px;font-size:.75rem;font-weight:700;color:var(--gold-dark)">Fecha de corte base:</div>'
+    + '<input type="date" id="otb-cutoff-before" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--gold-border);font-size:.82rem;margin-bottom:6px" onchange="OTB_STATE.beforeCutoff=this.value" title="Fecha en que fue generado este reporte (corte base)">'
     + '<div class="otb-file-name" id="otb-fname-before">Sin archivo cargado</div>'
-    + '<div style="margin-top:10px">'
-    + '<input type="file" id="otb-file-before" accept=".jpg,.jpeg,.png" style="display:none" onchange="otbLoadFile(this,\'before\')">'
-    + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-before\').click()">Seleccionar archivo</button>'
+    + '<div style="margin-top:8px">'
+    + '<input type="file" id="otb-file-before" accept=".xlsx,.xls,.csv" style="display:none" onchange="otbLoadFile(this,\'before\')">'
+    + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-before\').click()">📂 Seleccionar Excel</button>'
     + '<button class="otb-btn" id="otb-replace-before-btn" style="display:none" onclick="document.getElementById(\'otb-file-before\').click()">🔁 Reemplazar</button>'
     + '<button class="otb-btn danger" onclick="otbClearFile(\'before\')">Limpiar</button>'
     + '</div>'
     + '<div class="otb-stale-warning" id="otb-stale-before">⚠ Cambiar este archivo invalidará la comparativa actual. Deberá recalcular.</div>'
-    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 JPG / PNG · OCR automático</div>'
+    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📊 XLSX / XLS / CSV · SheetJS · Hoja rptForecastNew</div>'
+    + '<div id="otb-meta-before" style="font-size:.72rem;color:#555;margin-top:6px;display:none"></div>'
     + '<button class="otb-manual-btn" onclick="otbOpenManual(event, \'before\')">✏ Ingresar datos manualmente</button>'
     + '</div>'
     // --- OTB DESPUÉS ---
     + '<div class="otb-upload-card" id="otb-drop-after" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'after\')">'
-    + '<div class="otb-upload-icon">🖼</div>'
-    + '<div class="otb-upload-title">OTB DESPUÉS</div>'
-    + '<div class="otb-upload-hint">Imagen JPG/PNG — estado posterior a acciones</div>'
+    + '<div class="otb-upload-icon">📊</div>'
+    + '<div class="otb-upload-title">CORTE ACTUAL</div>'
+    + '<div class="otb-upload-hint">Excel rptForecastNew · Fecha de corte más reciente</div>'
+    + '<div style="margin:8px 0 4px;font-size:.75rem;font-weight:700;color:var(--gold-dark)">Fecha de corte actual:</div>'
+    + '<input type="date" id="otb-cutoff-after" style="width:100%;padding:5px 8px;border-radius:6px;border:1.5px solid var(--gold-border);font-size:.82rem;margin-bottom:6px" onchange="OTB_STATE.afterCutoff=this.value" title="Fecha en que fue generado este reporte (corte actual)">'
     + '<div class="otb-file-name" id="otb-fname-after">Sin archivo cargado</div>'
-    + '<div style="margin-top:10px">'
-    + '<input type="file" id="otb-file-after" accept=".jpg,.jpeg,.png" style="display:none" onchange="otbLoadFile(this,\'after\')">'
-    + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-after\').click()">Seleccionar archivo</button>'
+    + '<div style="margin-top:8px">'
+    + '<input type="file" id="otb-file-after" accept=".xlsx,.xls,.csv" style="display:none" onchange="otbLoadFile(this,\'after\')">'
+    + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-after\').click()">📂 Seleccionar Excel</button>'
     + '<button class="otb-btn" id="otb-replace-after-btn" style="display:none" onclick="document.getElementById(\'otb-file-after\').click()">🔁 Reemplazar</button>'
     + '<button class="otb-btn danger" onclick="otbClearFile(\'after\')">Limpiar</button>'
     + '</div>'
     + '<div class="otb-stale-warning" id="otb-stale-after">⚠ Cambiar este archivo invalidará la comparativa actual. Deberá recalcular.</div>'
-    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 JPG / PNG · OCR automático</div>'
+    + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📊 XLSX / XLS / CSV · SheetJS · Hoja rptForecastNew</div>'
+    + '<div id="otb-meta-after" style="font-size:.72rem;color:#555;margin-top:6px;display:none"></div>'
     + '<button class="otb-manual-btn" onclick="otbOpenManual(event, \'after\')">✏ Ingresar datos manualmente</button>'
     + '</div>'
     + '</div>'
@@ -2226,13 +2271,10 @@ function initOTB(page) {
     + '<div id="otb-mode-bar" class="otb-mode-bar">'
     + '<span class="otb-mode-label">Modo de comparación:</span>'
     + '<select class="otb-mode-select" id="otb-mode-select" onchange="OTB_STATE.comparisonMode=this.value">'
-    + '<option value="dayOfMonth">Mes anterior vs mes actual (día del mes)</option>'
-    + '<option value="exactDate">Mismo período — corte inicial vs corte actual</option>'
+    + '<option value="exactDate" selected>Misma fecha de estancia (Excel)</option>'
+    + '<option value="dayOfMonth">Por día del mes</option>'
     + '<option value="periodIndex">Por posición en período</option>'
-    + '<option value="monthlySummary">Resumen mensual de contexto</option>'
     + '</select>'
-    + '<span class="otb-mode-label" style="margin-left:18px">Habitaciones del hotel:</span>'
-    + '<input type="number" id="otb-inventory" placeholder="Ej: 100" min="1" max="9999" style="width:80px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--gold-border);font-size:.82rem" onchange="OTB_STATE.inventory=parseInt(this.value)||null" title="Número de habitaciones disponibles. Permite calcular pickup en habitaciones.">'
     + '</div>'
     + '<div style="text-align:center;padding:10px 0" id="otb-compare-btn-area">'
     + '<button class="otb-btn primary" id="otb-calc-btn" style="font-size:.85rem;padding:10px 28px" onclick="otbRunComparison()">▶ Calcular comparativa</button>'
@@ -2244,6 +2286,8 @@ function initOTB(page) {
     + '<div id="otb-diagnostics-area" style="display:none"></div>'
     + '<div id="otb-alerts-area"></div>'
     + '<div id="otb-kpi-area"></div>'
+    + '<div id="otb-inline-chart-area"></div>'
+    + '<div id="otb-recs-area"></div>'
     + '<div id="otb-filters-area"></div>'
     + '<div id="otb-table-area"></div>'
     + '<div id="otb-weekly-area"></div>'
@@ -2300,8 +2344,8 @@ function otbHandleDrop(e, side) {
   e.preventDefault();
   const file = e.dataTransfer.files[0];
   if (!file) return;
-  if (!file.name.toLowerCase().match(/\.(jpe?g|png)$/)) {
-    otbShowError('Solo se aceptan imágenes JPG o PNG.');
+  if (!file.name.toLowerCase().match(/\.(xlsx?|csv)$/)) {
+    otbShowError('Solo se aceptan archivos Excel (.xlsx, .xls) o CSV.');
     return;
   }
   otbProcessFile(file, side);
@@ -2320,14 +2364,18 @@ function otbLoadFile(input, side) {
 function otbClearFile(side) {
   OTB_STATE[side+'Data'] = null;
   OTB_STATE[side+'Cols'] = null;
+  OTB_STATE[side+'Meta'] = null;
+  OTB_STATE[side+'Source'] = null;
   const fnEl = document.getElementById('otb-fname-'+side);
   const dropEl = document.getElementById('otb-drop-'+side);
   const replBtn = document.getElementById('otb-replace-'+side+'-btn');
   const staleW = document.getElementById('otb-stale-'+side);
+  const metaEl = document.getElementById('otb-meta-'+side);
   if (fnEl) fnEl.textContent = 'Sin archivo cargado';
   if (dropEl) dropEl.classList.remove('has-file');
   if (replBtn) replBtn.style.display = 'none';
   if (staleW) staleW.classList.remove('show');
+  if (metaEl) { metaEl.innerHTML = ''; metaEl.style.display = 'none'; }
   const mapArea = document.getElementById('otb-mapping-area');
   const edArea = document.getElementById('otb-editor-area');
   const cmpBtn = document.getElementById('otb-compare-btn-area');
@@ -2345,12 +2393,12 @@ function otbClearFile(side) {
 
 function otbProcessFile(file, side) {
   const name = file.name.toLowerCase();
-  if (!name.match(/\.(jpe?g|png)$/)) {
-    otbShowError('Solo se aceptan imágenes JPG o PNG.');
-    return;
+  if (name.match(/\.(xlsx?|csv)$/)) {
+    OTB_STATE[side+'Source'] = 'excel';
+    parseForecastExcel(file, side);
+  } else {
+    otbShowError('Solo se aceptan archivos Excel (.xlsx, .xls) o CSV.');
   }
-  OTB_STATE[side+'Source'] = 'image';
-  otbProcessImageOCR(file, side);
 }
 
 // ── MANUAL ENTRY ─────────────────────────────────────────────────────────────
@@ -2555,6 +2603,250 @@ function otbProcessImageOCR(file, side) {
   });
 }
 
+// ── EXCEL FORECAST PARSER ────────────────────────────────────────────────────
+function parseForecastExcel(file, side) {
+  var fnEl = document.getElementById('otb-fname-'+side);
+  var dropEl = document.getElementById('otb-drop-'+side);
+  var metaEl = document.getElementById('otb-meta-'+side);
+  if (fnEl) fnEl.textContent = '⏳ Leyendo Excel…';
+  otbSetStatus('processing');
+
+  // Convert Excel serial date to YYYY-MM-DD
+  function excelDateToISO(serial) {
+    if (!serial || isNaN(serial)) return null;
+    // Excel incorrectly treats 1900 as a leap year; adjust
+    var d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 10);
+  }
+
+  // Parse a numeric cell value (handle string numbers)
+  function num(v) {
+    if (v === undefined || v === null || v === '') return null;
+    var n = parseFloat(String(v).replace(/,/g, ''));
+    return isNaN(n) ? null : n;
+  }
+
+  var reader = new FileReader();
+  reader.onerror = function() {
+    if (fnEl) fnEl.textContent = '⚠ Error leyendo el archivo';
+    otbSetStatus('empty');
+  };
+  reader.onload = function(evt) {
+    try {
+      if (typeof XLSX === 'undefined') throw new Error('SheetJS no disponible');
+      var data = new Uint8Array(evt.target.result);
+      var wb = XLSX.read(data, { type: 'array', cellDates: false });
+
+      // Find the target sheet (prefer rptForecastNew, otherwise first sheet)
+      var sheetName = wb.SheetNames.find(function(n){ return /rptforecast/i.test(n); })
+                   || wb.SheetNames[0];
+      var ws = wb.Sheets[sheetName];
+      if (!ws) throw new Error('No se encontró ninguna hoja en el archivo');
+
+      // Convert sheet to array of arrays
+      var aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+      // ── Auto-detect header row ─────────────────────────────────────────────
+      var headerIdx = -1;
+      var headerRow = [];
+      var colIdx = {}; // { fecha, name, totales, reservadas, disponibles, ... }
+
+      var candidateKeys = ['fecha','name','nombre','totales','reservadas','disponibles','ocupacion','occ','adr','revpar'];
+      for (var i = 0; i < Math.min(aoa.length, 20); i++) {
+        var row = aoa[i].map(function(c){ return String(c).toLowerCase().trim(); });
+        var hits = row.filter(function(c){ return candidateKeys.some(function(k){ return c.indexOf(k) !== -1; }); }).length;
+        if (hits >= 2) {
+          headerIdx = i;
+          headerRow = row;
+          break;
+        }
+      }
+      if (headerIdx === -1) throw new Error('No se encontró una fila de encabezados. Verifique que el archivo sea rptForecastNew.xlsx');
+
+      // Map column positions
+      headerRow.forEach(function(h, ci) {
+        if (!colIdx.fecha    && (h.indexOf('fecha') !== -1 || h === 'date'))              colIdx.fecha       = ci;
+        if (!colIdx.name     && (h.indexOf('name') !== -1 || h.indexOf('nombre') !== -1)) colIdx.name        = ci;
+        if (!colIdx.totales  && h.indexOf('total') !== -1 && h.indexOf('fecha') === -1)   colIdx.totales     = ci;
+        if (!colIdx.reservadas && h.indexOf('reservada') !== -1)                           colIdx.reservadas  = ci;
+        if (!colIdx.disponibles && h.indexOf('disponible') !== -1)                        colIdx.disponibles = ci;
+        if (!colIdx.adr      && h === 'adr')                                               colIdx.adr         = ci;
+        if (!colIdx.revpar   && h.indexOf('revpar') !== -1)                                colIdx.revpar      = ci;
+        if (!colIdx.ingresos && (h.indexOf('ingreso') !== -1 || h.indexOf('revenue') !== -1)) colIdx.ingresos = ci;
+      });
+
+      if (colIdx.fecha === undefined) throw new Error('Columna "Fecha" no encontrada. Verifique el formato del archivo.');
+      if (colIdx.reservadas === undefined && colIdx.totales === undefined) {
+        throw new Error('No se encontraron columnas de Reservadas o Totales. Verifique el formato.');
+      }
+
+      // ── Extract data rows ──────────────────────────────────────────────────
+      var rows = [];
+      var roomTypes = {};
+      var totalFechaCount = 0;
+      var warnings = [];
+      var minDate = null, maxDate = null;
+
+      for (var ri = headerIdx + 1; ri < aoa.length; ri++) {
+        var r = aoa[ri];
+        if (!r || !r.length) continue;
+
+        var rawFecha = r[colIdx.fecha];
+        var rawName  = colIdx.name !== undefined ? String(r[colIdx.name] || '').trim() : '';
+
+        // Convert date (could be Excel serial or string)
+        var dateStr = null;
+        if (typeof rawFecha === 'number' && rawFecha > 40000) {
+          dateStr = excelDateToISO(rawFecha);
+        } else if (rawFecha) {
+          var s = String(rawFecha).trim();
+          // Try YYYY-MM-DD
+          if (/^\d{4}-\d{2}-\d{2}/.test(s)) dateStr = s.slice(0, 10);
+          // Try DD/MM/YYYY
+          else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
+            var p = s.split('/'); dateStr = p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+          }
+          // Try DD-MM-YYYY
+          else if (/^\d{1,2}-\d{1,2}-\d{4}/.test(s)) {
+            var p2 = s.split('-'); dateStr = p2[2]+'-'+p2[1].padStart(2,'0')+'-'+p2[0].padStart(2,'0');
+          }
+        }
+        if (!dateStr) continue;
+
+        var totales   = num(r[colIdx.totales]);
+        var reservadas = num(r[colIdx.reservadas]);
+        var disponibles = colIdx.disponibles !== undefined ? num(r[colIdx.disponibles]) : null;
+        var adr       = colIdx.adr !== undefined ? num(r[colIdx.adr]) : null;
+        var revpar    = colIdx.revpar !== undefined ? num(r[colIdx.revpar]) : null;
+        var ingresos  = colIdx.ingresos !== undefined ? num(r[colIdx.ingresos]) : null;
+
+        if (reservadas === null && totales === null) continue;
+
+        // Track room types (any name that isn't "Total Fecha" or empty)
+        var isTotalFecha = /total\s*fecha/i.test(rawName) || rawName === '';
+        if (!isTotalFecha && rawName) roomTypes[rawName] = (roomTypes[rawName] || 0) + 1;
+        if (isTotalFecha) totalFechaCount++;
+
+        // Compute occupancy
+        var occ = null;
+        if (totales && reservadas !== null) {
+          occ = Math.min(100, Math.max(0, (reservadas / totales) * 100));
+        }
+
+        var dateObj = new Date(dateStr + 'T12:00:00');
+        var dom = dateObj.getDate();
+
+        // Only keep "Total Fecha" rows for hotel-level analysis
+        // (row where name matches or first occurrence per date if no name col)
+        if (isTotalFecha || colIdx.name === undefined) {
+          rows.push({
+            date: dateStr,
+            dayOfMonth: dom,
+            name: rawName || 'Total Fecha',
+            occ: occ,
+            rooms: reservadas,
+            totales: totales,
+            disponibles: disponibles,
+            adr: adr,
+            revpar: revpar,
+            revenue: ingresos,
+            confidence: 'excel'
+          });
+          if (!minDate || dateStr < minDate) minDate = dateStr;
+          if (!maxDate || dateStr > maxDate) maxDate = dateStr;
+        }
+      }
+
+      // If no "Total Fecha" rows found, fall back to using all rows
+      if (!rows.length) {
+        warnings.push('No se encontraron filas "Total Fecha". Se usarán todas las filas con fecha y datos válidos.');
+        for (var ri2 = headerIdx + 1; ri2 < aoa.length; ri2++) {
+          var r2 = aoa[ri2];
+          if (!r2 || !r2.length) continue;
+          var rawFecha2 = r2[colIdx.fecha];
+          var dateStr2 = null;
+          if (typeof rawFecha2 === 'number' && rawFecha2 > 40000) dateStr2 = excelDateToISO(rawFecha2);
+          else if (rawFecha2) {
+            var s2 = String(rawFecha2).trim();
+            if (/^\d{4}-\d{2}-\d{2}/.test(s2)) dateStr2 = s2.slice(0,10);
+            else if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s2)) { var p3=s2.split('/'); dateStr2=p3[2]+'-'+p3[1].padStart(2,'0')+'-'+p3[0].padStart(2,'0'); }
+          }
+          if (!dateStr2) continue;
+          var tot2 = num(r2[colIdx.totales]);
+          var res2 = num(r2[colIdx.reservadas]);
+          if (res2 === null && tot2 === null) continue;
+          var occ2 = (tot2 && res2 !== null) ? Math.min(100, Math.max(0,(res2/tot2)*100)) : null;
+          rows.push({ date:dateStr2, dayOfMonth:new Date(dateStr2+'T12:00:00').getDate(),
+            name:'Fila', occ:occ2, rooms:res2, totales:tot2, disponibles:null,
+            adr: colIdx.adr!==undefined?num(r2[colIdx.adr]):null,
+            revpar: colIdx.revpar!==undefined?num(r2[colIdx.revpar]):null,
+            revenue: colIdx.ingresos!==undefined?num(r2[colIdx.ingresos]):null,
+            confidence:'excel' });
+          if (!minDate || dateStr2 < minDate) minDate = dateStr2;
+          if (!maxDate || dateStr2 > maxDate) maxDate = dateStr2;
+        }
+        // Deduplicate by date (keep last)
+        var seen = {}; rows = rows.filter(function(r){ if(seen[r.date]) return false; seen[r.date]=true; return true; });
+      }
+
+      rows.sort(function(a,b){ return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+
+      if (!rows.length) throw new Error('No se encontraron filas de datos válidas en el archivo. Verifique el formato.');
+
+      // ── Store in state ─────────────────────────────────────────────────────
+      var meta = {
+        filename: file.name,
+        sheet: sheetName,
+        dateRange: (minDate||'?') + ' → ' + (maxDate||'?'),
+        roomTypes: Object.keys(roomTypes),
+        totalFechaRows: totalFechaCount || rows.length,
+        warnings: warnings,
+        cols: colIdx
+      };
+      OTB_STATE[side+'Data']    = rows;
+      OTB_STATE[side+'Source']  = 'excel';
+      OTB_STATE[side+'Meta']    = meta;
+      OTB_STATE[side+'Headers'] = null; // not needed for Excel
+      OTB_STATE[side+'Mapping'] = null;
+
+      // Auto-fill inventory from Totales if consistent
+      var totalesVals = rows.map(function(r){ return r.totales; }).filter(function(v){ return v !== null; });
+      if (totalesVals.length) {
+        var maxTot = Math.max.apply(null, totalesVals);
+        if (!OTB_STATE.inventory && maxTot > 0 && maxTot < 5000) {
+          OTB_STATE.inventory = Math.round(maxTot);
+        }
+      }
+
+      // Update UI
+      if (fnEl) fnEl.textContent = '✅ ' + file.name + ' · ' + rows.length + ' fechas de estancia';
+      if (dropEl) dropEl.classList.add('has-file');
+      var replBtn = document.getElementById('otb-replace-'+side+'-btn');
+      if (replBtn) replBtn.style.display = '';
+
+      // Show meta panel
+      if (metaEl) {
+        var metaHTML = '<strong>Hoja:</strong> ' + sheetName
+          + ' · <strong>Fechas:</strong> ' + meta.dateRange
+          + ' · <strong>Filas Total Fecha:</strong> ' + meta.totalFechaRows;
+        if (meta.roomTypes.length) metaHTML += '<br><strong>Tipos de hab:</strong> ' + meta.roomTypes.slice(0,5).join(', ') + (meta.roomTypes.length>5?' …':'');
+        if (warnings.length) metaHTML += '<br>⚠ ' + warnings.join(' ');
+        metaEl.innerHTML = metaHTML;
+        metaEl.style.display = '';
+      }
+
+      otbCheckBothLoaded();
+
+    } catch(err) {
+      if (fnEl) fnEl.textContent = '⚠ Error: ' + err.message;
+      otbShowError(err.message);
+      otbSetStatus('empty');
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
 // ── OCR OCCUPANCY SEQUENCE EXTRACTOR ──────────────────────────────────────────
 // Extracts a sequence of integer/decimal values in range 0-100 that appear
 // as occupancy labels (e.g. "76 76 91 74 65" printed on or near the bars)
@@ -2714,30 +3006,31 @@ function extractDayNum(row) {
 }
 
 function compareOTBByDayOfMonth(before, after) {
+  var dbc = OTB_STATE.daysBetweenCutoffs || null;
   var afterByDay = {};
   after.forEach(function(r){ var d=extractDayNum(r); if(d!==null) afterByDay[d]=r; });
   var results=[], matched=0, unmatched=0;
   before.forEach(function(rb){
     var d = extractDayNum(rb);
     var ra = d !== null ? afterByDay[d] : null;
-    if (ra) { matched++; results.push(buildPickupRow(d, rb, ra, null)); }
+    if (ra) { matched++; results.push(buildPickupRow(d, rb, ra, null, dbc)); }
     else { unmatched++; }
   });
-  // Also add after-only days (new pickup)
   after.forEach(function(ra){
     var d = extractDayNum(ra);
     var hasMatch = before.some(function(rb){ return extractDayNum(rb)===d; });
-    if (!hasMatch) { results.push(buildPickupRow(d, null, ra, null)); }
+    if (!hasMatch) { results.push(buildPickupRow(d, null, ra, null, dbc)); }
   });
   results.sort(function(a,b){ return a.day - b.day; });
   return { rows: results, matched: matched, unmatched: unmatched, mode:'dayOfMonth' };
 }
 
 function compareOTBByPeriodIndex(before, after) {
+  var dbc = OTB_STATE.daysBetweenCutoffs || null;
   var results=[], matched=0;
   var len = Math.min(before.length, after.length);
   for (var i=0; i<len; i++) {
-    results.push(buildPickupRow(i+1, before[i], after[i], null));
+    results.push(buildPickupRow(i+1, before[i], after[i], null, dbc));
     matched++;
   }
   return { rows: results, matched: matched, unmatched: Math.abs(before.length-after.length), mode:'periodIndex' };
@@ -3055,62 +3348,52 @@ function otbEditCell(input) {
 
 function otbRunComparison() {
   var modeEl = document.getElementById('otb-mode-select');
-  var mode = (modeEl ? modeEl.value : null) || OTB_STATE.comparisonMode || 'dayOfMonth';
+  var mode = (modeEl ? modeEl.value : null) || OTB_STATE.comparisonMode || 'exactDate';
   OTB_STATE.comparisonMode = mode;
 
   var bData = OTB_STATE.beforeData || [];
   var aData = OTB_STATE.afterData  || [];
 
-  // Guard: need daily rows for pickup analysis
   var errEl = document.getElementById('otb-errors');
   if (errEl) errEl.innerHTML = '';
 
   if (!bData.length || !aData.length) {
     var missing = [];
-    if (!bData.length) missing.push('OTB Antes (Corte Base)');
-    if (!aData.length) missing.push('OTB Después (Corte Actual)');
-    otbShowError('Faltan datos diarios de: ' + missing.join(' y ') + '. Use el botón "✏ Ingresar datos manualmente" y pegue la secuencia de ocupación diaria (ej: 76, 76, 91, 74, 65…).');
+    if (!bData.length) missing.push('Corte Base');
+    if (!aData.length) missing.push('Corte Actual');
+    otbShowError('Faltan datos de: ' + missing.join(' y ') + '. Cargue los archivos Excel o ingrese datos manualmente.');
     return;
   }
 
-  // Check for sparse data — warn user if very few valid-occ rows
-  var bValid = bData.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; });
-  var aValid = aData.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; });
+  // Rooms-based validation: need either rooms or occ
+  var bValid = bData.filter(function(r){ return (r.rooms !== null && r.rooms !== undefined) || (r.occ !== null && r.occ >= 0 && r.occ <= 100); });
+  var aValid = aData.filter(function(r){ return (r.rooms !== null && r.rooms !== undefined) || (r.occ !== null && r.occ >= 0 && r.occ <= 100); });
   if (bValid.length < 2 || aValid.length < 2) {
     var sparseParts = [];
-    if (bValid.length < 2) sparseParts.push('OTB Base: '+bValid.length+' registros con ocupación válida (de '+bData.length+' total)');
-    if (aValid.length < 2) sparseParts.push('OTB Actual: '+aValid.length+' registros con ocupación válida (de '+aData.length+' total)');
-    otbShowError('⚠ Datos insuficientes para calcular pickup: '+sparseParts.join(' · ')
-      +'.<br>Se requieren al menos 2 días con ocupación válida en cada período.<br>'
-      +'<strong>Solución:</strong> Use "✏ Ingresar datos manualmente" e ingrese la secuencia de ocupación diaria. Ejemplo: <code>76, 76, 91, 74, 65, 76…</code>');
+    if (bValid.length < 2) sparseParts.push('Corte Base: '+bValid.length+' registros válidos (de '+bData.length+' total)');
+    if (aValid.length < 2) sparseParts.push('Corte Actual: '+aValid.length+' registros válidos (de '+aData.length+' total)');
+    otbShowError('⚠ Datos insuficientes: ' + sparseParts.join(' · '));
     return;
   }
 
-  // Detect if comparing different months and suggest dayOfMonth
-  var firstB = bData[0] && bData[0].date ? bData[0].date.slice(0,7) : '';
-  var firstA = aData[0] && aData[0].date ? aData[0].date.slice(0,7) : '';
-  var diffMonths = firstB && firstA && firstB !== firstA;
-  if (diffMonths && mode === 'exactDate') {
-    // Auto-correct: different months cannot match by exact date
-    mode = 'dayOfMonth';
-    OTB_STATE.comparisonMode = 'dayOfMonth';
-    if (modeEl) modeEl.value = 'dayOfMonth';
-    var notice = document.getElementById('otb-errors');
-    if (notice) {
-      notice.innerHTML = '<div class="otb-alert yellow">⚠ Los períodos corresponden a meses diferentes ('+firstB+' vs '+firstA+'). Se comparará por día del mes para medir pickup entre períodos equivalentes.</div>';
-      setTimeout(function(){ if(notice) notice.innerHTML=''; }, 6000);
-    }
+  // Calculate days between cutoffs for velocity
+  var daysBetween = null;
+  var bCutoff = OTB_STATE.beforeCutoff || (document.getElementById('otb-cutoff-before')||{}).value;
+  var aCutoff = OTB_STATE.afterCutoff  || (document.getElementById('otb-cutoff-after')||{}).value;
+  if (bCutoff && aCutoff) {
+    var msB = new Date(bCutoff).getTime();
+    var msA = new Date(aCutoff).getTime();
+    daysBetween = Math.abs(Math.round((msA - msB) / 86400000));
+    if (daysBetween === 0) daysBetween = null;
   }
+  OTB_STATE.daysBetweenCutoffs = daysBetween;
 
   var result;
   if (mode === 'exactDate') {
-    var rows = compareOTB(bData, aData);
-    result = { rows: rows, matched: rows.length, unmatched: Math.abs(bData.length - aData.length), mode: 'exactDate' };
+    var rows = compareOTBExact(bData, aData, daysBetween);
+    result = { rows: rows, matched: rows.filter(function(r){ return r.occBefore !== null && r.occAfter !== null; }).length, unmatched: 0, mode: 'exactDate' };
   } else if (mode === 'periodIndex') {
     result = compareOTBByPeriodIndex(bData, aData);
-  } else if (mode === 'monthlySummary') {
-    // Monthly summary as a supplement rendered below the main pickup table
-    result = compareOTBByDayOfMonth(bData, aData);
   } else {
     result = compareOTBByDayOfMonth(bData, aData);
   }
@@ -3136,9 +3419,12 @@ function otbRunComparison() {
   OTB_STATE.recs       = generateRecommendations(OTB_STATE.metrics, result.rows);
   OTB_STATE.weeklyComparison = compareWeekly(bData, aData);
   OTB_STATE.weeklyMetrics = buildWeeklyMetrics(OTB_STATE.weeklyComparison);
+  OTB_STATE.rmRecs = generateRMRecommendations(OTB_STATE.metrics, result.rows, OTB_STATE.weeklyComparison || []);
 
   otbRenderComparison();
   otbRenderWeekly();
+  setTimeout(otbRenderInlinePickupChart, 30);   // defer so DOM is painted
+  otbRenderRMRecommendations('otb-recs-area', OTB_STATE.rmRecs, OTB_STATE.metrics);
   // Charts are rendered lazily when the tab is activated (avoids 0px canvas issue on hidden tab)
   OTB_STATE._chartsDirty = true;
   otbRenderConsultant();
@@ -3174,6 +3460,383 @@ function buildSummaryFromRows(rows) {
   return { occ: totalOcc/n, adr: totalADR/n, revpar: totalRevPAR/n, label: 'Promedio' };
 }
 
+// ── REVENUE MANAGER RECOMMENDATIONS ENGINE ────────────────────────────────────
+
+function generateRMRecommendations(metrics, rows, weeklyData) {
+  var m = metrics || {};
+  var allRows = rows || [];
+  var wc = weeklyData || [];
+  var dbc = OTB_STATE.daysBetweenCutoffs;
+
+  // Categorize dates
+  var opportunityDates = allRows.filter(function(r){ return r.status === 'strong-up' || r.status === 'moderate-up'; });
+  var riskDates        = allRows.filter(function(r){ return r.status === 'strong-down' || r.status === 'moderate-down'; });
+  var stagnantDates    = allRows.filter(function(r){ return r.status === 'stable' && (r.occAfter||100) < 55; });
+  var criticalDates    = allRows.filter(function(r){ return r.status === 'strong-down'; });
+  var criticalWeeks    = wc.filter(function(w){ return (w.avgPickup||0) < -3 || (w.totalRoomPickup||0) < -5; });
+
+  // Opportunity date detail
+  var opDetails = opportunityDates.map(function(r) {
+    var actions = [];
+    if (r.status === 'strong-up') {
+      actions.push('📈 Evaluar incremento tarifario del 5–10%');
+      actions.push('🔒 Cerrar tarifas con descuento agresivo');
+      if ((r.occAfter||0) > 75) actions.push('⏱ Aplicar mínimo de estancia (2–3 noches)');
+      actions.push('📦 Proteger inventario en canales OTA');
+    } else {
+      actions.push('📊 Revisar oportunidad de mejora tarifaria gradual');
+      actions.push('👁 Mantener visibilidad y monitorear evolución');
+    }
+    return { date: r.stayDate||r.afterDate||'', occ: r.occAfter, roomPickup: r.roomPickup, pickupPP: r.pickup, velocity: r.velocityHabs, status: r.status, actions: actions };
+  });
+
+  // Risk date detail
+  var riskDetails = riskDates.map(function(r) {
+    var actions = [];
+    if (r.status === 'strong-down') {
+      actions.push('🚨 Revisar tarifa vs competidores inmediatamente');
+      actions.push('📉 Activar promoción táctica urgente');
+      actions.push('📣 Mejorar visibilidad en OTAs principales');
+      actions.push('🔍 Revisar restricciones activas (mín noches, CTA, CTD)');
+    } else {
+      actions.push('🔍 Revisar competitividad tarifaria frente al compset');
+      actions.push('📣 Activar campaña por mercado clave');
+      actions.push('👁 Mejorar contenido y disponibilidad en canales');
+    }
+    return { date: r.stayDate||r.afterDate||'', occ: r.occAfter, roomPickup: r.roomPickup, pickupPP: r.pickup, velocity: r.velocityHabs, status: r.status, actions: actions };
+  });
+
+  // Stagnant date detail
+  var stagnantDetails = stagnantDates.map(function(r) {
+    return { date: r.stayDate||r.afterDate||'', occ: r.occAfter, actions: ['👁 Monitorear y evaluar estímulo de demanda', '📝 Revisar contenido y calidad de ficha en OTAs'] };
+  });
+
+  // Critical week detail
+  var critWeekDetails = criticalWeeks.map(function(w) {
+    return { weekLabel: w.weekLabel, avgPickup: w.avgPickup, roomPickup: w.totalRoomPickup,
+      actions: ['📅 Crear campaña focalizada para esa ventana de estancia', '💲 Revisar tarifas frente al compset para esas fechas', '🔧 Ajustar promociones por canal', '📉 Revisar mínimos de noches', '📣 Aumentar exposición en canales con mayor conversión'] };
+  });
+
+  // General diagnosis
+  var total = m.total || 1;
+  var pctPos = Math.round((m.up||0) / total * 100);
+  var pctNeg = Math.round((m.down||0) / total * 100);
+  var pctStb = Math.round((m.stable||0) / total * 100);
+  var generalClass = m.general === 'Positivo' ? 'positive' : m.general === 'Negativo' ? 'negative' : m.general === 'Mixto' ? 'mixed' : 'stable';
+  var totalHabsStr = m.hasRooms ? ' Pickup neto: '+(m.totalRoomPickup>0?'+':'')+Math.round(m.totalRoomPickup)+' habitaciones.' : '';
+  var velStr = m.avgVelocityHabs !== null && m.avgVelocityHabs !== undefined
+    ? ' Velocidad promedio: '+(m.avgVelocityHabs>0?'+':'')+m.avgVelocityHabs.toFixed(2)+' habs/día'+(dbc?' (entre '+dbc+' días)':'')+'. '
+    : '';
+  var diagText;
+  if (generalClass === 'positive') {
+    diagText = 'El mes presenta una tendencia positiva de pickup. '+pctPos+'% de las fechas muestran crecimiento frente al corte base.'+totalHabsStr+velStr+'Las fechas con pickup fuerte son oportunidad para ajuste tarifario al alza y protección de inventario.';
+  } else if (generalClass === 'negative') {
+    diagText = 'El mes presenta una tendencia negativa de pickup. '+pctNeg+'% de las fechas muestran caída.'+totalHabsStr+velStr+'Se requiere revisión urgente de competitividad tarifaria e intervención comercial en fechas críticas.';
+  } else if (generalClass === 'mixed') {
+    diagText = 'El mes presenta un comportamiento mixto. '+pctPos+'% de fechas con pickup positivo, '+pctNeg+'% con caída.'+totalHabsStr+velStr+'Se recomienda gestión diferenciada: proteger tarifa donde el pickup es positivo y activar estímulos donde es negativo.';
+  } else {
+    diagText = 'El mes está estancado. '+pctStb+'% de fechas sin variación relevante.'+totalHabsStr+velStr+'Monitoree la evolución semanal y evalúe visibilidad y competitividad tarifaria antes de actuar.';
+  }
+
+  // Priority actions
+  var priorityActions = [];
+  if (criticalDates.length > 0) {
+    priorityActions.push({ priority:'high', title:'Fechas con caída fuerte de pickup', body:'Revisar tarifa y activar estímulo táctico urgente. Verificar restricciones activas.', dates: criticalDates.map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+  }
+  if (riskDates.length > criticalDates.length) {
+    var modDates = riskDates.filter(function(r){return r.status==='moderate-down';});
+    if (modDates.length) priorityActions.push({ priority:'medium', title:'Fechas con caída moderada', body:'Revisar competitividad tarifaria frente al compset. Activar estímulo táctico y mejorar visibilidad en OTAs.', dates: modDates.map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+  }
+  if (criticalWeeks.length > 0) {
+    priorityActions.push({ priority:'medium', title:'Semanas con pickup negativo', body:'Crear campaña focalizada para esa ventana. Revisar mínimos de noches y aumentar exposición en canales clave.', dates: criticalWeeks.map(function(w){return w.weekLabel;}) });
+  }
+  if (stagnantDates.length > 0) {
+    priorityActions.push({ priority:'low', title:'Fechas estables con baja ocupación', body:'Monitorear evolución. Evaluar visibilidad de contenido y distribución en OTAs.', dates: stagnantDates.slice(0,5).map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+  }
+  if (opportunityDates.length > 0) {
+    priorityActions.push({ priority:'medium', title:'Fechas con oportunidad tarifaria', body:'Evaluar incremento gradual de tarifa y proteger inventario. Revisar posibles descuentos vigentes.', dates: opportunityDates.slice(0,5).map(function(r){return r.stayDate||r.afterDate;}).filter(Boolean) });
+  }
+
+  return {
+    generalClass: generalClass, diagText: diagText,
+    opportunityDates: opDetails, riskDates: riskDetails, stagnantDates: stagnantDetails, criticalWeeks: critWeekDetails, criticalDates: criticalDates,
+    priorityActions: priorityActions,
+    stats: { total: total, pctPos: pctPos, pctNeg: pctNeg, pctStb: pctStb }
+  };
+}
+
+function otbRenderRMRecommendations(containerId, recs, metrics) {
+  var el = document.getElementById(containerId);
+  if (!el || !recs) return;
+
+  var DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  function dayLabel(dateStr) {
+    if (!dateStr || dateStr.length < 10) return '';
+    var d = new Date(dateStr + 'T12:00:00');
+    return DAYS_ES[d.getDay()];
+  }
+  function fmt(n, unit, plus) { if (n===null||n===undefined) return '—'; return (plus&&n>0?'+':'')+n+' '+(unit||''); }
+  function fmtPP(n) { if (n===null||n===undefined) return '—'; return (n>0?'+':'')+n.toFixed(1)+' pp'; }
+
+  var bannerColor = { positive:'#e8f5e9', negative:'#ffebee', mixed:'#fff8e1', stable:'#f5f5f5' }[recs.generalClass]||'#f5f5f5';
+  var bannerBorder = { positive:'#4caf50', negative:'#f44336', mixed:'#ff9800', stable:'#9e9e9e' }[recs.generalClass]||'#9e9e9e';
+  var bannerIcon = { positive:'✅', negative:'🔴', mixed:'⚠️', stable:'⚫' }[recs.generalClass]||'⚫';
+
+  var html = '<div style="background:#fff;border:1.5px solid #e8d88a;border-radius:12px;padding:20px 22px;margin:10px 0">'
+    + '<div style="font-size:.78rem;font-weight:800;color:#2c1a00;letter-spacing:.04em;margin-bottom:14px;text-transform:uppercase">🤖 Recomendaciones Revenue Manager</div>'
+
+    // Diagnostic banner
+    + '<div style="background:'+bannerColor+';border-left:4px solid '+bannerBorder+';padding:12px 16px;border-radius:6px;margin-bottom:16px">'
+    + '<div style="font-size:.8rem;font-weight:800;color:#222;margin-bottom:4px">'+bannerIcon+' Diagnóstico General del Mes</div>'
+    + '<div style="font-size:.78rem;color:#333;line-height:1.6">'+recs.diagText+'</div>'
+    + '<div style="font-size:.72rem;color:#666;margin-top:6px">'
+    + '📊 <strong>'+recs.stats.pctPos+'%</strong> positivo · '
+    + '📉 <strong>'+recs.stats.pctNeg+'%</strong> negativo · '
+    + '⚫ <strong>'+recs.stats.pctStb+'%</strong> estable'
+    + (metrics && metrics.hasRooms && metrics.totalRoomPickup !== undefined ? ' · Pickup total: <strong>'+(metrics.totalRoomPickup>0?'+':'')+Math.round(metrics.totalRoomPickup)+' habs</strong>' : '')
+    + '</div></div>';
+
+  // Priority actions
+  var high   = (recs.priorityActions||[]).filter(function(a){return a.priority==='high';});
+  var medium = (recs.priorityActions||[]).filter(function(a){return a.priority==='medium';});
+  var low    = (recs.priorityActions||[]).filter(function(a){return a.priority==='low';});
+
+  if (recs.priorityActions && recs.priorityActions.length) {
+    html += '<div style="font-size:.76rem;font-weight:800;color:#555;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">⚡ Acciones por Prioridad</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px">';
+    function renderPriority(items, label, bg, border, dot) {
+      var h = '<div style="background:'+bg+';border:1px solid '+border+';border-radius:8px;padding:12px 14px">'
+        + '<div style="font-size:.72rem;font-weight:800;color:'+dot+';margin-bottom:8px">'+label+'</div>';
+      if (!items.length) { h += '<div style="font-size:.72rem;color:#aaa;font-style:italic">Sin acciones en esta prioridad</div>'; }
+      items.forEach(function(a) {
+        h += '<div style="background:rgba(255,255,255,.7);border-radius:5px;padding:7px 9px;margin-bottom:6px;font-size:.72rem">'
+          + '<div style="font-weight:700;color:#222;margin-bottom:2px">'+a.title+'</div>'
+          + '<div style="color:#555;line-height:1.5">'+a.body+'</div>'
+          + (a.dates&&a.dates.length?'<div style="color:'+dot+';margin-top:4px;font-size:.68rem">'+a.dates.slice(0,4).join(' · ')+(a.dates.length>4?' + '+(a.dates.length-4)+' más':'')+'</div>':'')
+          + '</div>';
+      });
+      return h + '</div>';
+    }
+    html += renderPriority(high,   '🔴 Prioridad Alta',   '#fff5f5', '#f44336', '#c62828');
+    html += renderPriority(medium, '🟡 Prioridad Media',  '#fff8e1', '#ff9800', '#e65100');
+    html += renderPriority(low,    '⚪ Prioridad Baja',   '#f5f5f5', '#9e9e9e', '#616161');
+    html += '</div>';
+  }
+
+  // Opportunity dates
+  html += '<div style="font-size:.76rem;font-weight:800;color:#2e7d32;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">📈 Fechas con Oportunidad de Subida Tarifaria ('+recs.opportunityDates.length+')</div>';
+  if (!recs.opportunityDates.length) {
+    html += '<div style="font-size:.76rem;color:#aaa;margin-bottom:12px">Sin fechas con pickup fuerte en este corte.</div>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">';
+    recs.opportunityDates.slice(0, 10).forEach(function(d) {
+      var isFuerte = d.status === 'strong-up';
+      html += '<div style="background:#e8f5e9;border:1px solid #'+(isFuerte?'4caf50':'a5d6a7')+';border-radius:8px;padding:10px 12px">'
+        + '<div style="font-weight:800;color:#1b5e20;font-size:.78rem">'+d.date+(d.date&&dayLabel(d.date)?' · '+dayLabel(d.date):'')+'</div>'
+        + '<div style="font-size:.7rem;color:#555;margin-top:3px">'
+        + 'Occ actual: <strong>'+(d.occ!==null?d.occ.toFixed(1)+'%':'—')+'</strong>'
+        + (d.roomPickup!==null?' · Pickup: <strong>+'+(Math.round(d.roomPickup))+' habs</strong>':'')
+        + (d.pickupPP!==null?' (<strong>'+fmtPP(d.pickupPP)+'</strong>)':'')
+        + (d.velocity!==null?' · Vel: <strong>'+(d.velocity>0?'+':'')+d.velocity.toFixed(2)+'</strong>':'')
+        + '</div>'
+        + '<ul style="margin:6px 0 0 0;padding-left:14px;font-size:.7rem;color:#2e7d32;line-height:1.7">'
+        + d.actions.map(function(a){return '<li>'+a+'</li>';}).join('')
+        + '</ul></div>';
+    });
+    html += '</div>';
+  }
+
+  // Risk dates
+  html += '<div style="font-size:.76rem;font-weight:800;color:#c62828;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">⚠️ Fechas con Riesgo Comercial ('+recs.riskDates.length+')</div>';
+  if (!recs.riskDates.length) {
+    html += '<div style="font-size:.76rem;color:#aaa;margin-bottom:12px">Sin fechas con pickup negativo significativo.</div>';
+  } else {
+    html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">';
+    recs.riskDates.slice(0, 10).forEach(function(d) {
+      var isFuerte = d.status === 'strong-down';
+      html += '<div style="background:#ffebee;border:1px solid #'+(isFuerte?'f44336':'ef9a9a')+';border-radius:8px;padding:10px 12px">'
+        + '<div style="font-weight:800;color:#b71c1c;font-size:.78rem">'+d.date+(d.date&&dayLabel(d.date)?' · '+dayLabel(d.date):'')+'</div>'
+        + '<div style="font-size:.7rem;color:#555;margin-top:3px">'
+        + 'Occ actual: <strong>'+(d.occ!==null?d.occ.toFixed(1)+'%':'—')+'</strong>'
+        + (d.roomPickup!==null?' · Pickup: <strong>'+(d.roomPickup>0?'+':'')+Math.round(d.roomPickup)+' habs</strong>':'')
+        + (d.pickupPP!==null?' (<strong>'+fmtPP(d.pickupPP)+'</strong>)':'')
+        + (d.velocity!==null?' · Vel: <strong>'+d.velocity.toFixed(2)+'</strong>':'')
+        + '</div>'
+        + '<ul style="margin:6px 0 0 0;padding-left:14px;font-size:.7rem;color:#b71c1c;line-height:1.7">'
+        + d.actions.map(function(a){return '<li>'+a+'</li>';}).join('')
+        + '</ul></div>';
+    });
+    html += '</div>';
+  }
+
+  // Critical weeks
+  if (recs.criticalWeeks.length) {
+    html += '<div style="font-size:.76rem;font-weight:800;color:#e65100;text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px">📅 Semanas Críticas ('+recs.criticalWeeks.length+')</div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:14px">';
+    recs.criticalWeeks.forEach(function(w) {
+      html += '<div style="background:#fff3e0;border:1px solid #ff9800;border-radius:8px;padding:10px 12px">'
+        + '<div style="font-weight:800;color:#bf360c;font-size:.78rem">'+w.weekLabel+'</div>'
+        + '<div style="font-size:.7rem;color:#555;margin-top:3px">'
+        + 'Pickup prom: <strong>'+(w.avgPickup!==null?(w.avgPickup>0?'+':'')+w.avgPickup.toFixed(1)+' pp':'—')+'</strong>'
+        + (w.roomPickup!==null?' · Habs: <strong>'+(w.roomPickup>0?'+':'')+Math.round(w.roomPickup)+'</strong>':'')
+        + '</div>'
+        + '<ul style="margin:6px 0 0 0;padding-left:14px;font-size:.7rem;color:#e65100;line-height:1.7">'
+        + w.actions.map(function(a){return '<li>'+a+'</li>';}).join('')
+        + '</ul></div>';
+    });
+    html += '</div>';
+  }
+
+  // AI section (stub)
+  html += '<div style="margin-top:14px;padding:10px 14px;background:#f3f4f6;border:1px dashed #bbb;border-radius:8px;font-size:.72rem;color:#888">'
+    + '🤖 <strong>Recomendaciones con IA</strong> — Disponible para activación. '
+    + 'Configure el endpoint seguro <code>OTB_AI_ENDPOINT</code> en su backend para recibir análisis avanzado de Revenue Management generado por IA. '
+    + 'Las claves nunca se exponen en el frontend. '
+    + '<span style="color:#4caf50;font-weight:700">● Recomendaciones por reglas activas</span> | '
+    + '<span style="color:#9e9e9e">● IA no configurada</span></div>';
+
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+function otbRenderInlinePickupChart() {
+  var area = document.getElementById('otb-inline-chart-area');
+  if (!area) return;
+
+  // Destroy existing chart
+  if (OTB_STATE.charts['ch-inline-pickup']) {
+    try { OTB_STATE.charts['ch-inline-pickup'].destroy(); } catch(e){}
+    delete OTB_STATE.charts['ch-inline-pickup'];
+  }
+
+  var allRows = OTB_STATE.comparison || [];
+  var rows = allRows.filter(function(r){ return r.pickup !== null || r.roomPickup !== null; });
+  if (rows.length < 2) { area.innerHTML = ''; return; }
+
+  var isExcel = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
+  var useRooms = isExcel && rows.some(function(r){ return r.roomPickup !== null; });
+  var DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+  function dateLabel(r) {
+    var s = r.stayDate || r.afterDate || '';
+    if (s && s.length >= 10) {
+      var d = new Date(s + 'T12:00:00');
+      return d.getDate()+'/'+(d.getMonth()+1) + ' ' + DAYS_ES[d.getDay()];
+    }
+    return 'D'+r.day;
+  }
+
+  var STATUS_COLORS = {
+    'strong-up':    { fill:'rgba(27,94,32,0.85)',  border:'#1b5e20' },
+    'moderate-up':  { fill:'rgba(76,175,80,0.80)', border:'#388e3c' },
+    'stable':       { fill:'rgba(158,158,158,0.70)',border:'#757575' },
+    'moderate-down':{ fill:'rgba(230,81,0,0.80)',  border:'#bf360c' },
+    'strong-down':  { fill:'rgba(183,28,28,0.85)', border:'#b71c1c' },
+    'unknown':      { fill:'rgba(189,189,189,0.6)', border:'#9e9e9e' }
+  };
+
+  function clr(r, prop) { return (STATUS_COLORS[r.status]||STATUS_COLORS['unknown'])[prop]; }
+
+  var dataValues = rows.map(function(r) {
+    return useRooms ? (r.roomPickup !== null ? Math.round(r.roomPickup) : 0) : (r.pickup !== null ? parseFloat(r.pickup.toFixed(1)) : 0);
+  });
+
+  var yLabel = useRooms ? 'Pickup (habitaciones)' : 'Pickup (puntos porcentuales)';
+  var dbc = OTB_STATE.daysBetweenCutoffs;
+
+  area.innerHTML = '<div style="background:#fff;border:1.5px solid #e8d88a;border-radius:12px;padding:18px 20px;margin:10px 0">'
+    + '<div style="font-size:.8rem;font-weight:800;color:#2c1a00;margin-bottom:2px;letter-spacing:.02em">📊 COMPORTAMIENTO DIARIO DEL PICKUP</div>'
+    + '<div style="font-size:.69rem;color:#888;margin-bottom:10px">'
+    + (useRooms ? 'Barras = habitaciones ganadas o perdidas' : 'Barras = puntos porcentuales de ocupación')
+    + ' · Verde = ganó pickup · Rojo = perdió pickup · Gris = estable'
+    + (dbc ? ' · Entre cortes: '+dbc+' días' : '')
+    + '</div>'
+    + '<div style="position:relative;height:280px"><canvas id="ch-inline-pickup"></canvas></div>'
+    + '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:.69rem;color:#555">'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#1b5e20;display:inline-block"></span>Pickup fuerte</span>'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#4caf50;display:inline-block"></span>Pickup moderado</span>'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#9e9e9e;display:inline-block"></span>Estable</span>'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#e65100;display:inline-block"></span>Caída moderada</span>'
+    + '<span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:2px;background:#b71c1c;display:inline-block"></span>Caída fuerte</span>'
+    + '</div></div>';
+
+  var canvas = document.getElementById('ch-inline-pickup');
+  if (!canvas) return;
+
+  OTB_STATE.charts['ch-inline-pickup'] = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: rows.map(dateLabel),
+      datasets: [{
+        label: yLabel,
+        data: dataValues,
+        backgroundColor: rows.map(function(r){ return clr(r,'fill'); }),
+        borderColor:     rows.map(function(r){ return clr(r,'border'); }),
+        borderWidth: 1,
+        borderRadius: 3,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: rows.length <= 40,
+          formatter: function(v) { return (v>0?'+':'')+v; },
+          font: { size: rows.length > 25 ? 7 : 9, weight: 'bold' },
+          anchor: function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'end' : 'start'; },
+          align:  function(ctx) { return ctx.dataset.data[ctx.dataIndex] >= 0 ? 'top' : 'bottom'; },
+          color: function(ctx) { var v = ctx.dataset.data[ctx.dataIndex]; return v > 0 ? '#1b5e20' : v < 0 ? '#b71c1c' : '#666'; }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(20,20,20,.93)',
+          titleFont: { size: 12, weight: 'bold' },
+          bodyFont: { size: 11 },
+          padding: 12,
+          callbacks: {
+            title: function(items) {
+              var r = rows[items[0].dataIndex];
+              var s = r.stayDate || r.afterDate || '';
+              var dayStr = '';
+              if (s && s.length >= 10) {
+                var d2 = new Date(s + 'T12:00:00'); dayStr = ' · ' + DAYS_ES[d2.getDay()];
+              }
+              return 'Fecha: ' + (s || 'Día '+r.day) + dayStr;
+            },
+            label: function(item) {
+              var r = rows[item.dataIndex];
+              var lines = [];
+              if (r.roomsBefore !== null) lines.push('  Reservadas base: ' + Math.round(r.roomsBefore) + ' habs');
+              if (r.roomsAfter  !== null) lines.push('  Reservadas actual: ' + Math.round(r.roomsAfter) + ' habs');
+              if (r.roomPickup  !== null) lines.push('  Pickup habs: ' + (r.roomPickup>0?'+':'') + Math.round(r.roomPickup) + ' habs');
+              if (r.occBefore   !== null) lines.push('  Occ base: ' + r.occBefore.toFixed(1) + '%');
+              if (r.occAfter    !== null) lines.push('  Occ actual: ' + r.occAfter.toFixed(1) + '%');
+              if (r.pickup      !== null) lines.push('  Pickup occ: ' + (r.pickup>0?'+':'') + r.pickup.toFixed(1) + ' pp');
+              if (r.velocityHabs !== null) lines.push('  Velocidad: ' + (r.velocityHabs>0?'+':'') + r.velocityHabs.toFixed(2) + ' habs/día');
+              lines.push('  Estado: ' + pickupLabel(r.status));
+              lines.push('  Acción: ' + pickupAction(r.status));
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color:'rgba(0,0,0,.04)' },
+          ticks: { font:{ size: rows.length > 25 ? 7 : 9 }, maxRotation: rows.length > 20 ? 45 : 0 }
+        },
+        y: {
+          grid: { color:'rgba(0,0,0,.06)' },
+          ticks: { callback: function(v){ return (v>0?'+':'')+v+(useRooms?' habs':' pp'); }, font:{size:9} },
+          title: { display: true, text: yLabel, font:{size:9} }
+        }
+      }
+    }
+  });
+}
+
 function otbRenderConsultantFromSummary(msum) {
   var el = document.getElementById('otb-consultant-area');
   if (!el) return;
@@ -3199,22 +3862,32 @@ function otbRenderComparison() {
   var alertsArea = document.getElementById('otb-alerts-area');
   if (alertsArea) alertsArea.innerHTML = '<div class="otb-alert '+alertClass+'">'+alertText+'</div>';
 
-  // Pickup-centric KPI cards
+  var isExcel = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
+  var dbc = OTB_STATE.daysBetweenCutoffs;
+
+  // KPI cards
   var avgPU = m.avgPickup !== null ? m.avgPickup.toFixed(1) : 'N/D';
   var avgCls = m.avgPickup > 0 ? 'up' : m.avgPickup < 0 ? 'down' : '';
-  var bestLabel = m.bestDay ? 'Día '+m.bestDay.day+' (+'+m.bestDay.pickup.toFixed(1)+'pp)' : 'N/D';
-  var worstLabel = m.worstDay ? 'Día '+m.worstDay.day+' ('+m.worstDay.pickup.toFixed(1)+'pp)' : 'N/D';
+
   var kpis = [
-    { label:'Fechas comparadas', val: m.total, cls:'', sub:'' },
+    { label:'Fechas de estancia', val: m.total, cls:'', sub:'' },
     { label:'Con pickup positivo', val: m.up, cls:'up', sub: m.total ? Math.round(m.up/m.total*100)+'%' : '' },
     { label:'Con pickup negativo', val: m.down, cls:'down', sub: m.total ? Math.round(m.down/m.total*100)+'%' : '' },
     { label:'Estables', val: m.stable, cls:'', sub:'' },
-    { label:'Pickup prom. (pp)', val: (m.avgPickup!==null?(m.avgPickup>0?'+':'')+avgPU+' pp':'N/D'), cls:avgCls, sub:'puntos porcentuales' },
-    { label:'Mejor fecha', val: bestLabel, cls:'up', sub:'' },
-    { label:'Peor fecha', val: worstLabel, cls:'down', sub:'' },
   ];
-  if (m.hasRooms) {
+
+  if (isExcel && m.hasRooms) {
     kpis.push({ label:'Pickup total habs.', val: (m.totalRoomPickup>0?'+':'')+Math.round(m.totalRoomPickup), cls: m.totalRoomPickup>=0?'up':'down', sub:'habitaciones' });
+    if (m.bestRoomDay) kpis.push({ label:'Mejor fecha (habs)', val: m.bestRoomDay.stayDate+' ('+(m.bestRoomDay.roomPickup>0?'+':'')+Math.round(m.bestRoomDay.roomPickup)+' habs)', cls:'up', sub:'' });
+    if (m.worstRoomDay) kpis.push({ label:'Peor fecha (habs)', val: m.worstRoomDay.stayDate+' ('+Math.round(m.worstRoomDay.roomPickup)+' habs)', cls:'down', sub:'' });
+    if (m.avgVelocityHabs !== null) kpis.push({ label:'Velocidad promedio', val: (m.avgVelocityHabs>0?'+':'')+m.avgVelocityHabs.toFixed(2)+' habs/día', cls:m.avgVelocityHabs>=0?'up':'down', sub: dbc ? 'entre '+dbc+' días' : '' });
+  } else {
+    var bestLabel = m.bestDay ? (m.bestDay.stayDate||'Día '+m.bestDay.day)+' (+'+(m.bestDay.pickup!==null?m.bestDay.pickup.toFixed(1):'?')+'pp)' : 'N/D';
+    var worstLabel = m.worstDay ? (m.worstDay.stayDate||'Día '+m.worstDay.day)+' ('+(m.worstDay.pickup!==null?m.worstDay.pickup.toFixed(1):'?')+'pp)' : 'N/D';
+    kpis.push({ label:'Pickup prom. (pp)', val: (m.avgPickup!==null?(m.avgPickup>0?'+':'')+avgPU+' pp':'N/D'), cls:avgCls, sub:'puntos porcentuales' });
+    kpis.push({ label:'Mejor fecha', val: bestLabel, cls:'up', sub:'' });
+    kpis.push({ label:'Peor fecha', val: worstLabel, cls:'down', sub:'' });
+    if (m.hasRooms) kpis.push({ label:'Pickup total habs.', val: (m.totalRoomPickup>0?'+':'')+Math.round(m.totalRoomPickup), cls: m.totalRoomPickup>=0?'up':'down', sub:'habitaciones' });
   }
   var wm = OTB_STATE.weeklyMetrics;
   if (wm) {
@@ -3253,10 +3926,11 @@ function otbRenderComparison() {
     if (msum) tArea.innerHTML += '<details style="margin-top:16px"><summary style="cursor:pointer;font-size:.72rem;font-weight:700;color:var(--gray3);text-transform:uppercase;letter-spacing:.05em;user-select:none">▶ Resumen mensual de contexto (ADR / RevPAR)</summary>'
       + otbRenderMonthlySummary(msum) + '</details>';
   }
-  // Inventory notice
-  if (!OTB_STATE.inventory && tArea) {
+  // Velocity notice for Excel mode when no cutoff dates given
+  var isExcel2 = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
+  if (isExcel2 && !OTB_STATE.daysBetweenCutoffs && tArea) {
     tArea.innerHTML += '<div style="margin-top:10px;padding:8px 12px;background:#fffbee;border:1px solid #e8c88a;border-radius:6px;font-size:.73rem;color:#7a5a00">'
-      + '💡 Ingrese el número de habitaciones del hotel en el campo "Habitaciones del hotel" para ver el pickup en habitaciones junto a cada fecha.</div>';
+      + '💡 Ingrese las <strong>Fechas de corte base y actual</strong> en la pestaña "Carga de datos" para calcular la velocidad de pickup (habs/día).</div>';
   }
 }
 
@@ -3268,36 +3942,84 @@ function otbFilter(filter, btn) {
 }
 
 function otbRenderTable(rows) {
+  var isExcel = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
   var hasRooms = rows.some(function(r){ return r.roomPickup !== null; });
-  var html = '<div style="margin-bottom:6px;font-size:.72rem;font-weight:700;color:var(--gray3);text-transform:uppercase;letter-spacing:.05em">Pickup por Fecha</div>';
-  html += '<div class="otb-table-wrap"><table class="otb-table"><thead><tr>'
-    + '<th>Día</th><th>Fecha Base</th><th>Fecha Actual</th>'
-    + '<th>Occ Base</th><th>Occ Actual</th>'
-    + '<th>Pickup (pp)</th><th>Var. Relativa</th><th></th>';
-  if (hasRooms) html += '<th>Habs Base</th><th>Habs Actual</th><th>Pickup Habs</th>';
-  html += '<th>Estado Pickup</th><th>Diagnóstico Revenue</th></tr></thead><tbody>';
+  var hasVelocity = rows.some(function(r){ return r.velocityHabs !== null; });
+  var hasTotales = rows.some(function(r){ return r.totalesAfter !== null || r.totalesBefore !== null; });
+  var dbc = OTB_STATE.daysBetweenCutoffs;
 
+  var title = isExcel
+    ? 'Pickup por Fecha de Estancia' + (dbc ? ' · ' + dbc + ' días entre cortes' : ' · Ingrese fechas de corte para velocidad')
+    : 'Pickup por Fecha';
+  var html = '<div style="margin-bottom:6px;font-size:.72rem;font-weight:700;color:var(--gray3);text-transform:uppercase;letter-spacing:.05em">'+title+'</div>';
+  html += '<div class="otb-table-wrap"><table class="otb-table"><thead><tr>';
+
+  if (isExcel) {
+    html += '<th>Fecha Estancia</th><th>Día</th>';
+    if (hasTotales) html += '<th>Tot. Base</th><th>Tot. Act.</th>';
+    html += '<th>Habs Base</th><th>Habs Act.</th><th>Occ Base</th><th>Occ Act.</th>'
+          + '<th>Pickup Habs</th><th>Pickup pp</th><th>Var. Rel.</th><th></th>';
+    if (hasVelocity) html += '<th>Veloc. Habs/día</th><th>Veloc. pp/día</th>';
+  } else {
+    html += '<th>Día</th><th>Fecha Base</th><th>Fecha Actual</th>'
+          + '<th>Occ Base</th><th>Occ Actual</th>'
+          + '<th>Pickup (pp)</th><th>Var. Relativa</th><th></th>';
+    if (hasRooms) html += '<th>Habs Base</th><th>Habs Actual</th><th>Pickup Habs</th>';
+  }
+  html += '<th>Estado</th><th>Acción</th></tr></thead><tbody>';
+
+  var DAYS_ES = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   rows.forEach(function(r) {
     var pickup = r.pickup;
     var pp = pickup !== null ? (pickup>0?'+':'')+pickup.toFixed(1)+' pp' : '—';
     var pctRel = r.pctChange !== null ? (r.pctChange>0?'+':'')+r.pctChange.toFixed(1)+'%' : '—';
-    var statusCls = { 'strong-up':'color:#1a6e3c;font-weight:800', 'moderate-up':'color:#2a9e5c;font-weight:700',
-                      'stable':'color:#888', 'moderate-down':'color:#c07800;font-weight:700',
-                      'strong-down':'color:#c00;font-weight:800', 'unknown':'color:#aaa' }[r.status] || '';
+    var sCls = { 'strong-up':'color:#1a6e3c;font-weight:800', 'moderate-up':'color:#2a9e5c;font-weight:700',
+                 'stable':'color:#888', 'moderate-down':'color:#c07800;font-weight:700',
+                 'strong-down':'color:#c00;font-weight:800', 'unknown':'color:#aaa' }[r.status] || '';
     var action = pickupAction(r.status);
-    var row = '<tr>'
-      + '<td style="font-weight:700;text-align:center">'+r.day+'</td>'
-      + '<td style="white-space:nowrap;font-size:.75rem">'+r.beforeDate+'</td>'
-      + '<td style="white-space:nowrap;font-size:.75rem">'+r.afterDate+'</td>'
-      + '<td style="text-align:center">'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td>'
-      + '<td style="text-align:center">'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td>'
-      + '<td style="text-align:center;'+statusCls+'">'+pp+'</td>'
-      + '<td style="text-align:center;'+statusCls+'">'+pctRel+'</td>'
-      + '<td style="text-align:center">'+pickupIcon(pickup)+'</td>';
-    if (hasRooms) {
+
+    var row = '<tr>';
+    if (isExcel) {
+      var stayDate = r.stayDate || r.afterDate || '';
+      var dayLabel = '';
+      if (stayDate && stayDate.length >= 10) {
+        var d = new Date(stayDate + 'T12:00:00');
+        dayLabel = DAYS_ES[d.getDay()] + ' ' + d.getDate();
+      }
+      row += '<td style="white-space:nowrap;font-size:.75rem;font-weight:700">'+stayDate+'</td>'
+           + '<td style="text-align:center;font-size:.73rem;color:#888">'+dayLabel+'</td>';
+      if (hasTotales) {
+        row += '<td style="text-align:center;font-size:.73rem">'+(r.totalesBefore!==null?Math.round(r.totalesBefore):'—')+'</td>'
+             + '<td style="text-align:center;font-size:.73rem">'+(r.totalesAfter!==null?Math.round(r.totalesAfter):'—')+'</td>';
+      }
       row += '<td style="text-align:center">'+(r.roomsBefore!==null?Math.round(r.roomsBefore):'—')+'</td>'
            + '<td style="text-align:center">'+(r.roomsAfter!==null?Math.round(r.roomsAfter):'—')+'</td>'
-           + '<td style="text-align:center;'+statusCls+'">'+(r.roomPickup!==null?(r.roomPickup>0?'+':'')+Math.round(r.roomPickup)+' habs':'—')+'</td>';
+           + '<td style="text-align:center">'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td>'
+           + '<td style="text-align:center">'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td>'
+           + '<td style="text-align:center;'+sCls+'">'+(r.roomPickup!==null?(r.roomPickup>0?'+':'')+Math.round(r.roomPickup)+' habs':'—')+'</td>'
+           + '<td style="text-align:center;'+sCls+'">'+pp+'</td>'
+           + '<td style="text-align:center;'+sCls+'">'+pctRel+'</td>'
+           + '<td style="text-align:center">'+pickupIcon(pickup)+'</td>';
+      if (hasVelocity) {
+        var vh = r.velocityHabs !== null ? (r.velocityHabs>0?'+':'')+r.velocityHabs.toFixed(2) : '—';
+        var vp = r.velocityPP  !== null ? (r.velocityPP>0?'+':'')+r.velocityPP.toFixed(2) : '—';
+        row += '<td style="text-align:center;'+sCls+';font-size:.73rem">'+vh+'</td>'
+             + '<td style="text-align:center;'+sCls+';font-size:.73rem">'+vp+'</td>';
+      }
+    } else {
+      row += '<td style="font-weight:700;text-align:center">'+r.day+'</td>'
+           + '<td style="white-space:nowrap;font-size:.75rem">'+r.beforeDate+'</td>'
+           + '<td style="white-space:nowrap;font-size:.75rem">'+r.afterDate+'</td>'
+           + '<td style="text-align:center">'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td>'
+           + '<td style="text-align:center">'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td>'
+           + '<td style="text-align:center;'+sCls+'">'+pp+'</td>'
+           + '<td style="text-align:center;'+sCls+'">'+pctRel+'</td>'
+           + '<td style="text-align:center">'+pickupIcon(pickup)+'</td>';
+      if (hasRooms) {
+        row += '<td style="text-align:center">'+(r.roomsBefore!==null?Math.round(r.roomsBefore):'—')+'</td>'
+             + '<td style="text-align:center">'+(r.roomsAfter!==null?Math.round(r.roomsAfter):'—')+'</td>'
+             + '<td style="text-align:center;'+sCls+'">'+(r.roomPickup!==null?(r.roomPickup>0?'+':'')+Math.round(r.roomPickup)+' habs':'—')+'</td>';
+      }
     }
     row += '<td style="white-space:nowrap;font-size:.8rem">'+pickupLabel(r.status)+'</td>'
          + '<td style="font-size:.68rem;color:#555;max-width:160px">'+action+'</td>'
@@ -3409,14 +4131,109 @@ function otbRenderCharts() {
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // GRÁFICO 1 — PICKUP VISUAL POR FECHA
-  // Barras = ocupación actual (como el OTB original) coloreadas por pickup
-  // Línea  = ocupación base superpuesta (referencia del período anterior)
+  // GRÁFICO 0 — COMPORTAMIENTO DIARIO DEL PICKUP (GRÁFICA PRINCIPAL)
+  // El centro visual del análisis: barras coloreadas por estado de pickup
+  // ─────────────────────────────────────────────────────────────────────────────
+  var useRoomsMain = rows.some(function(r){ return r.roomPickup !== null; });
+  var DAYS_ES_C = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  function pickupDateLabel(r) {
+    var s = r.stayDate || r.afterDate || '';
+    if (s && s.length >= 10) {
+      var d2 = new Date(s + 'T12:00:00');
+      return d2.getDate()+'/'+(d2.getMonth()+1)+' '+DAYS_ES_C[d2.getDay()];
+    }
+    return 'D'+r.day;
+  }
+  var mainPickupData = rows.map(function(r){
+    return useRoomsMain ? (r.roomPickup!==null?Math.round(r.roomPickup):0) : (r.pickup!==null?parseFloat(r.pickup.toFixed(1)):0);
+  });
+  var g0id = mkFull('ch-daily-pickup',
+    '📊 Comportamiento Diario del Pickup',
+    (useRoomsMain?'Barras = habitaciones ganadas o perdidas':'Barras = puntos porcentuales de ocupación')
+    +' · 🟩 Verde fuerte = ganó pickup · 🟩 Verde = pickup moderado · ⬜ Gris = estable · 🟥 Rojo = perdió pickup · 🟥 Rojo fuerte = caída fuerte',
+    320
+  );
+  var STATUS_COLORS_MAIN = {
+    'strong-up':    {fill:'rgba(27,94,32,0.85)',  border:'#1b5e20'},
+    'moderate-up':  {fill:'rgba(76,175,80,0.80)', border:'#388e3c'},
+    'stable':       {fill:'rgba(158,158,158,0.70)',border:'#757575'},
+    'moderate-down':{fill:'rgba(230,81,0,0.80)',  border:'#bf360c'},
+    'strong-down':  {fill:'rgba(183,28,28,0.85)', border:'#b71c1c'},
+    'unknown':      {fill:'rgba(189,189,189,0.6)',border:'#9e9e9e'}
+  };
+  function scm(r, p) { return (STATUS_COLORS_MAIN[r.status]||STATUS_COLORS_MAIN['unknown'])[p]; }
+  var dbc0 = OTB_STATE.daysBetweenCutoffs;
+  OTB_STATE.charts['ch-daily-pickup'] = new Chart(document.getElementById(g0id), {
+    type: 'bar',
+    data: {
+      labels: rows.map(pickupDateLabel),
+      datasets: [{
+        label: useRoomsMain ? 'Pickup (habs)' : 'Pickup (pp)',
+        data: mainPickupData,
+        backgroundColor: rows.map(function(r){ return scm(r,'fill'); }),
+        borderColor:     rows.map(function(r){ return scm(r,'border'); }),
+        borderWidth: 1.5, borderRadius: 4, borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: rows.length <= 40,
+          formatter: function(v){ return (v>0?'+':'')+v; },
+          font: { size: rows.length > 25 ? 7 : 9, weight: 'bold' },
+          anchor: function(ctx){ return ctx.dataset.data[ctx.dataIndex]>=0?'end':'start'; },
+          align:  function(ctx){ return ctx.dataset.data[ctx.dataIndex]>=0?'top':'bottom'; },
+          color: function(ctx){ var v=ctx.dataset.data[ctx.dataIndex]; return v>0?'#1b5e20':v<0?'#b71c1c':'#555'; }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(15,15,15,.92)',
+          titleFont: { size: 12, weight: 'bold' },
+          bodyFont: { size: 11 },
+          padding: 14,
+          callbacks: {
+            title: function(items) {
+              var r = rows[items[0].dataIndex];
+              var s = r.stayDate||r.afterDate||'';
+              var dy = '';
+              if (s&&s.length>=10){ var dd=new Date(s+'T12:00:00'); dy=' · '+DAYS_ES_C[dd.getDay()]; }
+              return 'Fecha: '+(s||'Día '+r.day)+dy;
+            },
+            label: function(item) {
+              var r = rows[item.dataIndex];
+              var lines = [];
+              if (r.roomsBefore!==null) lines.push('  Reservadas base:   '+Math.round(r.roomsBefore)+' habs');
+              if (r.roomsAfter !==null) lines.push('  Reservadas actual: '+Math.round(r.roomsAfter)+' habs');
+              if (r.roomPickup !==null) lines.push('  Pickup habs: '+(r.roomPickup>0?'+':'')+Math.round(r.roomPickup)+' habs');
+              if (r.occBefore  !==null) lines.push('  Occ base:   '+r.occBefore.toFixed(1)+'%');
+              if (r.occAfter   !==null) lines.push('  Occ actual: '+r.occAfter.toFixed(1)+'%');
+              if (r.pickup     !==null) lines.push('  Pickup occ: '+(r.pickup>0?'+':'')+r.pickup.toFixed(1)+' pp');
+              if (r.velocityHabs!==null) lines.push('  Velocidad: '+(r.velocityHabs>0?'+':'')+r.velocityHabs.toFixed(2)+' habs/día');
+              lines.push('  Estado: '+pickupLabel(r.status));
+              lines.push('  Acción: '+pickupAction(r.status));
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid:{color:'rgba(0,0,0,.04)'}, ticks:{font:{size:rows.length>25?7:9},maxRotation:rows.length>20?45:0} },
+        y: { grid:{color:'rgba(0,0,0,.06)'},
+          ticks:{callback:function(v){return (v>0?'+':'')+v+(useRoomsMain?' habs':' pp');},font:{size:9}},
+          title:{display:true,text:useRoomsMain?'Pickup (habitaciones)':'Pickup (puntos porcentuales)',font:{size:9}} }
+      }
+    }
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // GRÁFICO 1 — OCC ACTUAL vs BASE coloreada (visual complementario)
   // ─────────────────────────────────────────────────────────────────────────────
   var g1id = mkFull('ch-otb-main',
-    'Pickup visual por fecha — OTB Actual vs OTB Base',
-    'Barras = ocupación actual coloreadas por pickup · Línea = ocupación base (referencia) · Verde = ganó pickup · Rojo = perdió pickup · Gris = estable',
-    360
+    'Ocupación Actual vs Base — coloreada por pickup',
+    'Barras = ocupación actual coloreadas por pickup · Línea azul = ocupación base · Verde = ganó · Rojo = perdió · Gris = estable',
+    300
   );
   var g1labels = rows.map(function(r){ return 'D'+r.day; });
   OTB_STATE.charts['ch-otb-main'] = new Chart(document.getElementById(g1id), {
@@ -3511,12 +4328,12 @@ function otbRenderCharts() {
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // GRÁFICO 2 — PICKUP DIARIO (pp) — barras centradas en cero
+  // GRÁFICO 2 — PICKUP EN PP (complementario — solo occ pp)
   // ─────────────────────────────────────────────────────────────────────────────
   var g2id = mkFull('ch-pickup-pp',
-    'Pickup diario por fecha (puntos porcentuales)',
-    '▲ Verde = ganó pickup  ▼ Rojo = perdió pickup  ● Gris = estable',
-    280
+    'Pickup diario en puntos porcentuales de ocupación',
+    '▲ Verde = ganó ocupación  ▼ Rojo = perdió ocupación  ● Gris = sin variación relevante',
+    260
   );
   OTB_STATE.charts['ch-pickup-pp'] = new Chart(document.getElementById(g2id), {
     type: 'bar',
@@ -3726,58 +4543,69 @@ function otbRenderCharts() {
 }
 
 function otbRenderConsultant() {
-  var recs = OTB_STATE.recs || [];
   var m = OTB_STATE.metrics;
   var area = document.getElementById('otb-consultant-area');
   if (!area) return;
   if (!m) { area.innerHTML='<p style="color:var(--gray3);padding:20px">Ejecute la comparativa primero.</p>'; return; }
 
-  var avgPU = m.avgPickup !== null ? m.avgPickup.toFixed(1) : 'N/D';
-  var diagBody = 'El análisis de pickup por día del mes muestra ';
-  if (m.general === 'Positivo') {
-    diagBody += 'crecimiento general de ocupación frente al período base. El pickup promedio es de +'+avgPU+' pp. Los días con pickup fuerte son oportunidad para ajuste tarifario al alza y protección de inventario.';
-  } else if (m.general === 'Negativo') {
-    diagBody += 'una caída de ocupación frente al período base. El pickup promedio es de '+avgPU+' pp. Se recomienda revisar competitividad tarifaria, activar acciones tácticas en fechas con pickup negativo y evaluar restricciones activas que puedan estar limitando la conversión.';
-  } else if (m.general === 'Mixto') {
-    diagBody += 'un comportamiento mixto. Algunas fechas ganan pickup y otras lo pierden. Se recomienda gestión diferenciada: proteger tarifa donde el pickup es positivo y activar estímulos comerciales donde es negativo.';
-  } else {
-    diagBody += 'estabilidad frente al período base. El pickup promedio es de '+avgPU+' pp. Se recomienda monitorear el pickup semanal antes de tomar decisiones tarifarias agresivas.';
+  var isExcelC = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
+  var rmRecs = OTB_STATE.rmRecs;
+  if (!rmRecs) {
+    rmRecs = generateRMRecommendations(m, OTB_STATE.comparison||[], OTB_STATE.weeklyComparison||[]);
+    OTB_STATE.rmRecs = rmRecs;
   }
 
-  var html = '<div class="otb-card"><div class="otb-card-title">🤖 Análisis de Pickup — Consultor Revenue Manager</div>'
-    + '<div class="otb-alert '+(m.general==='Positivo'?'green':m.general==='Negativo'?'red':m.general==='Mixto'?'yellow':'gray')+'">'+diagBody+'</div></div>';
+  // Render the full RM recommendations panel at top
+  area.innerHTML = '';
+  otbRenderRMRecommendations('otb-consultant-area', rmRecs, m);
 
-  html += '<div class="otb-card"><div class="otb-card-title">Recomendaciones por estado de pickup ('+recs.length+')</div>';
-  recs.forEach(function(r) {
-    html += '<div class="otb-rec '+r.type+'">'
-      + '<div class="otb-rec-title">'+r.title+'</div>'
-      + '<div class="otb-rec-body">'+r.body+'</div>'
-      + '<span class="otb-rec-priority '+r.priority+'">'+ ({high:'Alta',medium:'Media',low:'Baja'}[r.priority]||r.priority) +'</span>'
-      + '</div>';
+  // Append the additional analysis tables below the recommendations
+  var validRows = (OTB_STATE.comparison||[]).filter(function(r){ return r.pickup !== null || r.roomPickup !== null; });
+  var top5up   = isExcelC && m.hasRooms
+    ? validRows.slice().sort(function(a,b){ return (b.roomPickup||0)-(a.roomPickup||0); }).slice(0,5)
+    : validRows.slice().sort(function(a,b){ return (b.pickup||0)-(a.pickup||0); }).slice(0,5);
+  var top5down = isExcelC && m.hasRooms
+    ? validRows.slice().sort(function(a,b){ return (a.roomPickup||0)-(b.roomPickup||0); }).slice(0,5)
+    : validRows.slice().sort(function(a,b){ return (a.pickup||0)-(b.pickup||0); }).slice(0,5);
+
+  var html = '<div class="otb-card" style="margin-top:16px"><div class="otb-card-title">📈 Top 5 fechas con mayor pickup positivo</div>'
+    + '<table class="otb-hist-table"><thead><tr>'
+    + (isExcelC?'<th>Fecha Estancia</th><th>Habs Base</th><th>Habs Act.</th><th>Pickup Habs</th><th>Occ Actual</th><th>Veloc.</th>'
+               :'<th>Día</th><th>Fecha Base</th><th>Fecha Actual</th><th>Occ Base</th><th>Occ Actual</th><th>Pickup</th>')
+    +'</tr></thead><tbody>';
+  top5up.forEach(function(r){
+    if (isExcelC) {
+      html += '<tr><td style="font-size:.76rem;font-weight:700">'+(r.stayDate||r.afterDate||r.day)+'</td><td>'+(r.roomsBefore!==null?Math.round(r.roomsBefore):'—')+'</td><td>'+(r.roomsAfter!==null?Math.round(r.roomsAfter):'—')+'</td><td class="ind-up">'+(r.roomPickup!==null?(r.roomPickup>0?'+':'')+Math.round(r.roomPickup)+' habs':'—')+'</td><td>'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td><td>'+(r.velocityHabs!==null?(r.velocityHabs>0?'+':'')+r.velocityHabs.toFixed(2):'—')+'</td></tr>';
+    } else {
+      html += '<tr><td>'+r.day+'</td><td style="font-size:.76rem">'+r.beforeDate+'</td><td style="font-size:.76rem">'+r.afterDate+'</td><td>'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td><td>'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td><td class="ind-up">+'+(r.pickup!==null?r.pickup.toFixed(1):'?')+' pp</td></tr>';
+    }
   });
-  html += '</div>';
-
-  // Top 5 best/worst by pickup
-  var validRows = (OTB_STATE.comparison||[]).filter(function(r){ return r.pickup !== null; });
-  var top5up   = validRows.slice().sort(function(a,b){ return b.pickup-a.pickup; }).slice(0,5);
-  var top5down = validRows.slice().sort(function(a,b){ return a.pickup-b.pickup; }).slice(0,5);
-
-  html += '<div class="otb-card"><div class="otb-card-title">Top 5 fechas con mayor pickup positivo</div><table class="otb-hist-table"><thead><tr><th>Día</th><th>Fecha Base</th><th>Fecha Actual</th><th>Occ Base</th><th>Occ Actual</th><th>Pickup</th></tr></thead><tbody>';
-  top5up.forEach(function(r){ html += '<tr><td>'+r.day+'</td><td style="font-size:.76rem">'+r.beforeDate+'</td><td style="font-size:.76rem">'+r.afterDate+'</td><td>'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td><td>'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td><td class="ind-up">+'+(r.pickup).toFixed(1)+' pp</td></tr>'; });
   html += '</tbody></table></div>';
 
-  html += '<div class="otb-card"><div class="otb-card-title">Top 5 fechas con mayor caída de pickup</div><table class="otb-hist-table"><thead><tr><th>Día</th><th>Fecha Base</th><th>Fecha Actual</th><th>Occ Base</th><th>Occ Actual</th><th>Pickup</th></tr></thead><tbody>';
-  top5down.forEach(function(r){ html += '<tr><td>'+r.day+'</td><td style="font-size:.76rem">'+r.beforeDate+'</td><td style="font-size:.76rem">'+r.afterDate+'</td><td>'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td><td>'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td><td class="ind-down">'+(r.pickup).toFixed(1)+' pp</td></tr>'; });
+  html += '<div class="otb-card"><div class="otb-card-title">📉 Top 5 fechas con mayor caída de pickup</div>'
+    + '<table class="otb-hist-table"><thead><tr>'
+    + (isExcelC?'<th>Fecha Estancia</th><th>Habs Base</th><th>Habs Act.</th><th>Pickup Habs</th><th>Occ Actual</th><th>Veloc.</th>'
+               :'<th>Día</th><th>Fecha Base</th><th>Fecha Actual</th><th>Occ Base</th><th>Occ Actual</th><th>Pickup</th>')
+    +'</tr></thead><tbody>';
+  top5down.forEach(function(r){
+    if (isExcelC) {
+      html += '<tr><td style="font-size:.76rem;font-weight:700">'+(r.stayDate||r.afterDate||r.day)+'</td><td>'+(r.roomsBefore!==null?Math.round(r.roomsBefore):'—')+'</td><td>'+(r.roomsAfter!==null?Math.round(r.roomsAfter):'—')+'</td><td class="ind-down">'+(r.roomPickup!==null?Math.round(r.roomPickup)+' habs':'—')+'</td><td>'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td><td>'+(r.velocityHabs!==null?r.velocityHabs.toFixed(2):'—')+'</td></tr>';
+    } else {
+      html += '<tr><td>'+r.day+'</td><td style="font-size:.76rem">'+r.beforeDate+'</td><td style="font-size:.76rem">'+r.afterDate+'</td><td>'+(r.occBefore!==null?r.occBefore.toFixed(1)+'%':'—')+'</td><td>'+(r.occAfter!==null?r.occAfter.toFixed(1)+'%':'—')+'</td><td class="ind-down">'+(r.pickup!==null?r.pickup.toFixed(1):'?')+' pp</td></tr>';
+    }
+  });
   html += '</tbody></table></div>';
 
   // Context: ADR & RevPAR if available
   var hasCtx = validRows.some(function(r){ return r.adrBefore || r.revparBefore; });
   if (hasCtx) {
     html += '<div class="otb-card" style="border-color:#ccc"><div class="otb-card-title" style="color:#888">Métricas de contexto (ADR · RevPAR)</div>'
-      + '<p style="font-size:.75rem;color:#888;margin:0 0 8px">ADR y RevPAR se muestran únicamente como referencia. El análisis principal es de pickup de ocupación.</p>'
-      + '<table class="otb-hist-table"><thead><tr><th>Día</th><th>ADR Base</th><th>ADR Actual</th><th>RevPAR Base</th><th>RevPAR Actual</th></tr></thead><tbody>';
-    validRows.slice(0,10).forEach(function(r){
-      html += '<tr><td>'+r.day+'</td><td>'+(r.adrBefore!==null?fmtCOP(r.adrBefore):'—')+'</td><td>'+(r.adrAfter!==null?fmtCOP(r.adrAfter):'—')+'</td><td>'+(r.revparBefore!==null?fmtCOP(r.revparBefore):'—')+'</td><td>'+(r.revparAfter!==null?fmtCOP(r.revparAfter):'—')+'</td></tr>';
+      + '<p style="font-size:.75rem;color:#888;margin:0 0 8px">ADR y RevPAR como referencia. El análisis principal es de pickup en habitaciones.</p>'
+      + '<table class="otb-hist-table"><thead><tr><th>Fecha</th><th>ADR Base</th><th>ADR Actual</th><th>RevPAR Base</th><th>RevPAR Actual</th></tr></thead><tbody>';
+    validRows.filter(function(r){ return r.adrBefore||r.adrAfter; }).slice(0,10).forEach(function(r){
+      html += '<tr><td style="font-size:.74rem">'+(r.stayDate||r.afterDate||r.day)+'</td>'
+        +'<td>'+(r.adrBefore!==null?fmtCOP(r.adrBefore):'—')+'</td><td>'+(r.adrAfter!==null?fmtCOP(r.adrAfter):'—')+'</td>'
+        +'<td>'+(r.revparBefore!==null?fmtCOP(r.revparBefore):'—')+'</td><td>'+(r.revparAfter!==null?fmtCOP(r.revparAfter):'—')+'</td></tr>';
     });
     html += '</tbody></table></div>';
   }
@@ -3787,24 +4615,26 @@ function otbRenderConsultant() {
   var wm = OTB_STATE.weeklyMetrics;
   if (wc && wc.length && wm) {
     html += '<div class="otb-card"><div class="otb-card-title">📅 Diagnóstico Semanal</div>';
-    html += '<table class="otb-hist-table"><thead><tr><th>Semana</th><th>Pickup Prom.</th><th>Estado</th><th>Acción recomendada</th></tr></thead><tbody>';
+    html += '<table class="otb-hist-table"><thead><tr><th>Semana</th><th>Pickup Prom.</th>'
+      +(m.hasRooms?'<th>Habs netas</th>':'')
+      +'<th>Estado</th><th>Acción recomendada</th></tr></thead><tbody>';
     wc.forEach(function(w) {
       html += '<tr><td>'+w.weekLabel+'</td>'
         + '<td>'+(w.avgPickup!==null?(w.avgPickup>0?'+':'')+w.avgPickup.toFixed(1)+' pp':'—')+'</td>'
+        + (m.hasRooms?'<td>'+(w.totalRoomPickup!==null?(w.totalRoomPickup>0?'+':'')+Math.round(w.totalRoomPickup)+' habs':'—')+'</td>':'')
         + '<td>'+pickupLabel(w.status)+'</td>'
         + '<td style="font-size:.72rem;color:#555">'+pickupAction(w.status)+'</td></tr>';
     });
     html += '</tbody></table>';
     var wkTrend = wm.general || 'Mixto';
-    var wkSummary = 'Tendencia semanal: <strong>'+wkTrend+'</strong>. '
-      + wm.positiveWeeks+' de '+wm.totalWeeks+' semanas muestran pickup positivo. '
-      + (wm.avgWeeklyPickup !== null ? 'Pickup semanal promedio: '+(wm.avgWeeklyPickup>0?'+':'')+wm.avgWeeklyPickup.toFixed(1)+' pp. ' : '')
-      + (wm.bestWeek ? 'Mejor semana: '+wm.bestWeek.weekLabel+'. ' : '')
-      + (wm.worstWeek ? 'Semana más débil: '+wm.worstWeek.weekLabel+'.' : '');
-    html += '<p style="font-size:.78rem;color:#444;margin-top:10px">'+wkSummary+'</p></div>';
+    html += '<p style="font-size:.78rem;color:#444;margin-top:10px">Tendencia semanal: <strong>'+wkTrend+'</strong>. '
+      + wm.positiveWeeks+'/'+wm.totalWeeks+' semanas con pickup positivo.'
+      + (wm.bestWeek ? ' Mejor: '+wm.bestWeek.weekLabel+'.' : '')
+      + (wm.worstWeek ? ' Más débil: '+wm.worstWeek.weekLabel+'.' : '')
+      +'</p></div>';
   }
 
-  area.innerHTML = html;
+  area.innerHTML += html;
 }
 
 // ── WEEKLY GROUPING AND COMPARISON ───────────────────────────────────────────
@@ -4017,30 +4847,68 @@ function otbExportExcel() {
   const m = OTB_STATE.metrics;
   const wb = XLSX.utils.book_new();
 
+  var dbc3 = OTB_STATE.daysBetweenCutoffs;
   const resumen = [
     ['Revenue Master Dashboard — GEH Suites'],
-    ['Comparativa OTB', '', currentHotel],
+    ['Comparativa OTB (Pickup)', '', currentHotel],
     ['Fecha exportación', new Date().toLocaleDateString('es-CO')],
+    ['Corte base', OTB_STATE.beforeCutoff || '—'],
+    ['Corte actual', OTB_STATE.afterCutoff || '—'],
+    ['Días entre cortes', dbc3 || '—'],
     [],
     ['Indicador','Valor'],
-    ['Total fechas', m.total], ['Fechas subieron', m.up], ['Fechas bajaron', m.down], ['Fechas estables', m.stable],
-    ['Var. prom. Ocupación (pp)', m.avgOcc!==null?m.avgOcc.toFixed(2):'N/D'],
-    ['Var. prom. ADR', m.avgAdr!==null?m.avgAdr.toFixed(0):'N/D'],
-    ['Var. prom. RevPAR', m.avgRevpar!==null?m.avgRevpar.toFixed(0):'N/D'],
+    ['Total fechas de estancia', m.total],
+    ['Fechas con pickup positivo', m.up],
+    ['Fechas con pickup negativo', m.down],
+    ['Fechas estables', m.stable],
+    ['Pickup total habs.', m.hasRooms ? Math.round(m.totalRoomPickup) : 'N/D'],
+    ['Pickup promedio (pp)', m.avgPickup !== null ? m.avgPickup.toFixed(2) : 'N/D'],
+    ['Velocidad promedio (habs/día)', m.avgVelocityHabs !== null ? m.avgVelocityHabs.toFixed(3) : 'N/D'],
     ['Estado general', m.general]
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(resumen), 'Resumen OTB');
 
-  const comp = [['Fecha','Ocup Antes','Ocup Después','Var Ocup','Hab Antes','Hab Después','Var Hab','ADR Antes','ADR Después','Var ADR','RevPAR Antes','RevPAR Después','Var RevPAR','Estado']];
+  var isExcelExp = OTB_STATE.beforeSource === 'excel' || OTB_STATE.afterSource === 'excel';
+  var dbc2 = OTB_STATE.daysBetweenCutoffs;
+  var compHeaders = isExcelExp
+    ? ['Fecha Estancia','Tot. Base','Tot. Act.','Habs Base','Habs Act.','Occ Base %','Occ Act. %','Pickup Habs','Pickup pp','Var. Relativa %','Velocidad Habs/día','Velocidad pp/día','Estado','Acción']
+    : ['Fecha','Occ Base','Occ Actual','Pickup pp','Var. Relativa %','Habs Base','Habs Actual','Pickup Habs','ADR Base','ADR Actual','RevPAR Base','RevPAR Actual','Estado'];
+  var comp = [compHeaders];
   OTB_STATE.comparison.forEach(function(r) {
-    comp.push([
-      r.date,
-      r.b&&r.b.occ!==null?r.b.occ.toFixed(1):'', r.a&&r.a.occ!==null?r.a.occ.toFixed(1):'', r.occ&&r.occ.abs!==null?r.occ.abs.toFixed(1):'',
-      r.b&&r.b.rooms!==null?r.b.rooms:'', r.a&&r.a.rooms!==null?r.a.rooms:'', r.rooms&&r.rooms.abs!==null?r.rooms.abs.toFixed(0):'',
-      r.b&&r.b.adr!==null?r.b.adr.toFixed(0):'', r.a&&r.a.adr!==null?r.a.adr.toFixed(0):'', r.adr&&r.adr.abs!==null?r.adr.abs.toFixed(0):'',
-      r.b&&r.b.revpar!==null?r.b.revpar.toFixed(0):'', r.a&&r.a.revpar!==null?r.a.revpar.toFixed(0):'', r.revpar&&r.revpar.abs!==null?r.revpar.abs.toFixed(0):'',
-      r.status
-    ]);
+    if (isExcelExp) {
+      comp.push([
+        r.stayDate || r.afterDate || '',
+        r.totalesBefore !== null ? Math.round(r.totalesBefore) : '',
+        r.totalesAfter  !== null ? Math.round(r.totalesAfter)  : '',
+        r.roomsBefore   !== null ? Math.round(r.roomsBefore)   : '',
+        r.roomsAfter    !== null ? Math.round(r.roomsAfter)    : '',
+        r.occBefore  !== null ? r.occBefore.toFixed(2)  : '',
+        r.occAfter   !== null ? r.occAfter.toFixed(2)   : '',
+        r.roomPickup !== null ? Math.round(r.roomPickup) : '',
+        r.pickup     !== null ? r.pickup.toFixed(2)     : '',
+        r.pctChange  !== null ? r.pctChange.toFixed(2)  : '',
+        r.velocityHabs !== null ? r.velocityHabs.toFixed(3) : '',
+        r.velocityPP   !== null ? r.velocityPP.toFixed(3)   : '',
+        r.status,
+        pickupAction(r.status)
+      ]);
+    } else {
+      comp.push([
+        r.afterDate || r.beforeDate || '',
+        r.occBefore !== null ? r.occBefore.toFixed(2) : '',
+        r.occAfter  !== null ? r.occAfter.toFixed(2)  : '',
+        r.pickup    !== null ? r.pickup.toFixed(2)    : '',
+        r.pctChange !== null ? r.pctChange.toFixed(2) : '',
+        r.roomsBefore !== null ? Math.round(r.roomsBefore) : '',
+        r.roomsAfter  !== null ? Math.round(r.roomsAfter)  : '',
+        r.roomPickup  !== null ? Math.round(r.roomPickup)  : '',
+        r.adrBefore    !== null ? r.adrBefore.toFixed(0)    : '',
+        r.adrAfter     !== null ? r.adrAfter.toFixed(0)     : '',
+        r.revparBefore !== null ? r.revparBefore.toFixed(0) : '',
+        r.revparAfter  !== null ? r.revparAfter.toFixed(0)  : '',
+        r.status
+      ]);
+    }
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(comp), 'Comparativa Día a Día');
 
