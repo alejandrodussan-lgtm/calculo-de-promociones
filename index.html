@@ -5070,6 +5070,636 @@ function otbExportExcel() {
 // ═══════════════════════════════════════════════════════════════
 // END OTB MODULE
 // ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// AGENDA DE SEGUIMIENTO REVENUE
+// ═══════════════════════════════════════════════════════════════
+
+const AGENDA_STORAGE_KEY = 'rmd_agenda_v1';
+
+// ── DATA MODEL ────────────────────────────────────────────────
+// AgendaItem: { id, title, description, hotelId, hotelName,
+//   moduleSource, channelId, channelName, category, status,
+//   priority, tags, createdAt, updatedAt, followUpDate,
+//   responsible, notes }
+
+// ── STORAGE ───────────────────────────────────────────────────
+function agendaGetAll() {
+  try { return JSON.parse(localStorage.getItem(AGENDA_STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+function agendaSaveAll(items) {
+  localStorage.setItem(AGENDA_STORAGE_KEY, JSON.stringify(items));
+}
+function agendaCreate(item) {
+  const items = agendaGetAll();
+  item.id = 'ag_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
+  item.createdAt = new Date().toISOString();
+  item.updatedAt = item.createdAt;
+  items.unshift(item);
+  agendaSaveAll(items);
+  return item;
+}
+function agendaUpdate(id, updates) {
+  const items = agendaGetAll();
+  const idx = items.findIndex(i => i.id === id);
+  if (idx >= 0) { items[idx] = Object.assign({}, items[idx], updates, { updatedAt: new Date().toISOString() }); agendaSaveAll(items); return items[idx]; }
+  return null;
+}
+function agendaDelete(id) {
+  agendaSaveAll(agendaGetAll().filter(i => i.id !== id));
+}
+function agendaGetStats() {
+  const items = agendaGetAll();
+  const now = new Date(); now.setHours(0,0,0,0);
+  const weekEnd = new Date(now); weekEnd.setDate(weekEnd.getDate()+7);
+  return {
+    total: items.length,
+    pending: items.filter(i => i.status === 'pending').length,
+    inProgress: items.filter(i => i.status === 'inProgress').length,
+    executed: items.filter(i => i.status === 'executed').length,
+    closed: items.filter(i => i.status === 'closed').length,
+    high: items.filter(i => i.priority === 'high').length,
+    overdue: items.filter(i => i.followUpDate && new Date(i.followUpDate) < now && !['closed','cancelled'].includes(i.status)).length,
+    thisWeek: items.filter(i => { if (!i.followUpDate) return false; const d = new Date(i.followUpDate); return d >= now && d <= weekEnd; }).length
+  };
+}
+
+// ── CONSTANTS ─────────────────────────────────────────────────
+const AGENDA_CATEGORIES = [
+  'Estrategia tarifaria','Promociones','Pickup OTB','Canal OTA',
+  'Revenue Management','Restricciones','Competencia','Fechas críticas',
+  'Seguimiento comercial','Revisión pendiente','Acción ejecutada',
+  'Recomendación IA','Otro'
+];
+const AGENDA_STATUSES = {
+  pending:'Pendiente', inProgress:'En seguimiento', executed:'Ejecutada',
+  underReview:'En revisión', closed:'Cerrada', cancelled:'Cancelada'
+};
+const AGENDA_PRIORITIES = { high:'Alta', medium:'Media', low:'Baja' };
+const AGENDA_MODULES = {
+  rateSimulator:'Simulador de Tarifas', otbComparison:'Comparativa OTB', agendaGeneral:'Agenda general'
+};
+const AGENDA_CHANNELS = ['Booking.com','Despegar','Expedia','Price Travel','Hotelbeds','eDreams','Otro','(ninguno)'];
+
+// ── SORT STATE ────────────────────────────────────────────────
+let agendaSortField = 'priority';
+let agendaSortDir = 'asc';
+let agendaView = 'table'; // 'table' | 'cards'
+let agendaEditingId = null;
+let agendaFilters = { text:'', hotel:'', module:'', channel:'', status:'', priority:'', category:'', dateFrom:'', dateTo:'', pendingOnly:false, highOnly:false };
+
+// ── INIT AGENDA ───────────────────────────────────────────────
+function initAgenda() {
+  const page = document.getElementById('page-agenda');
+  if (page._initialized) { agendaRender(); return; }
+  page._initialized = true;
+
+  page.innerHTML = `
+    <div class="otb-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:1.05rem;font-weight:900;color:var(--gold-dark);text-transform:uppercase;letter-spacing:1px;">📋 Agenda de Seguimiento Revenue</div>
+          <div style="font-size:.7rem;color:var(--gray3);margin-top:2px;">Notas · Tareas · Seguimiento de estrategias</div>
+        </div>
+        <button class="save-btn primary" onclick="agendaOpenCreate()">✏ Nueva nota</button>
+      </div>
+      <div id="agenda-alerts-area"></div>
+      <div id="agenda-kpi-area" class="agenda-kpi-grid"></div>
+      <div class="agenda-filters-bar" id="agenda-filters-bar">
+        <div class="agenda-filter-group" style="flex:1;min-width:160px;">
+          <label>Buscar</label>
+          <input type="text" id="af-text" placeholder="Título, descripción…" oninput="agendaFilterChange()">
+        </div>
+        <div class="agenda-filter-group">
+          <label>Hotel</label>
+          <select id="af-hotel" onchange="agendaFilterChange()">
+            <option value="">Todos</option>
+            ${(typeof HOTELS !== 'undefined' ? HOTELS : []).map(h=>`<option value="${h}">${h}</option>`).join('')}
+          </select>
+        </div>
+        <div class="agenda-filter-group">
+          <label>Módulo</label>
+          <select id="af-module" onchange="agendaFilterChange()">
+            <option value="">Todos</option>
+            ${Object.entries(AGENDA_MODULES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="agenda-filter-group">
+          <label>Canal</label>
+          <select id="af-channel" onchange="agendaFilterChange()">
+            <option value="">Todos</option>
+            ${AGENDA_CHANNELS.filter(c=>c!=='(ninguno)').map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="agenda-filter-group">
+          <label>Estado</label>
+          <select id="af-status" onchange="agendaFilterChange()">
+            <option value="">Todos</option>
+            ${Object.entries(AGENDA_STATUSES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="agenda-filter-group">
+          <label>Importancia</label>
+          <select id="af-priority" onchange="agendaFilterChange()">
+            <option value="">Todas</option>
+            ${Object.entries(AGENDA_PRIORITIES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </div>
+        <div class="agenda-filter-group">
+          <label>Categoría</label>
+          <select id="af-category" onchange="agendaFilterChange()">
+            <option value="">Todas</option>
+            ${AGENDA_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+        </div>
+        <div class="agenda-filter-group">
+          <label>Desde</label>
+          <input type="date" id="af-from" onchange="agendaFilterChange()">
+        </div>
+        <div class="agenda-filter-group">
+          <label>Hasta</label>
+          <input type="date" id="af-to" onchange="agendaFilterChange()">
+        </div>
+        <div class="agenda-filter-actions">
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <label style="font-size:.62rem;color:var(--gray3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;"><input type="checkbox" id="af-pending" onchange="agendaFilterChange()" style="margin-right:4px">Solo pendientes</label>
+            <label style="font-size:.62rem;color:var(--gray3);font-weight:700;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;"><input type="checkbox" id="af-high" onchange="agendaFilterChange()" style="margin-right:4px">Solo alta importancia</label>
+          </div>
+          <button class="save-btn" onclick="agendaClearFilters()" style="white-space:nowrap;">✕ Limpiar</button>
+          <div class="agenda-view-toggle">
+            <button class="agenda-view-btn active" id="view-btn-table" onclick="agendaSetView('table')">≡ Tabla</button>
+            <button class="agenda-view-btn" id="view-btn-cards" onclick="agendaSetView('cards')">⊞ Tarjetas</button>
+          </div>
+        </div>
+      </div>
+      <div id="agenda-content-area"></div>
+    </div>
+  `;
+  agendaRender();
+}
+
+function agendaFilterChange() {
+  agendaFilters.text = document.getElementById('af-text')?.value || '';
+  agendaFilters.hotel = document.getElementById('af-hotel')?.value || '';
+  agendaFilters.module = document.getElementById('af-module')?.value || '';
+  agendaFilters.channel = document.getElementById('af-channel')?.value || '';
+  agendaFilters.status = document.getElementById('af-status')?.value || '';
+  agendaFilters.priority = document.getElementById('af-priority')?.value || '';
+  agendaFilters.category = document.getElementById('af-category')?.value || '';
+  agendaFilters.dateFrom = document.getElementById('af-from')?.value || '';
+  agendaFilters.dateTo = document.getElementById('af-to')?.value || '';
+  agendaFilters.pendingOnly = document.getElementById('af-pending')?.checked || false;
+  agendaFilters.highOnly = document.getElementById('af-high')?.checked || false;
+  agendaRender();
+}
+
+function agendaClearFilters() {
+  agendaFilters = { text:'', hotel:'', module:'', channel:'', status:'', priority:'', category:'', dateFrom:'', dateTo:'', pendingOnly:false, highOnly:false };
+  ['af-text','af-hotel','af-module','af-channel','af-status','af-priority','af-category','af-from','af-to'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['af-pending','af-high'].forEach(id => { const el = document.getElementById(id); if (el) el.checked = false; });
+  agendaRender();
+}
+
+function agendaSetView(v) {
+  agendaView = v;
+  document.getElementById('view-btn-table')?.classList.toggle('active', v === 'table');
+  document.getElementById('view-btn-cards')?.classList.toggle('active', v === 'cards');
+  agendaRender();
+}
+
+function agendaGetFiltered() {
+  let items = agendaGetAll();
+  const f = agendaFilters;
+  if (f.text) { const t = f.text.toLowerCase(); items = items.filter(i => (i.title||'').toLowerCase().includes(t) || (i.description||'').toLowerCase().includes(t) || (i.notes||'').toLowerCase().includes(t)); }
+  if (f.hotel) items = items.filter(i => i.hotelId === f.hotel || i.hotelName === f.hotel);
+  if (f.module) items = items.filter(i => i.moduleSource === f.module);
+  if (f.channel) items = items.filter(i => i.channelName === f.channel);
+  if (f.status) items = items.filter(i => i.status === f.status);
+  if (f.priority) items = items.filter(i => i.priority === f.priority);
+  if (f.category) items = items.filter(i => i.category === f.category);
+  if (f.dateFrom) items = items.filter(i => i.followUpDate && i.followUpDate >= f.dateFrom);
+  if (f.dateTo) items = items.filter(i => i.followUpDate && i.followUpDate <= f.dateTo);
+  if (f.pendingOnly) items = items.filter(i => i.status === 'pending');
+  if (f.highOnly) items = items.filter(i => i.priority === 'high');
+
+  // Sort
+  const pOrder = { high:0, medium:1, low:2 };
+  const sOrder = { pending:0, inProgress:1, underReview:2, executed:3, closed:4, cancelled:5 };
+  items.sort((a, b) => {
+    let va, vb;
+    if (agendaSortField === 'priority') { va = pOrder[a.priority]??99; vb = pOrder[b.priority]??99; }
+    else if (agendaSortField === 'status') { va = sOrder[a.status]??99; vb = sOrder[b.status]??99; }
+    else if (agendaSortField === 'followUpDate') { va = a.followUpDate||'9999'; vb = b.followUpDate||'9999'; }
+    else if (agendaSortField === 'createdAt') { va = a.createdAt||''; vb = b.createdAt||''; }
+    else { va = (a[agendaSortField]||'').toString().toLowerCase(); vb = (b[agendaSortField]||'').toString().toLowerCase(); }
+    if (va < vb) return agendaSortDir === 'asc' ? -1 : 1;
+    if (va > vb) return agendaSortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  return items;
+}
+
+function agendaRender() {
+  agendaRenderKPIs();
+  agendaRenderAlerts();
+  if (agendaView === 'table') agendaRenderTable();
+  else agendaRenderCards();
+}
+
+function agendaRenderKPIs() {
+  const el = document.getElementById('agenda-kpi-area');
+  if (!el) return;
+  const s = agendaGetStats();
+  el.innerHTML = [
+    ['Total', s.total, ''],
+    ['Pendientes', s.pending, ''],
+    ['En seguimiento', s.inProgress, ''],
+    ['Ejecutadas', s.executed, ''],
+    ['Alta importancia', s.high, 'kpi-high'],
+    ['Vencidas', s.overdue, 'kpi-overdue'],
+    ['Esta semana', s.thisWeek, ''],
+    ['Cerradas', s.closed, ''],
+  ].map(([label, num, cls]) =>
+    `<div class="agenda-kpi-card ${cls}"><div class="agenda-kpi-num">${num}</div><div class="agenda-kpi-label">${label}</div></div>`
+  ).join('');
+}
+
+function agendaRenderAlerts() {
+  const el = document.getElementById('agenda-alerts-area');
+  if (!el) return;
+  const items = agendaGetAll();
+  const now = new Date(); now.setHours(0,0,0,0);
+  const today = now.toISOString().slice(0,10);
+  const overdue = items.filter(i => i.followUpDate && i.followUpDate < today && !['closed','cancelled'].includes(i.status));
+  const todayItems = items.filter(i => i.followUpDate === today && !['closed','cancelled'].includes(i.status));
+  const highPending = items.filter(i => i.priority === 'high' && i.status === 'pending');
+  const msgs = [];
+  if (highPending.length) msgs.push(`⚠ Tienes <strong>${highPending.length}</strong> nota${highPending.length>1?'s':''} de importancia alta pendiente${highPending.length>1?'s':''}.`);
+  if (todayItems.length) msgs.push(`📅 Tienes <strong>${todayItems.length}</strong> seguimiento${todayItems.length>1?'s':''} programado${todayItems.length>1?'s':''} para hoy.`);
+  if (overdue.length) msgs.push(`🔴 <strong>${overdue.length}</strong> nota${overdue.length>1?'s':''} vencida${overdue.length>1?'s':''}.`);
+  if (msgs.length) {
+    el.innerHTML = `<div class="agenda-alerts"><strong>Alertas</strong><ul>${msgs.map(m=>`<li>${m}</li>`).join('')}</ul></div>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+function agendaRenderTable() {
+  const el = document.getElementById('agenda-content-area');
+  if (!el) return;
+  const items = agendaGetFiltered();
+
+  function thSort(field, label) {
+    const icon = agendaSortField === field ? (agendaSortDir === 'asc' ? '▲' : '▼') : '⇅';
+    return `<th onclick="agendaSort('${field}')" style="cursor:pointer">${label} <span class="sort-icon">${icon}</span></th>`;
+  }
+
+  if (!items.length) {
+    el.innerHTML = `<div class="agenda-empty"><div class="empty-icon">📋</div><div>No hay notas que coincidan con los filtros actuales.</div><button class="save-btn primary" style="margin-top:12px" onclick="agendaOpenCreate()">✏ Crear primera nota</button></div>`;
+    return;
+  }
+
+  const rows = items.map(item => {
+    const dateStr = item.followUpDate ? item.followUpDate : '—';
+    const now = new Date(); now.setHours(0,0,0,0);
+    const isOverdue = item.followUpDate && new Date(item.followUpDate) < now && !['closed','cancelled'].includes(item.status);
+    const tags = (item.tags||[]).map(t=>`<span class="agenda-tag">${t}</span>`).join(' ');
+    return `<tr>
+      <td style="white-space:nowrap;color:var(--gray3);font-size:.68rem">${(item.createdAt||'').slice(0,10)}</td>
+      <td style="font-weight:700;max-width:200px">${item.title||'Sin título'}</td>
+      <td style="font-size:.72rem">${item.hotelName||'—'}</td>
+      <td style="font-size:.68rem">${AGENDA_MODULES[item.moduleSource]||item.moduleSource||'—'}</td>
+      <td style="font-size:.68rem">${item.channelName&&item.channelName!=='(ninguno)'?item.channelName:'—'}</td>
+      <td style="font-size:.68rem">${item.category||'—'}</td>
+      <td>${agendaStatusBadge(item.status)}</td>
+      <td>${agendaPriorityBadge(item.priority)}</td>
+      <td style="white-space:nowrap;font-size:.72rem;color:${isOverdue?'#c00':'inherit'}">${isOverdue?'🔴 ':''} ${dateStr}</td>
+      <td class="td-actions">
+        <button onclick="agendaOpenEdit('${item.id}')">✏ Editar</button>
+        <button onclick="agendaCycleStatus('${item.id}')">↻ Estado</button>
+        <button onclick="agendaQuickClose('${item.id}')">✓ Cerrar</button>
+        <button onclick="agendaConfirmDelete('${item.id}')" class="btn-danger">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<div class="agenda-table-wrap"><table class="agenda-table">
+    <thead><tr>
+      ${thSort('createdAt','Fecha')}
+      ${thSort('title','Título')}
+      ${thSort('hotelName','Hotel')}
+      ${thSort('moduleSource','Módulo')}
+      <th>Canal</th>
+      ${thSort('category','Categoría')}
+      ${thSort('status','Estado')}
+      ${thSort('priority','Importancia')}
+      ${thSort('followUpDate','Seguimiento')}
+      <th>Acción</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function agendaRenderCards() {
+  const el = document.getElementById('agenda-content-area');
+  if (!el) return;
+  const items = agendaGetFiltered();
+  if (!items.length) {
+    el.innerHTML = `<div class="agenda-empty"><div class="empty-icon">📋</div><div>No hay notas que coincidan con los filtros actuales.</div><button class="save-btn primary" style="margin-top:12px" onclick="agendaOpenCreate()">✏ Crear primera nota</button></div>`;
+    return;
+  }
+  const cards = items.map(item => {
+    const tags = (item.tags||[]).map(t=>`<span class="agenda-tag">${t}</span>`).join(' ');
+    const now = new Date(); now.setHours(0,0,0,0);
+    const isOverdue = item.followUpDate && new Date(item.followUpDate) < now && !['closed','cancelled'].includes(item.status);
+    return `<div class="agenda-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+        <div class="agenda-card-title">${item.title||'Sin título'}</div>
+        ${agendaPriorityBadge(item.priority)}
+      </div>
+      <div class="agenda-card-desc">${item.description ? item.description.slice(0,120)+(item.description.length>120?'…':'') : ''}</div>
+      <div class="agenda-card-meta">
+        ${agendaStatusBadge(item.status)}
+        ${item.category?`<span class="agenda-tag">${item.category}</span>`:''}
+        ${tags}
+      </div>
+      <div class="agenda-card-footer">
+        <span>${item.hotelName||''} ${item.channelName&&item.channelName!=='(ninguno)'?'· '+item.channelName:''}</span>
+        <span style="color:${isOverdue?'#c00':'inherit'}">${isOverdue?'🔴 ':''} ${item.followUpDate||''}</span>
+      </div>
+      <div class="agenda-card-actions">
+        <button onclick="agendaOpenEdit('${item.id}')">✏</button>
+        <button onclick="agendaCycleStatus('${item.id}')">↻</button>
+        <button onclick="agendaQuickClose('${item.id}')">✓</button>
+        <button onclick="agendaConfirmDelete('${item.id}')" style="color:#c00;border-color:#f5c6cb">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div class="agenda-cards-grid">${cards}</div>`;
+}
+
+function agendaSort(field) {
+  if (agendaSortField === field) agendaSortDir = agendaSortDir === 'asc' ? 'desc' : 'asc';
+  else { agendaSortField = field; agendaSortDir = 'asc'; }
+  agendaRender();
+}
+
+function agendaStatusBadge(status) {
+  const labels = { pending:'Pendiente', inProgress:'En seguimiento', executed:'Ejecutada', underReview:'En revisión', closed:'Cerrada', cancelled:'Cancelada' };
+  return `<span class="badge-status ${status||'pending'}">${labels[status]||status||'Pendiente'}</span>`;
+}
+function agendaPriorityBadge(priority) {
+  const icons = { high:'🔴', medium:'🟡', low:'🟢' };
+  const labels = { high:'Alta', medium:'Media', low:'Baja' };
+  return `<span class="badge-priority ${priority||'medium'}">${icons[priority]||''} ${labels[priority]||priority||'Media'}</span>`;
+}
+
+function agendaCycleStatus(id) {
+  const item = agendaGetAll().find(i => i.id === id);
+  if (!item) return;
+  const cycle = ['pending','inProgress','underReview','executed','closed'];
+  const idx = cycle.indexOf(item.status);
+  const next = cycle[(idx+1) % cycle.length];
+  agendaUpdate(id, { status: next });
+  agendaRender();
+}
+function agendaQuickClose(id) {
+  agendaUpdate(id, { status: 'closed' });
+  agendaRender();
+}
+function agendaConfirmDelete(id) {
+  if (confirm('¿Eliminar esta nota? Esta acción no se puede deshacer.')) {
+    agendaDelete(id);
+    agendaRender();
+  }
+}
+
+// ── MODAL ─────────────────────────────────────────────────────
+function agendaOpenCreate(preload) {
+  agendaEditingId = null;
+  const today = new Date().toISOString().slice(0,10);
+  const defaults = Object.assign({
+    title:'', description:'', hotelId: typeof currentHotel !== 'undefined' ? currentHotel : '',
+    hotelName: typeof currentHotel !== 'undefined' ? currentHotel : '',
+    moduleSource:'agendaGeneral', channelId:'', channelName:'(ninguno)',
+    category:'Revenue Management', status:'pending', priority:'medium',
+    tags:[], followUpDate:'', responsible:'', notes:''
+  }, preload||{});
+  agendaFillModal(defaults);
+  document.getElementById('agenda-modal-title').textContent = 'Nueva nota de seguimiento';
+  document.getElementById('agenda-modal-overlay').classList.add('open');
+}
+
+function agendaOpenEdit(id) {
+  const item = agendaGetAll().find(i => i.id === id);
+  if (!item) return;
+  agendaEditingId = id;
+  agendaFillModal(item);
+  document.getElementById('agenda-modal-title').textContent = 'Editar nota';
+  document.getElementById('agenda-modal-overlay').classList.add('open');
+}
+
+function agendaFillModal(data) {
+  // Populate hotel select
+  const hotelSel = document.getElementById('am-hotel');
+  if (hotelSel) {
+    hotelSel.innerHTML = '<option value="">— Sin hotel —</option>' +
+      (typeof HOTELS !== 'undefined' ? HOTELS : []).map(h=>`<option value="${h}">${h}</option>`).join('');
+  }
+  // Populate channel select
+  const chSel = document.getElementById('am-channel');
+  if (chSel) {
+    chSel.innerHTML = AGENDA_CHANNELS.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+  // Populate category select
+  const catSel = document.getElementById('am-category');
+  if (catSel) {
+    catSel.innerHTML = AGENDA_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+  }
+  // Populate module select
+  const modSel = document.getElementById('am-module');
+  if (modSel) {
+    modSel.innerHTML = Object.entries(AGENDA_MODULES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+  }
+
+  const f = (id, val) => { const el = document.getElementById(id); if (el) el.value = val||''; };
+  f('am-title', data.title);
+  f('am-description', data.description);
+  f('am-hotel', data.hotelName||data.hotelId);
+  f('am-module', data.moduleSource);
+  f('am-channel', data.channelName);
+  f('am-category', data.category);
+  f('am-status', data.status);
+  f('am-priority', data.priority);
+  f('am-follow-date', data.followUpDate);
+  f('am-responsible', data.responsible);
+  f('am-tags', (data.tags||[]).join(', '));
+  f('am-notes', data.notes);
+}
+
+function agendaCloseModal() {
+  document.getElementById('agenda-modal-overlay').classList.remove('open');
+  agendaEditingId = null;
+}
+
+function agendaSaveModal(andNew) {
+  const gv = id => (document.getElementById(id)||{}).value||'';
+  const title = gv('am-title').trim();
+  if (!title) { alert('El título es obligatorio.'); return; }
+  const hotelVal = gv('am-hotel');
+  const tagsRaw = gv('am-tags');
+  const tags = tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [];
+  const item = {
+    title, description: gv('am-description'),
+    hotelId: hotelVal, hotelName: hotelVal,
+    moduleSource: gv('am-module'), channelId: gv('am-channel'), channelName: gv('am-channel'),
+    category: gv('am-category'), status: gv('am-status'), priority: gv('am-priority'),
+    followUpDate: gv('am-follow-date'), responsible: gv('am-responsible'),
+    tags, notes: gv('am-notes')
+  };
+  if (agendaEditingId) { agendaUpdate(agendaEditingId, item); }
+  else { agendaCreate(item); }
+  agendaCloseModal();
+  if (agendaView !== undefined) agendaRender();
+  if (andNew) setTimeout(() => agendaOpenCreate(), 100);
+}
+
+// ── QUICK MODAL FROM OTHER MODULES ───────────────────────────
+function agendaQuickModal(moduleSource) {
+  const today = new Date().toISOString().slice(0,10);
+  const hotel = typeof currentHotel !== 'undefined' ? currentHotel : '';
+  let channelName = '(ninguno)';
+  if (moduleSource === 'rateSimulator' && typeof currentChannelKey !== 'undefined') {
+    const ch = (typeof CHANNELS !== 'undefined' ? CHANNELS : []).find(c => c.key === currentChannelKey);
+    if (ch) channelName = ch.name;
+  }
+  agendaOpenCreate({ moduleSource, hotelId: hotel, hotelName: hotel, channelName, followUpDate: today });
+}
+
+// ── EXPORT ────────────────────────────────────────────────────
+function agendaExport() {
+  const items = agendaGetAll();
+  if (!items.length) { alert('No hay notas para exportar.'); return; }
+  if (typeof XLSX === 'undefined') { alert('La librería XLSX no está disponible.'); return; }
+  const wb = XLSX.utils.book_new();
+  const header = ['ID','Fecha creación','Fecha actualización','Título','Descripción','Hotel','Módulo','Canal','Categoría','Estado','Importancia','Fecha seguimiento','Responsable','Etiquetas','Notas adicionales'];
+  const rows = items.map(i => [
+    i.id, (i.createdAt||'').slice(0,10), (i.updatedAt||'').slice(0,10),
+    i.title, i.description, i.hotelName,
+    AGENDA_MODULES[i.moduleSource]||i.moduleSource,
+    i.channelName, i.category,
+    AGENDA_STATUSES[i.status]||i.status,
+    AGENDA_PRIORITIES[i.priority]||i.priority,
+    i.followUpDate, i.responsible,
+    (i.tags||[]).join(', '), i.notes
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws, 'Agenda Revenue');
+  XLSX.writeFile(wb, 'Agenda_Revenue_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ── END AGENDA MODULE ─────────────────────────────────────────
 </script>
+
+<!-- AGENDA CREATE/EDIT MODAL -->
+<div class="agenda-modal-overlay" id="agenda-modal-overlay" onclick="if(event.target===this)agendaCloseModal()">
+  <div class="agenda-modal">
+    <div class="agenda-modal-head">
+      <h3 id="agenda-modal-title">Nueva nota de seguimiento</h3>
+      <button onclick="agendaCloseModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray3)">✕</button>
+    </div>
+    <div class="agenda-modal-body">
+      <div class="agenda-form-row full">
+        <div class="agenda-form-group">
+          <label>Título *</label>
+          <input type="text" id="am-title" placeholder="Ej: Ajuste tarifario Booking Semana Santa">
+        </div>
+      </div>
+      <div class="agenda-form-row full">
+        <div class="agenda-form-group">
+          <label>Descripción</label>
+          <textarea id="am-description" placeholder="Describe la estrategia, decisión u observación…"></textarea>
+        </div>
+      </div>
+      <div class="agenda-form-row">
+        <div class="agenda-form-group">
+          <label>Hotel</label>
+          <select id="am-hotel">
+            <option value="">— Sin hotel —</option>
+          </select>
+        </div>
+        <div class="agenda-form-group">
+          <label>Módulo de origen</label>
+          <select id="am-module">
+            <option value="agendaGeneral">Agenda general</option>
+            <option value="rateSimulator">Simulador de Tarifas</option>
+            <option value="otbComparison">Comparativa OTB</option>
+          </select>
+        </div>
+      </div>
+      <div class="agenda-form-row">
+        <div class="agenda-form-group">
+          <label>Canal asociado</label>
+          <select id="am-channel">
+          </select>
+        </div>
+        <div class="agenda-form-group">
+          <label>Categoría</label>
+          <select id="am-category">
+          </select>
+        </div>
+      </div>
+      <div class="agenda-form-row">
+        <div class="agenda-form-group">
+          <label>Estado</label>
+          <select id="am-status">
+            <option value="pending">Pendiente</option>
+            <option value="inProgress">En seguimiento</option>
+            <option value="executed">Ejecutada</option>
+            <option value="underReview">En revisión</option>
+            <option value="closed">Cerrada</option>
+            <option value="cancelled">Cancelada</option>
+          </select>
+        </div>
+        <div class="agenda-form-group">
+          <label>Importancia</label>
+          <select id="am-priority">
+            <option value="high">🔴 Alta</option>
+            <option value="medium" selected>🟡 Media</option>
+            <option value="low">🟢 Baja</option>
+          </select>
+        </div>
+      </div>
+      <div class="agenda-form-row">
+        <div class="agenda-form-group">
+          <label>Fecha de seguimiento</label>
+          <input type="date" id="am-follow-date">
+        </div>
+        <div class="agenda-form-group">
+          <label>Responsable</label>
+          <input type="text" id="am-responsible" placeholder="Ej: Ana García">
+        </div>
+      </div>
+      <div class="agenda-form-row full">
+        <div class="agenda-form-group">
+          <label>Etiquetas (separadas por coma)</label>
+          <input type="text" id="am-tags" placeholder="Ej: urgente, Q2, Booking">
+        </div>
+      </div>
+      <div class="agenda-form-row full">
+        <div class="agenda-form-group">
+          <label>Observaciones adicionales</label>
+          <textarea id="am-notes" placeholder="Notas internas, contexto adicional…"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="agenda-modal-footer">
+      <button class="save-btn" onclick="agendaCloseModal()">Cancelar</button>
+      <button class="save-btn" onclick="agendaSaveModal(true)">Guardar y crear otra</button>
+      <button class="save-btn primary" onclick="agendaSaveModal(false)">💾 Guardar</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
