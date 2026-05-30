@@ -262,6 +262,28 @@
 .otb-manual-btn{padding:5px 12px;border-radius:14px;border:1.5px dashed var(--gold);background:var(--gold-pale);color:var(--gold-dark);font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s;margin-top:6px;}
 .otb-manual-btn:hover{background:var(--gold);color:#fff;border-style:solid;}
 .otb-manual-form{background:#fffdf8;border:1.5px solid var(--gold-border);border-radius:8px;padding:14px 16px;margin:10px 0;display:none;}
+/* OTB STATUS BADGE */
+.otb-status-bar{display:flex;align-items:center;gap:10px;padding:8px 0 12px;flex-wrap:wrap;}
+.otb-status-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:800;letter-spacing:.5px;text-transform:uppercase;}
+.otb-status-badge.empty{background:#f0f0f0;color:#888;border:1px solid #ddd;}
+.otb-status-badge.loaded{background:#fff3cd;color:#856404;border:1px solid #ffc107;}
+.otb-status-badge.processing{background:#d1ecf1;color:#0c5460;border:1px solid #bee5eb;}
+.otb-status-badge.active{background:#d4edda;color:#155724;border:1px solid #28a745;}
+.otb-status-badge.stale{background:#fde;color:#c00;border:1px solid #f5c6cb;}
+.otb-status-badge.pending{background:#fff3cd;color:#856404;border:1px solid #ffc107;}
+/* OTB RESET MODAL */
+.otb-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;display:flex;align-items:center;justify-content:center;animation:fadeIn .15s;}
+.otb-modal{background:#fff;border-radius:12px;padding:28px 32px;max-width:480px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.22);position:relative;}
+.otb-modal-title{font-size:1rem;font-weight:800;color:var(--gold-dark);margin-bottom:10px;}
+.otb-modal-body{font-size:.82rem;color:#444;line-height:1.6;margin-bottom:20px;}
+.otb-modal-actions{display:flex;gap:10px;justify-content:flex-end;}
+.otb-btn.reset{background:#c00;color:#fff;border-color:#900;}
+.otb-btn.reset:hover{background:#900;}
+.otb-btn.secondary{background:#f5f5f5;color:#444;border-color:#ccc;}
+.otb-btn.secondary:hover{background:#e0e0e0;}
+/* stale warning inside cards */
+.otb-stale-warning{background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:7px 12px;font-size:.74rem;color:#856404;margin-top:8px;display:none;}
+.otb-stale-warning.show{display:block;}
 .otb-manual-form.open{display:block;}
 .otb-manual-form h4{font-size:.75rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
 .otb-manual-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;}
@@ -404,6 +426,7 @@
 <div class="action-bar" id="action-bar-otb" style="display:none;">
   <button class="save-btn" onclick="document.getElementById('otb-file-before')?.click()">📂 Cargar OTB Antes</button>
   <button class="save-btn" onclick="document.getElementById('otb-file-after')?.click()">📊 Cargar OTB Después</button>
+  <button class="save-btn" id="otb-new-analysis-btn" onclick="otbConfirmNewAnalysis()" style="background:#fff0f0;color:#c00;border-color:#f5c6cb;font-weight:800">🔄 Nuevo análisis OTB</button>
   <button class="save-btn" onclick="otbSaveToHistory && otbSaveToHistory()">💾 Guardar histórico</button>
   <button class="save-btn primary" onclick="otbExportExcel && otbExportExcel()">⬇ Exportar comparativa</button>
 </div>
@@ -1618,8 +1641,148 @@ const OTB_STATE = {
   diagnostics: null,
   inventory: null,                           // hotel room count for pickup-in-rooms calculation
   charts: {},
-  history: JSON.parse(localStorage.getItem('otb_history')||'[]')
+  history: JSON.parse(localStorage.getItem('otb_history')||'[]'),
+  analysisStatus: 'empty' // 'empty'|'loaded'|'processing'|'active'|'stale'|'pending'
 };
+
+// ── OTB STATE MANAGEMENT ────────────────────────────────────────────────────
+
+function otbSetStatus(status) {
+  OTB_STATE.analysisStatus = status;
+  const badge = document.getElementById('otb-status-badge');
+  const clearBtn = document.getElementById('otb-clear-results-btn');
+  const newTopBtn = document.getElementById('otb-new-analysis-top-btn');
+  const calcBtn = document.getElementById('otb-calc-btn');
+  const recalcBtn = document.getElementById('otb-recalc-btn');
+  const stateMsg = document.getElementById('otb-state-msg');
+  if (!badge) return;
+
+  const configs = {
+    empty:      { cls:'empty',      icon:'⬜', text:'Sin datos cargados',           msg:'Cargue OTB Antes y OTB Después para iniciar una nueva comparativa.' },
+    loaded:     { cls:'loaded',     icon:'📂', text:'Archivos cargados',            msg:'Archivos cargados. Presione Calcular comparativa para generar el análisis.' },
+    processing: { cls:'processing', icon:'⏳', text:'Procesando OCR…',             msg:'Procesando imagen… esto puede tardar unos segundos.' },
+    active:     { cls:'active',     icon:'✅', text:'Análisis activo',             msg:'Comparativa calculada y activa.' },
+    stale:      { cls:'stale',      icon:'⚠', text:'Cambios pendientes de recalcular', msg:'Un archivo fue reemplazado. Recalcule la comparativa para actualizar los resultados.' },
+    pending:    { cls:'pending',    icon:'🕐', text:'Análisis pendiente',          msg:'Archivos cargados. Presione Calcular comparativa para generar el análisis.' }
+  };
+  const cfg = configs[status] || configs.empty;
+
+  badge.className = 'otb-status-badge ' + cfg.cls;
+  badge.textContent = cfg.icon + ' ' + cfg.text;
+  if (stateMsg) stateMsg.textContent = cfg.msg;
+
+  const hasActive = (status === 'active' || status === 'stale');
+  if (clearBtn)  clearBtn.style.display   = hasActive ? '' : 'none';
+  if (newTopBtn) newTopBtn.style.display  = hasActive ? '' : 'none';
+  if (calcBtn)   calcBtn.style.display    = (status === 'stale') ? 'none' : '';
+  if (recalcBtn) recalcBtn.style.display  = (status === 'stale') ? '' : 'none';
+}
+
+function markAnalysisAsStale() {
+  if (OTB_STATE.analysisStatus === 'active') {
+    otbSetStatus('stale');
+    // show stale warnings in cards
+    ['before','after'].forEach(function(s) {
+      const w = document.getElementById('otb-stale-'+s);
+      if (w && OTB_STATE[s+'Data']) w.classList.add('show');
+    });
+  }
+}
+
+function resetFullOTBAnalysis() {
+  // Preserve history, inventory preference, and comparisonMode
+  const history = OTB_STATE.history;
+  const inventory = OTB_STATE.inventory;
+  // Destroy charts
+  Object.values(OTB_STATE.charts).forEach(function(c) { try { c.destroy(); } catch(e){} });
+  // Reset all state
+  OTB_STATE.beforeData = null; OTB_STATE.afterData = null;
+  OTB_STATE.beforeCols = null; OTB_STATE.afterCols = null;
+  OTB_STATE.beforeSummary = null; OTB_STATE.afterSummary = null;
+  OTB_STATE.beforeSource = null; OTB_STATE.afterSource = null;
+  OTB_STATE.comparison = null; OTB_STATE.metrics = null; OTB_STATE.recs = null;
+  OTB_STATE.weeklyComparison = null; OTB_STATE.weeklyMetrics = null;
+  OTB_STATE.diagnostics = null;
+  OTB_STATE.charts = {};
+  OTB_STATE.history = history;
+  OTB_STATE.inventory = inventory;
+  OTB_STATE.analysisStatus = 'empty';
+
+  // Reset UI
+  ['before','after'].forEach(function(s) {
+    const fn = document.getElementById('otb-fname-'+s);
+    const drop = document.getElementById('otb-drop-'+s);
+    const replBtn = document.getElementById('otb-replace-'+s+'-btn');
+    const staleW = document.getElementById('otb-stale-'+s);
+    const fi = document.getElementById('otb-file-'+s);
+    if (fn)  fn.textContent = 'Sin archivo cargado';
+    if (drop) drop.classList.remove('has-file');
+    if (replBtn) replBtn.style.display = 'none';
+    if (staleW) staleW.classList.remove('show');
+    if (fi) fi.value = '';
+    // Close manual forms
+    const mf = document.getElementById('otb-manual-'+s);
+    if (mf) { mf.innerHTML = ''; mf.classList.remove('open'); }
+  });
+  const ids = ['otb-mapping-area','otb-editor-area','otb-alerts-area','otb-kpi-area',
+                'otb-filters-area','otb-table-area','otb-weekly-area','otb-charts-area',
+                'otb-consultant-area','otb-errors'];
+  ids.forEach(function(id) { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const diagArea = document.getElementById('otb-diagnostics-area');
+  if (diagArea) { diagArea.innerHTML = ''; diagArea.style.display = 'none'; }
+  const cmpBtn = document.getElementById('otb-compare-btn-area');
+  if (cmpBtn) cmpBtn.style.display = 'none';
+
+  // Switch to upload tab
+  document.querySelectorAll('.otb-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+  document.querySelectorAll('.otb-sub-panel').forEach(function(p) { p.classList.remove('active'); });
+  const uploadTab = document.querySelector('.otb-tab-btn[data-tab="upload"]');
+  const uploadPanel = document.getElementById('otb-panel-upload');
+  if (uploadTab) uploadTab.classList.add('active');
+  if (uploadPanel) uploadPanel.classList.add('active');
+
+  otbSetStatus('empty');
+}
+
+function clearOTBResultsOnly() {
+  Object.values(OTB_STATE.charts).forEach(function(c) { try { c.destroy(); } catch(e){} });
+  OTB_STATE.comparison = null; OTB_STATE.metrics = null; OTB_STATE.recs = null;
+  OTB_STATE.weeklyComparison = null; OTB_STATE.weeklyMetrics = null;
+  OTB_STATE.diagnostics = null; OTB_STATE.charts = {};
+
+  const ids = ['otb-alerts-area','otb-kpi-area','otb-filters-area','otb-table-area',
+                'otb-weekly-area','otb-charts-area','otb-consultant-area'];
+  ids.forEach(function(id) { const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  const diagArea = document.getElementById('otb-diagnostics-area');
+  if (diagArea) { diagArea.innerHTML = ''; diagArea.style.display = 'none'; }
+
+  const hasBoth = OTB_STATE.beforeData && OTB_STATE.afterData;
+  otbSetStatus(hasBoth ? 'loaded' : 'empty');
+}
+
+function otbConfirmNewAnalysis() {
+  // Remove existing modal if any
+  const existing = document.getElementById('otb-reset-modal');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'otb-modal-overlay';
+  overlay.id = 'otb-reset-modal';
+  overlay.innerHTML = '<div class="otb-modal">'
+    + '<div class="otb-modal-title">🔄 Iniciar nuevo análisis OTB</div>'
+    + '<div class="otb-modal-body">Está a punto de iniciar un nuevo análisis OTB.<br><br>'
+    + 'Se eliminarán los archivos cargados, los datos extraídos, la comparativa actual, '
+    + 'los gráficos y las recomendaciones generadas.<br><br>'
+    + '<strong>Si desea conservar este análisis, guárdelo en el histórico antes de continuar.</strong></div>'
+    + '<div class="otb-modal-actions">'
+    + '<button class="otb-btn secondary" onclick="document.getElementById(\'otb-reset-modal\').remove()">Cancelar</button>'
+    + '<button class="otb-btn reset" onclick="document.getElementById(\'otb-reset-modal\').remove();resetFullOTBAnalysis()">Iniciar nuevo análisis</button>'
+    + '</div>'
+    + '</div>';
+  // Close on overlay click (outside modal box)
+  overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+  document.body.appendChild(overlay);
+}
 
 const COL_ALIASES = {
   date:     ['fecha','date','día','day','stay date','arrival date','periodo'],
@@ -1842,6 +2005,12 @@ function initOTB(page) {
   page.innerHTML = '<div class="otb-section">'
     + '<div class="otb-header"><h2>Comparativa On the Book (OTB)</h2>'
     + '<p>Análisis de Pickup diario de Ocupación · Comparación por día del mes · Habitaciones ganadas o perdidas</p></div>'
+    // Status bar
+    + '<div class="otb-status-bar">'
+    + '<span id="otb-status-badge" class="otb-status-badge empty">⬜ Sin datos cargados</span>'
+    + '<button class="otb-btn" id="otb-clear-results-btn" style="display:none;font-size:.72rem" onclick="otbClearResultsOnly()">🧹 Limpiar resultados</button>'
+    + '<button class="otb-btn reset" id="otb-new-analysis-top-btn" style="display:none;font-size:.72rem" onclick="otbConfirmNewAnalysis()">🔄 Nuevo análisis OTB</button>'
+    + '</div>'
     + '<div class="otb-tabs">'
     + '<button class="otb-tab-btn active" data-tab="upload">Carga de datos</button>'
     + '<button class="otb-tab-btn" data-tab="comparison">Comparativa</button>'
@@ -1850,7 +2019,10 @@ function initOTB(page) {
     + '<button class="otb-tab-btn" data-tab="history">Histórico</button>'
     + '</div>'
     + '<div id="otb-panel-upload" class="otb-sub-panel active">'
+    // State message
+    + '<div id="otb-state-msg" style="padding:10px 0;font-size:.8rem;color:var(--gray3)">Cargue OTB Antes y OTB Después para iniciar una nueva comparativa.</div>'
     + '<div class="otb-upload-grid">'
+    // --- OTB ANTES ---
     + '<div class="otb-upload-card" id="otb-drop-before" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'before\')">'
     + '<div class="otb-upload-icon">🖼</div>'
     + '<div class="otb-upload-title">OTB ANTES</div>'
@@ -1859,11 +2031,14 @@ function initOTB(page) {
     + '<div style="margin-top:10px">'
     + '<input type="file" id="otb-file-before" accept=".jpg,.jpeg,.png" style="display:none" onchange="otbLoadFile(this,\'before\')">'
     + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-before\').click()">Seleccionar archivo</button>'
+    + '<button class="otb-btn" id="otb-replace-before-btn" style="display:none" onclick="document.getElementById(\'otb-file-before\').click()">🔁 Reemplazar</button>'
     + '<button class="otb-btn danger" onclick="otbClearFile(\'before\')">Limpiar</button>'
     + '</div>'
+    + '<div class="otb-stale-warning" id="otb-stale-before">⚠ Cambiar este archivo invalidará la comparativa actual. Deberá recalcular.</div>'
     + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 JPG / PNG · OCR automático</div>'
     + '<button class="otb-manual-btn" onclick="otbOpenManual(event, \'before\')">✏ Ingresar datos manualmente</button>'
     + '</div>'
+    // --- OTB DESPUÉS ---
     + '<div class="otb-upload-card" id="otb-drop-after" ondragover="event.preventDefault()" ondrop="otbHandleDrop(event,\'after\')">'
     + '<div class="otb-upload-icon">🖼</div>'
     + '<div class="otb-upload-title">OTB DESPUÉS</div>'
@@ -1872,8 +2047,10 @@ function initOTB(page) {
     + '<div style="margin-top:10px">'
     + '<input type="file" id="otb-file-after" accept=".jpg,.jpeg,.png" style="display:none" onchange="otbLoadFile(this,\'after\')">'
     + '<button class="otb-btn primary" onclick="document.getElementById(\'otb-file-after\').click()">Seleccionar archivo</button>'
+    + '<button class="otb-btn" id="otb-replace-after-btn" style="display:none" onclick="document.getElementById(\'otb-file-after\').click()">🔁 Reemplazar</button>'
     + '<button class="otb-btn danger" onclick="otbClearFile(\'after\')">Limpiar</button>'
     + '</div>'
+    + '<div class="otb-stale-warning" id="otb-stale-after">⚠ Cambiar este archivo invalidará la comparativa actual. Deberá recalcular.</div>'
     + '<div class="otb-upload-hint" style="margin-top:8px;color:#1a6e3c">📷 JPG / PNG · OCR automático</div>'
     + '<button class="otb-manual-btn" onclick="otbOpenManual(event, \'after\')">✏ Ingresar datos manualmente</button>'
     + '</div>'
@@ -1894,7 +2071,8 @@ function initOTB(page) {
     + '<input type="number" id="otb-inventory" placeholder="Ej: 100" min="1" max="9999" style="width:80px;padding:4px 8px;border-radius:6px;border:1.5px solid var(--gold-border);font-size:.82rem" onchange="OTB_STATE.inventory=parseInt(this.value)||null" title="Número de habitaciones disponibles. Permite calcular pickup en habitaciones.">'
     + '</div>'
     + '<div style="text-align:center;padding:10px 0" id="otb-compare-btn-area">'
-    + '<button class="otb-btn primary" style="font-size:.85rem;padding:10px 28px" onclick="otbRunComparison()">▶ Calcular comparativa</button>'
+    + '<button class="otb-btn primary" id="otb-calc-btn" style="font-size:.85rem;padding:10px 28px" onclick="otbRunComparison()">▶ Calcular comparativa</button>'
+    + '<button class="otb-btn primary" id="otb-recalc-btn" style="font-size:.85rem;padding:10px 28px;display:none;background:#e6a817;border-color:#c88d00" onclick="otbRunComparison()">🔁 Recalcular comparativa</button>'
     + '</div>'
     + '<div id="otb-errors" style="margin-top:12px"></div>'
     + '</div>'
@@ -1905,9 +2083,10 @@ function initOTB(page) {
     + '<div id="otb-filters-area"></div>'
     + '<div id="otb-table-area"></div>'
     + '<div id="otb-weekly-area"></div>'
-    + '<div style="margin:12px 0">'
+    + '<div style="margin:12px 0;display:flex;gap:8px;flex-wrap:wrap">'
     + '<button class="otb-btn primary" onclick="otbExportExcel()">⬇ Exportar a Excel</button>'
     + '<button class="otb-btn" onclick="otbSaveToHistory()">💾 Guardar en histórico</button>'
+    + '<button class="otb-btn danger" onclick="otbConfirmNewAnalysis()" style="margin-left:auto">🔄 Nuevo análisis OTB</button>'
     + '</div>'
     + '</div>'
     + '<div id="otb-panel-charts" class="otb-sub-panel">'
@@ -1956,6 +2135,11 @@ function otbHandleDrop(e, side) {
 
 function otbLoadFile(input, side) {
   if (!input.files[0]) return;
+  // If analysis is active, mark as stale before replacing
+  if (OTB_STATE.comparison) markAnalysisAsStale();
+  // Show stale warning on this card
+  const staleW = document.getElementById('otb-stale-'+side);
+  if (staleW && OTB_STATE.comparison) staleW.classList.add('show');
   otbProcessFile(input.files[0], side);
 }
 
@@ -1964,14 +2148,25 @@ function otbClearFile(side) {
   OTB_STATE[side+'Cols'] = null;
   const fnEl = document.getElementById('otb-fname-'+side);
   const dropEl = document.getElementById('otb-drop-'+side);
+  const replBtn = document.getElementById('otb-replace-'+side+'-btn');
+  const staleW = document.getElementById('otb-stale-'+side);
   if (fnEl) fnEl.textContent = 'Sin archivo cargado';
   if (dropEl) dropEl.classList.remove('has-file');
+  if (replBtn) replBtn.style.display = 'none';
+  if (staleW) staleW.classList.remove('show');
   const mapArea = document.getElementById('otb-mapping-area');
   const edArea = document.getElementById('otb-editor-area');
   const cmpBtn = document.getElementById('otb-compare-btn-area');
   if (mapArea) mapArea.innerHTML = '';
   if (edArea) edArea.innerHTML = '';
   if (cmpBtn) cmpBtn.style.display = 'none';
+  // Update status
+  const hasBoth = OTB_STATE.beforeData && OTB_STATE.afterData;
+  const hasOne  = OTB_STATE.beforeData || OTB_STATE.afterData;
+  if (OTB_STATE.comparison) markAnalysisAsStale();
+  else if (hasBoth) otbSetStatus('loaded');
+  else if (hasOne)  otbSetStatus('pending');
+  else              otbSetStatus('empty');
 }
 
 function otbProcessFile(file, side) {
@@ -2052,6 +2247,7 @@ function otbSaveManual(side) {
   if (dropEl) dropEl.classList.add('has-file');
   document.getElementById('otb-manual-'+side).classList.remove('open');
 
+  if (OTB_STATE.comparison) markAnalysisAsStale();
   otbCheckBothLoaded();
 }
 
@@ -2061,7 +2257,16 @@ function otbCheckBothLoaded() {
   if (hasBefore && hasAfter) {
     const cmpBtn = document.getElementById('otb-compare-btn-area');
     if (cmpBtn) cmpBtn.style.display = 'block';
+    if (OTB_STATE.analysisStatus !== 'stale') otbSetStatus('loaded');
+  } else {
+    if (OTB_STATE.analysisStatus !== 'stale') otbSetStatus('pending');
   }
+  // Show replace buttons for loaded sides
+  ['before','after'].forEach(function(s) {
+    const has = OTB_STATE[s+'Data'] || OTB_STATE[s+'Summary'];
+    const replBtn = document.getElementById('otb-replace-'+s+'-btn');
+    if (replBtn) replBtn.style.display = has ? '' : 'none';
+  });
 }
 
 // ── OCR ENGINE ────────────────────────────────────────────────────────────────
@@ -2069,6 +2274,7 @@ function otbProcessImageOCR(file, side) {
   const fnEl  = document.getElementById('otb-fname-'+side);
   const dropEl = document.getElementById('otb-drop-'+side);
   if (fnEl) fnEl.textContent = '⏳ Iniciando OCR...';
+  otbSetStatus('processing');
 
   if (typeof Tesseract === 'undefined') {
     otbShowError('Motor OCR no disponible. Verifique conexión a internet.');
@@ -2609,6 +2815,12 @@ function otbRunComparison() {
   otbRenderWeekly();
   otbRenderCharts();
   otbRenderConsultant();
+  // Clear stale warnings now that we've recalculated
+  ['before','after'].forEach(function(s) {
+    const w = document.getElementById('otb-stale-'+s);
+    if (w) w.classList.remove('show');
+  });
+  otbSetStatus('active');
   otbSwitchToComparisonTab();
 }
 
