@@ -2127,8 +2127,9 @@ function initOTB(page) {
 function otbShowError(msg) {
   const el = document.getElementById('otb-errors');
   if (!el) return;
-  el.innerHTML = '<div class="otb-alert red">⚠ ' + msg + '</div>';
-  setTimeout(function() { if(el) el.innerHTML=''; }, 5000);
+  el.innerHTML = '<div class="otb-alert red" style="align-items:flex-start;line-height:1.5">⚠ ' + msg + '</div>';
+  // Longer timeout for data errors (contains instructions)
+  setTimeout(function() { if(el) el.innerHTML=''; }, 12000);
 }
 
 function otbHandleDrop(e, side) {
@@ -2309,21 +2310,48 @@ function otbProcessImageOCR(file, side) {
       OTB_STATE[side+'Summary'] = summary;
     }
 
-    if (rows.length) {
+    // Count rows that have a valid occupancy value
+    var validRows = rows.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; });
+
+    if (rows.length && validRows.length >= 7) {
+      // Enough daily rows detected — accept OCR result
       OTB_STATE[side+'Data'] = rows;
       OTB_STATE[side+'Headers'] = ['Fecha','Ocup%','Hab.Vendidas','ADR','RevPAR','Ingresos'];
       OTB_STATE[side+'Mapping'] = { date:'Fecha', occ:'Ocup%', rooms:'Hab.Vendidas', adr:'ADR', revpar:'RevPAR', revenue:'Ingresos' };
-      if (fnEl) fnEl.textContent = '✓ ' + file.name + ' · ' + rows.length + ' días de ocupación detectados vía OCR';
+      if (validRows.length < rows.length) {
+        if (fnEl) fnEl.textContent = '⚠ ' + file.name + ' · ' + validRows.length + ' de ' + rows.length + ' días con ocupación válida. Revise los datos.';
+        otbShowPartialWarning(side, rows, validRows.length);
+      } else {
+        if (fnEl) fnEl.textContent = '✓ ' + file.name + ' · ' + rows.length + ' días detectados vía OCR';
+      }
     } else {
-      // No daily rows found — prompt manual entry
-      if (fnEl) fnEl.textContent = '⚠ ' + file.name + ' · OCR no detectó datos diarios → ingrese manualmente';
+      // OCR found too few usable rows — show what was found and open manual form
+      var reason = rows.length === 0
+        ? 'El OCR no detectó ninguna fila de datos diarios.'
+        : 'El OCR detectó '+rows.length+' fila(s) pero solo '+validRows.length+' con ocupación válida (se requieren al menos 7 para un análisis confiable).';
+
+      if (fnEl) fnEl.textContent = '⚠ ' + file.name + ' · OCR insuficiente (' + validRows.length + ' días válidos) → ingrese manualmente';
+
+      // Pre-fill start date from summary if available
+      var startHint = summary && summary.startDate ? summary.startDate : '';
+
+      // Auto-open manual form with guidance
       var hint = document.getElementById('otb-manual-'+side);
       if (hint) {
-        // Auto-open the manual form so the user can paste the daily sequence
-        var e = { stopPropagation: function(){} };
-        otbOpenManual(e, side);
+        var e2 = { stopPropagation: function(){} };
+        otbOpenManual(e2, side);
+        // Pre-fill start date if we extracted it from OCR
+        if (startHint) {
+          var fromEl = document.getElementById('otbm-'+side+'-from');
+          if (fromEl) fromEl.value = startHint;
+        }
       }
-      otbShowError('El OCR no detectó la secuencia de ocupación diaria. Las imágenes de gráficas de barras no son legibles automáticamente. Use "Ingresar datos manualmente" y pegue los valores del eje Y (76, 76, 91, 74…).');
+
+      var errMsg = '⚠ '+reason
+        + ' Las imágenes de gráficas de barras no son legibles automáticamente por OCR.<br>'
+        + '<strong>Solución:</strong> Use "✏ Ingresar datos manualmente" y pegue la secuencia de ocupación diaria (un número por día, separados por comas).<br>'
+        + 'Ejemplo: <code>76, 76, 91, 74, 65, 76, 87, 91…</code>';
+      otbShowError(errMsg);
       if (dropEl) dropEl.classList.remove('has-file');
       return;
     }
@@ -2341,14 +2369,37 @@ function otbShowPartialPreview(side) {
   var label = side === 'before' ? 'OTB ANTES' : 'OTB DESPUÉS';
   var edArea = document.getElementById('otb-editor-area');
   if (!edArea || !data.length) return;
-  var existing = edArea.innerHTML;
   edArea.innerHTML = '<div class="otb-card"><div class="otb-card-title">'
     + '✓ ' + label + ' cargado — ' + data.length + ' fechas detectadas. '
     + 'Cargue ahora la imagen ' + (side==='before'?'DESPUÉS':'ANTES') + ' para comparar.'
     + '</div></div>';
 }
 
-// ── OCR SUMMARY EXTRACTOR ─────────────────────────────────────────────────────
+function otbShowPartialWarning(side, rows, validCount) {
+  var edArea = document.getElementById('otb-editor-area');
+  if (!edArea) return;
+  var label = side === 'before' ? 'OTB ANTES' : 'OTB DESPUÉS';
+  var missing = rows.filter(function(r){ return r.occ === null || r.occ < 0 || r.occ > 100; });
+  var html = '<div class="otb-card" style="border-color:#f5a623">'
+    + '<div class="otb-card-title" style="color:#c07000">⚠ Datos parciales: '+label+'</div>'
+    + '<p style="font-size:.78rem;color:#555;margin:0 0 10px">Se detectaron <strong>'+rows.length+'</strong> fechas vía OCR, pero solo <strong>'+validCount+'</strong> tienen un valor de ocupación válido. '
+    + 'Los <strong>'+missing.length+'</strong> días sin dato se excluirán de la comparativa.</p>'
+    + '<p style="font-size:.78rem;color:#555;margin:0 0 10px">Si el resultado no es correcto, use "✏ Ingresar datos manualmente" para ingresar la secuencia completa.</p>'
+    + '<details style="font-size:.73rem"><summary style="cursor:pointer;color:var(--gold-dark);font-weight:700">Ver detalle de días detectados</summary>'
+    + '<table style="width:100%;border-collapse:collapse;margin-top:8px">'
+    + '<tr><th style="padding:4px;background:var(--gold-pale);font-size:.68rem">Fecha</th><th style="padding:4px;background:var(--gold-pale);font-size:.68rem">Occ%</th><th style="padding:4px;background:var(--gold-pale);font-size:.68rem">Estado</th></tr>'
+    + rows.slice(0, 35).map(function(r){
+        var ok = r.occ !== null && r.occ >= 0 && r.occ <= 100;
+        return '<tr style="background:'+(ok?'':'#fff5f5')+'">'
+          +'<td style="padding:3px 6px;border-bottom:1px solid #eee">'+(r.date||('Día '+r.dayOfMonth))+'</td>'
+          +'<td style="padding:3px 6px;border-bottom:1px solid #eee;text-align:center">'+(r.occ!==null?r.occ.toFixed(1)+'%':'—')+'</td>'
+          +'<td style="padding:3px 6px;border-bottom:1px solid #eee;text-align:center">'+(ok?'✓':'⚠ sin dato')+'</td></tr>';
+      }).join('')
+    + '</table></details></div>';
+  edArea.innerHTML = (edArea.innerHTML || '') + html;
+}
+
+
 function otbExtractSummaryFromOCR(text) {
   // Extract KPI values like "72,39%" or "195.545,88" or "195,545.88"
   var reOcc = /(?:ocupaci[oó]n|occ(?:upancy)?|ocup)[^\d]*(\d{1,3}[,\.]\d{1,2})\s*%/i;
@@ -2761,11 +2812,27 @@ function otbRunComparison() {
   var aData = OTB_STATE.afterData  || [];
 
   // Guard: need daily rows for pickup analysis
+  var errEl = document.getElementById('otb-errors');
+  if (errEl) errEl.innerHTML = '';
+
   if (!bData.length || !aData.length) {
     var missing = [];
     if (!bData.length) missing.push('OTB Antes (Corte Base)');
     if (!aData.length) missing.push('OTB Después (Corte Actual)');
     otbShowError('Faltan datos diarios de: ' + missing.join(' y ') + '. Use el botón "✏ Ingresar datos manualmente" y pegue la secuencia de ocupación diaria (ej: 76, 76, 91, 74, 65…).');
+    return;
+  }
+
+  // Check for sparse data — warn user if very few valid-occ rows
+  var bValid = bData.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; });
+  var aValid = aData.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; });
+  if (bValid.length < 2 || aValid.length < 2) {
+    var sparseParts = [];
+    if (bValid.length < 2) sparseParts.push('OTB Base: '+bValid.length+' registros con ocupación válida (de '+bData.length+' total)');
+    if (aValid.length < 2) sparseParts.push('OTB Actual: '+aValid.length+' registros con ocupación válida (de '+aData.length+' total)');
+    otbShowError('⚠ Datos insuficientes para calcular pickup: '+sparseParts.join(' · ')
+      +'.<br>Se requieren al menos 2 días con ocupación válida en cada período.<br>'
+      +'<strong>Solución:</strong> Use "✏ Ingresar datos manualmente" e ingrese la secuencia de ocupación diaria. Ejemplo: <code>76, 76, 91, 74, 65, 76…</code>');
     return;
   }
 
@@ -3010,11 +3077,16 @@ function otbRenderCharts() {
   var debugBar = document.createElement('div');
   debugBar.style.cssText = 'background:#f8f4e8;border:1px solid #e8d88a;border-radius:8px;padding:10px 16px;'
     + 'font-size:.73rem;color:#7a6500;margin-bottom:16px;display:flex;gap:20px;flex-wrap:wrap;align-items:center';
-  debugBar.innerHTML = '<strong style="color:#5a4a00">📊 Resumen de datos</strong>'
-    + '<span>OTB Base: <strong>'+bData.length+'</strong> días</span>'
-    + '<span>OTB Actual: <strong>'+aData.length+'</strong> días</span>'
+  var srcB = OTB_STATE.beforeSource || '—';
+  var srcA = OTB_STATE.afterSource  || '—';
+  var bValid2 = bData.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; }).length;
+  var aValid2 = aData.filter(function(r){ return r.occ !== null && r.occ >= 0 && r.occ <= 100; }).length;
+  debugBar.innerHTML = '<strong style="color:#5a4a00">📊 Estado de datos del análisis</strong>'
+    + '<span>OTB Base (<em>'+srcB+'</em>): <strong>'+bData.length+'</strong> filas · <strong>'+bValid2+'</strong> con occ válida</span>'
+    + '<span>OTB Actual (<em>'+srcA+'</em>): <strong>'+aData.length+'</strong> filas · <strong>'+aValid2+'</strong> con occ válida</span>'
     + '<span>Días comparables: <strong>'+allRows.length+'</strong></span>'
-    + '<span>Con pickup calculado: <strong>'+rows.length+'</strong></span>';
+    + '<span>Con pickup calculado: <strong>'+rows.length+'</strong></span>'
+    + '<span>Modo: <strong>'+(OTB_STATE.comparisonMode||'dayOfMonth')+'</strong></span>';
   if (OTB_STATE.weeklyComparison) {
     debugBar.innerHTML += '<span>Semanas: <strong>'+OTB_STATE.weeklyComparison.length+'</strong></span>';
   }
