@@ -1,862 +1,820 @@
 <!DOCTYPE html>
-<html lang="en" class="">
+<html lang="es">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Dussán Tennis Tracker 🎾</title>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/recharts@2.12.2/umd/Recharts.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = {
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        santiago: { DEFAULT: '#3266ad', light: '#E6F1FB' },
-        nicole:   { DEFAULT: '#D4537E', light: '#FBEAF0' },
-        win:      { DEFAULT: '#3B6D11', light: '#EAF3DE' },
-        loss:     { DEFAULT: '#A32D2D', light: '#FCEBEB' },
-        pending:  { DEFAULT: '#633806', light: '#FAEEDA' },
-      }
-    }
-  }
-}
-</script>
 <style>
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; }
-.input { @apply w-full border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-400; }
-select, input, textarea { width:100%; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; font-size:14px; background:#fff; color:#111; outline:none; box-sizing:border-box; }
-select:focus, input:focus, textarea:focus { border-color:#3266ad; box-shadow:0 0 0 2px #E6F1FB; }
-.dark select, .dark input, .dark textarea { background:#334155; border-color:#475569; color:#f1f5f9; }
-.dark body { background:#0f172a; color:#f1f5f9; }
-.dark .card { background:#1e293b !important; border-color:#334155 !important; }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;background:#f8fafc;color:#111;font-size:14px}
+button{cursor:pointer;font-family:inherit;font-size:14px}
+input,select,textarea{font-family:inherit;font-size:13px;width:100%;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;background:#fff;color:#111;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#3266ad;box-shadow:0 0 0 2px #E6F1FB}
+label.lbl{display:block;font-size:11px;font-weight:600;color:#64748b;margin-bottom:3px}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px}
+.btn{border:none;border-radius:12px;padding:9px 18px;font-weight:600;font-size:13px}
+.btn-blue{background:#3266ad;color:#fff}
+.btn-ghost{background:none;border:1px solid #e2e8f0;color:#374151}
+.badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;min-width:26px;text-align:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f1f5f9}
+.row:last-child{border-bottom:none}
+#root{padding-bottom:72px}
+nav.bottom{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e2e8f0;display:flex;z-index:40}
+nav.bottom button{flex:1;display:flex;flex-direction:column;align-items:center;padding:7px 0;background:none;border:none;font-size:10px;color:#9ca3af;gap:2px}
+nav.bottom button.active{color:#3266ad;font-weight:700}
+nav.bottom button span.ico{font-size:20px}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e2e8f0;background:#fff;position:sticky;top:0;z-index:30}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.modal-box{background:#fff;width:100%;max-width:520px;border-radius:20px 20px 0 0;max-height:92vh;overflow-y:auto}
+.modal-head{padding:14px 16px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff}
+.tag{background:#f1f5f9;border-radius:5px;padding:1px 6px;font-size:11px}
+.bar-wrap{height:5px;background:#f1f5f9;border-radius:99px;overflow:hidden;margin-top:8px}
+.bar-fill{height:100%;border-radius:99px}
+.err{color:#ef4444;font-size:11px;margin-top:3px}
+.sec-title{font-weight:600;font-size:13px;color:#374151;margin-bottom:10px}
+.stat-box{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;text-align:center}
+.stat-n{font-weight:700;font-size:20px}
+.stat-l{font-size:10px;color:#9ca3af;margin-top:1px}
+.streak-box{border-radius:12px;padding:10px 14px;font-weight:600;font-size:13px;margin-bottom:14px}
+.sug-list{position:absolute;z-index:10;width:100%;background:#fff;border:1px solid #e2e8f0;border-radius:8px;margin-top:2px;max-height:140px;overflow-y:auto;top:100%;left:0}
+.sug-item{width:100%;text-align:left;padding:8px 12px;border:none;background:none;border-bottom:1px solid #f8fafc;font-size:13px;cursor:pointer}
+.sug-item:hover{background:#f8fafc}
+
+/* Simple chart using pure CSS/SVG approach */
+.chart-wrap{width:100%;overflow-x:auto}
 </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useCallback, useMemo } = React;
-const { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } = Recharts;
+<div id="root"><div style="padding:40px;text-align:center;color:#9ca3af">Cargando...</div></div>
 
-// ─── DB (localStorage) ────────────────────────────────────────────────
-const DB = {
-  get: (k, def) => { try { return JSON.parse(localStorage.getItem('dtt_' + k)) ?? def; } catch { return def; } },
-  set: (k, v) => localStorage.setItem('dtt_' + k, JSON.stringify(v)),
+<script type="module">
+import { h, render, Fragment } from 'https://esm.sh/preact@10.22.0';
+import { useState, useEffect, useCallback, useRef } from 'https://esm.sh/preact@10.22.0/hooks';
+import htm from 'https://esm.sh/htm@3.1.1';
+const html = htm.bind(h);
+
+// ── Storage ──────────────────────────────────────────────────────────
+const S = {
+  get: (k, d) => { try { return JSON.parse(localStorage.getItem('dtt_'+k)) ?? d } catch { return d } },
+  set: (k, v) => localStorage.setItem('dtt_'+k, JSON.stringify(v)),
 };
 
-function initDB() {
-  if (!DB.get('players', null)) {
-    DB.set('players', [
-      { id: 1, name: 'Santiago Dussán', category: 'Sub-18', birthdate: '2007-01-01', nationality: 'Colombian', active: true },
-      { id: 2, name: 'Nicole Dussán',   category: 'Sub-12', birthdate: '2013-01-01', nationality: 'Colombian', active: true },
+function boot() {
+  if (!S.get('booted', false)) {
+    S.set('players', [
+      {id:1,name:'Santiago Dussán',category:'Sub-18',birthdate:'2007-01-01',nationality:'Colombian',active:true},
+      {id:2,name:'Nicole Dussán',  category:'Sub-12',birthdate:'2013-01-01',nationality:'Colombian',active:true},
     ]);
-    DB.set('tournaments', []);
-    DB.set('matches', []);
-    DB.set('nextId', { players: 3, tournaments: 1, matches: 1 });
+    S.set('tournaments', []);
+    S.set('matches', []);
+    S.set('nid', {t:1, m:1});
+    S.set('booted', true);
   }
 }
 
-function nextId(table) {
-  const ids = DB.get('nextId', { players: 3, tournaments: 1, matches: 1 });
+function nid(table) {
+  const ids = S.get('nid', {t:1,m:1});
   const id = ids[table];
   ids[table] = id + 1;
-  DB.set('nextId', ids);
+  S.set('nid', ids);
   return id;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────
+// ── Constants ────────────────────────────────────────────────────────
 const SURFACES = ['Clay','Hard','Grass','Synthetic','Variable'];
 const COUNTRIES = ['Colombia','USA','Other'];
 const ROUNDS = ['1R','2R','3R','QF','SF','F'];
 const LEVELS = ['ITF G1','ITF G2','ITF G3','ITF G4','ITF G5','National','Regional','Club'];
-const surfaceIcon = { Clay:'🟤', Hard:'🔵', Grass:'🟢', Synthetic:'⚪', Variable:'🎾' };
-const countryFlag = { Colombia:'🇨🇴', USA:'🇺🇸', Other:'🌍' };
-const SCORE_REGEX = /^(\d{1,2}-\d{1,2})(, \d{1,2}-\d{1,2})*$/;
+const SI = {Clay:'🟤',Hard:'🔵',Grass:'🟢',Synthetic:'⚪',Variable:'🎾'};
+const CF = {Colombia:'🇨🇴',USA:'🇺🇸',Other:'🌍'};
+const SCORE_RE = /^(\d{1,2}-\d{1,2})(, \d{1,2}-\d{1,2})*$/;
+const C_S = '#3266ad', C_N = '#D4537E';
+const BG_S = '#E6F1FB', BG_N = '#FBEAF0';
 
-function fmt(d) {
+function fmtDate(d) {
   if (!d) return '-';
   const [y,m,day] = d.split('-');
   return `${day}/${m}/${y}`;
 }
 
-function badge(r) {
-  if (r === 'W')  return { bg: '#EAF3DE', color: '#3B6D11', label: 'W' };
-  if (r === 'L')  return { bg: '#FCEBEB', color: '#A32D2D', label: 'L' };
-  if (r === 'WO') return { bg: '#EAF3DE', color: '#3B6D11', label: 'WO' };
-  return { bg: '#FAEEDA', color: '#633806', label: 'P' };
+function badgeStyle(r) {
+  if (r==='W'||r==='WO') return {background:'#EAF3DE',color:'#3B6D11'};
+  if (r==='L') return {background:'#FCEBEB',color:'#A32D2D'};
+  return {background:'#FAEEDA',color:'#633806'};
 }
 
-function computeStats(matches) {
-  const wins = matches.filter(m => m.result === 'W').length;
-  const losses = matches.filter(m => m.result === 'L').length;
+// ── Stats ────────────────────────────────────────────────────────────
+function calcStats(matches) {
+  const wins = matches.filter(m=>m.result==='W').length;
+  const losses = matches.filter(m=>m.result==='L').length;
   const total = matches.length;
-  const winRate = total > 0 ? Math.round(wins / total * 100) : 0;
+  const winRate = total>0 ? Math.round(wins/total*100) : 0;
 
-  let streak = 0, streakType = null;
-  const sorted = [...matches].sort((a,b) => b.date.localeCompare(a.date));
+  const sorted = [...matches].sort((a,b)=>b.date.localeCompare(a.date));
+  let streak=0, streakType=null;
   for (const m of sorted) {
-    if (m.result !== 'W' && m.result !== 'L') continue;
-    if (!streakType) { streakType = m.result; streak = 1; }
-    else if (m.result === streakType) streak++;
+    if (m.result!=='W'&&m.result!=='L') continue;
+    if (!streakType) { streakType=m.result; streak=1; }
+    else if (m.result===streakType) streak++;
     else break;
   }
 
-  let longest = 0, cur = 0;
+  let longest=0, cur=0;
   for (const m of [...sorted].reverse()) {
-    if (m.result === 'W') { cur++; longest = Math.max(longest, cur); } else cur = 0;
+    if (m.result==='W'){cur++;longest=Math.max(longest,cur);}else cur=0;
   }
 
-  const tIds = new Set(matches.map(m => m.tournamentId).filter(Boolean));
-  const countries = new Set(matches.map(m => m.country).filter(Boolean));
-
-  const surf = {};
+  const surf={};
   for (const m of matches) {
-    const s = m.surface || 'Unknown';
-    if (!surf[s]) surf[s] = { matches: 0, wins: 0 };
-    surf[s].matches++;
-    if (m.result === 'W') surf[s].wins++;
+    const s=m.surface||'Unknown';
+    if(!surf[s]) surf[s]={n:0,w:0};
+    surf[s].n++;
+    if(m.result==='W') surf[s].w++;
   }
-  const statsBySurface = Object.entries(surf).map(([s, d]) => ({
-    surface: s, matches: d.matches, wins: d.wins,
-    winRate: Math.round(d.wins / d.matches * 100),
-  }));
+  const bySurface = Object.entries(surf).map(([s,d])=>({s,n:d.n,w:d.w,pct:Math.round(d.w/d.n*100)}));
 
+  const tIds = new Set(matches.map(m=>m.tid).filter(Boolean));
+  const countries = new Set(matches.map(m=>m.country).filter(Boolean));
+
+  // Monthly (last 12)
   const now = new Date();
-  const monthly = {};
-  for (let i = 11; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+  const monthly=[];
+  for (let i=11;i>=0;i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
     const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-    monthly[key] = { wins: 0, total: 0 };
+    monthly.push({key, w:0, n:0, label:key.slice(5)});
   }
   for (const m of matches) {
-    const key = m.date.substring(0,7);
-    if (monthly[key]) { monthly[key].total++; if (m.result==='W') monthly[key].wins++; }
+    const key=m.date.slice(0,7);
+    const mo=monthly.find(x=>x.key===key);
+    if(mo){mo.n++;if(m.result==='W')mo.w++;}
   }
-  const monthlyChart = Object.entries(monthly).map(([month, d]) => ({
-    month, winRate: d.total > 0 ? Math.round(d.wins/d.total*100) : null, matches: d.total,
-  }));
+  const chart = monthly.map(mo=>({...mo, pct: mo.n>0 ? Math.round(mo.w/mo.n*100) : null}));
 
-  return { total, wins, losses, winRate, streak, streakType, longest,
-    tournamentsPlayed: tIds.size, countries: countries.size, statsBySurface, monthlyChart };
+  return {wins,losses,total,winRate,streak,streakType,longest,
+    tourns:tIds.size,countries:countries.size,bySurface,chart};
 }
 
-// ─── Match Row ────────────────────────────────────────────────────────
-function MatchRow({ match, showPlayer, onDelete }) {
-  const b = badge(match.result);
-  const tName = (DB.get('tournaments',[]).find(t => t.id === match.tournamentId) || {}).name;
-  const pName = showPlayer ? (DB.get('players',[]).find(p => p.id === match.playerId) || {}).name?.split(' ')[0] : null;
-  return (
-    <div style={{display:'flex',alignItems:'center',gap:10,padding:'10px 0',borderBottom:'1px solid #f3f4f6'}}>
-      <span style={{background:b.bg,color:b.color,fontWeight:700,fontSize:11,padding:'3px 7px',borderRadius:6,minWidth:28,textAlign:'center'}}>{b.label}</span>
-      <div style={{flex:1,minWidth:0}}>
-        <div style={{display:'flex',alignItems:'center',gap:6,fontSize:14,fontWeight:500}}>
-          {pName && <span style={{fontSize:11,color:match.playerId===1?'#3266ad':'#D4537E',fontWeight:700}}>{pName}</span>}
-          <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{match.opponentName}</span>
-        </div>
-        <div style={{display:'flex',gap:8,fontSize:11,color:'#6b7280',marginTop:2}}>
-          {match.score && <span style={{fontFamily:'monospace'}}>{match.score}</span>}
-          {match.round && <span style={{background:'#f3f4f6',padding:'1px 5px',borderRadius:4}}>{match.round}</span>}
-          {match.surface && <span>{surfaceIcon[match.surface]||''}</span>}
-          {match.country && <span>{countryFlag[match.country]||match.country}</span>}
-        </div>
-      </div>
-      <div style={{textAlign:'right',flexShrink:0}}>
-        <div style={{fontSize:11,color:'#9ca3af'}}>{fmt(match.date)}</div>
-        {tName && <div style={{fontSize:10,color:'#d1d5db',maxWidth:70,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{tName}</div>}
-      </div>
-      {onDelete && (
-        <button onClick={() => onDelete(match.id)} style={{color:'#d1d5db',background:'none',border:'none',cursor:'pointer',fontSize:16,padding:'0 4px'}} title="Delete">×</button>
-      )}
-    </div>
-  );
+// ── Mini line chart (pure SVG) ────────────────────────────────────────
+function LineChart({data, color}) {
+  const pts = data.filter(d=>d.pct!==null);
+  if (pts.length < 2) return html`<div style="color:#9ca3af;font-size:12px;text-align:center;padding:20px">Not enough data yet</div>`;
+  const W=320, H=100, pad=24;
+  const xStep = (W-pad*2)/(data.length-1);
+  const yScale = (H-pad*2)/100;
+  const path = data.map((d,i)=> {
+    if (d.pct===null) return null;
+    const x=pad+i*xStep, y=H-pad-d.pct*yScale;
+    return `${x},${y}`;
+  }).filter(Boolean).join(' L');
+  return html`
+    <div class="chart-wrap">
+      <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">
+        ${[0,25,50,75,100].map(v=>html`
+          <line x1=${pad} y1=${H-pad-v*yScale} x2=${W-pad} y2=${H-pad-v*yScale} stroke="#f1f5f9" stroke-width="1"/>
+          <text x=${pad-2} y=${H-pad-v*yScale+4} font-size="8" fill="#9ca3af" text-anchor="end">${v}%</text>
+        `)}
+        ${data.map((d,i)=>html`
+          <text x=${pad+i*xStep} y=${H-4} font-size="8" fill="#9ca3af" text-anchor="middle">${d.label}</text>
+        `)}
+        <polyline points="${path}" fill="none" stroke=${color} stroke-width="2" stroke-linejoin="round"/>
+        ${data.map((d,i)=> d.pct!==null ? html`
+          <circle cx=${pad+i*xStep} cy=${H-pad-d.pct*yScale} r="3" fill=${color}/>
+        ` : null)}
+      </svg>
+    </div>`;
 }
 
-// ─── Match Modal ──────────────────────────────────────────────────────
-function MatchModal({ onClose, onSaved, defaultPlayerId }) {
-  const [form, setForm] = useState({
-    playerId: defaultPlayerId ? String(defaultPlayerId) : '',
-    result: 'W', tournamentId: '', tournamentSearch: '',
-    city: '', country: 'Colombia', surface: 'Clay',
-    opponentName: '', opponentNationality: '', score: '',
-    round: '1R', date: new Date().toISOString().split('T')[0],
-    notes: '', duration: '',
-  });
-  const [errors, setErrors] = useState({});
+// ── Match Row ─────────────────────────────────────────────────────────
+function MatchRow({m, showPlayer, onDel}) {
+  const bs = badgeStyle(m.result);
+  const t = S.get('tournaments',[]).find(t=>t.id===m.tid);
+  const p = showPlayer ? S.get('players',[]).find(p=>p.id===m.pid) : null;
+  return html`
+    <div class="row">
+      <span class="badge" style=${bs}>${m.result}</span>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:5px;font-weight:500;font-size:13px">
+          ${p && html`<span style="color:${p.id===1?C_S:C_N};font-size:11px;font-weight:700">${p.name.split(' ')[0]}</span>`}
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.opp}</span>
+        </div>
+        <div style="display:flex;gap:6px;font-size:11px;color:#9ca3af;margin-top:2px;flex-wrap:wrap">
+          ${m.score && html`<span style="font-family:monospace">${m.score}</span>`}
+          ${m.round && html`<span class="tag">${m.round}</span>`}
+          ${m.surface && html`<span>${SI[m.surface]||''}</span>`}
+          ${m.country && html`<span>${CF[m.country]||m.country}</span>`}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:#9ca3af">${fmtDate(m.date)}</div>
+        ${t&&html`<div style="font-size:10px;color:#d1d5db;max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.name}</div>`}
+      </div>
+      ${onDel && html`<button onclick=${()=>onDel(m.id)} style="background:none;border:none;color:#d1d5db;font-size:18px;padding:0 2px;line-height:1" title="Delete">×</button>`}
+    </div>`;
+}
+
+// ── Match Modal ───────────────────────────────────────────────────────
+function MatchModal({onClose, onSaved, defPid}) {
+  const today = new Date().toISOString().split('T')[0];
+  const [f, setF] = useState({pid:defPid?String(defPid):'',result:'W',tid:'',ts:'',city:'',country:'Colombia',surface:'Clay',opp:'',oppNat:'',score:'',round:'1R',date:today,notes:'',dur:''});
+  const [err, setErr] = useState({});
   const [saving, setSaving] = useState(false);
   const [showSug, setShowSug] = useState(false);
-  const tournaments = DB.get('tournaments', []);
-  const suggestions = tournaments.filter(t => t.name.toLowerCase().includes(form.tournamentSearch.toLowerCase())).slice(0,5);
+  const tournaments = S.get('tournaments',[]);
+  const sugs = f.ts ? tournaments.filter(t=>t.name.toLowerCase().includes(f.ts.toLowerCase())).slice(0,5) : tournaments.slice(0,5);
 
-  function set(k, v) { setForm(f => ({...f, [k]: v})); setErrors(e => ({...e, [k]: ''})); }
+  function up(k,v){ setF(x=>({...x,[k]:v})); setErr(e=>({...e,[k]:''})); }
 
-  function validate() {
-    const e = {};
-    if (!form.playerId) e.playerId = 'Required';
-    if (!form.opponentName.trim()) e.opponentName = 'Required';
-    if (!form.date) e.date = 'Required';
-    if (form.score && !SCORE_REGEX.test(form.score.trim())) e.score = 'Format: "6-3" or "6-3, 4-6, 7-5"';
+  function validate(){
+    const e={};
+    if(!f.pid) e.pid='Requerido';
+    if(!f.opp.trim()) e.opp='Requerido';
+    if(!f.date) e.date='Requerido';
+    if(f.score&&!SCORE_RE.test(f.score.trim())) e.score='Formato: "6-3" o "6-3, 4-6, 7-5"';
     return e;
   }
 
-  function handleSubmit(e) {
+  function submit(e){
     e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    const errs=validate();
+    if(Object.keys(errs).length){setErr(errs);return;}
     setSaving(true);
-
-    let tournamentId = form.tournamentId ? Number(form.tournamentId) : undefined;
-    if (!tournamentId && form.tournamentSearch.trim()) {
-      const ts = DB.get('tournaments', []);
-      const nt = { id: nextId('tournaments'), name: form.tournamentSearch.trim(), city: form.city || 'Unknown',
-        country: form.country, startDate: form.date, endDate: form.date, surface: form.surface,
-        players: form.playerId === '1' ? 'Santiago' : 'Nicole', level: 'Club' };
-      DB.set('tournaments', [...ts, nt]);
-      tournamentId = nt.id;
+    let tid = f.tid ? Number(f.tid) : undefined;
+    if(!tid && f.ts.trim()){
+      const ts=S.get('tournaments',[]);
+      const nt={id:nid('t'),name:f.ts.trim(),city:f.city||'Unknown',country:f.country,
+        startDate:f.date,endDate:f.date,surface:f.surface,
+        players:f.pid==='1'?'Santiago':'Nicole',level:'Club'};
+      S.set('tournaments',[...ts,nt]);
+      tid=nt.id;
     }
-
-    const matches = DB.get('matches', []);
-    const nm = {
-      id: nextId('matches'), playerId: Number(form.playerId), tournamentId: tournamentId || undefined,
-      date: form.date, result: form.result, opponentName: form.opponentName.trim(),
-      opponentNationality: form.opponentNationality || undefined, score: form.score.trim() || undefined,
-      round: form.round, surface: form.surface, city: form.city || undefined, country: form.country,
-      notes: form.notes || undefined, duration: form.duration ? Number(form.duration) : undefined,
-    };
-    DB.set('matches', [...matches, nm]);
-    setSaving(false);
-    onSaved();
-    onClose();
+    const ms=S.get('matches',[]);
+    S.set('matches',[...ms,{
+      id:nid('m'),pid:Number(f.pid),tid:tid,date:f.date,result:f.result,
+      opp:f.opp.trim(),oppNat:f.oppNat||undefined,score:f.score.trim()||undefined,
+      round:f.round,surface:f.surface,city:f.city||undefined,country:f.country,
+      notes:f.notes||undefined,dur:f.dur?Number(f.dur):undefined,
+    }]);
+    setSaving(false); onSaved(); onClose();
   }
 
-  const inp = (label, key, type='text', opts={}) => (
+  const Sel=(label,k,opts)=>html`
     <div>
-      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>{label}</label>
-      <input type={type} value={form[key]} onChange={e => set(key, e.target.value)} {...opts} />
-      {errors[key] && <p style={{color:'#ef4444',fontSize:11,marginTop:2}}>{errors[key]}</p>}
-    </div>
-  );
-
-  const sel = (label, key, options) => (
-    <div>
-      <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>{label}</label>
-      <select value={form[key]} onChange={e => set(key, e.target.value)}>
-        {options.map(o => <option key={o.v||o} value={o.v||o}>{o.l||o}</option>)}
+      <label class="lbl">${label}</label>
+      <select value=${f[k]} onchange=${e=>up(k,e.target.value)}>
+        ${opts.map(o=>html`<option value=${o.v??o}>${o.l??o}</option>`)}
       </select>
-    </div>
-  );
+    </div>`;
 
-  return (
-    <div onClick={onClose} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.4)',zIndex:50,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-      <div onClick={e=>e.stopPropagation()} style={{background:'#fff',width:'100%',maxWidth:520,borderRadius:'20px 20px 0 0',maxHeight:'90vh',overflowY:'auto'}}>
-        <div style={{padding:'16px 16px 12px',borderBottom:'1px solid #e5e7eb',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,background:'#fff'}}>
-          <span style={{fontWeight:600,fontSize:15}}>Add match</span>
-          <button onClick={onClose} style={{background:'none',border:'none',fontSize:22,cursor:'pointer',color:'#9ca3af'}}>×</button>
+  const Inp=(label,k,type='text',ph='')=>html`
+    <div>
+      <label class="lbl">${label}</label>
+      <input type=${type} value=${f[k]} oninput=${e=>up(k,e.target.value)} placeholder=${ph}/>
+      ${err[k]&&html`<p class="err">${err[k]}</p>`}
+    </div>`;
+
+  return html`
+    <div class="modal-bg" onclick=${onClose}>
+      <div class="modal-box" onclick=${e=>e.stopPropagation()}>
+        <div class="modal-head">
+          <span style="font-weight:600;font-size:15px">Agregar partido</span>
+          <button onclick=${onClose} style="background:none;border:none;font-size:24px;color:#9ca3af;line-height:1">×</button>
         </div>
-        <form onSubmit={handleSubmit} style={{padding:16,display:'flex',flexDirection:'column',gap:12}}>
-          {sel('Player','playerId',[{v:'',l:'Select player'},{v:'1',l:'Santiago Dussán (Sub-18)'},{v:'2',l:'Nicole Dussán (Sub-12)'}])}
-          {errors.playerId && <p style={{color:'#ef4444',fontSize:11,marginTop:-8}}>{errors.playerId}</p>}
-
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            {inp('Date','date','date')}
-            {sel('Result','result',[{v:'W',l:'W – Win'},{v:'L',l:'L – Loss'},{v:'WO',l:'WO – Walkover'},{v:'P',l:'P – Pending'}])}
+        <form onsubmit=${submit} style="padding:16px;display:flex;flex-direction:column;gap:12px">
+          <div>
+            <label class="lbl">Jugador</label>
+            <select value=${f.pid} onchange=${e=>up('pid',e.target.value)}>
+              <option value="">Seleccionar jugador</option>
+              <option value="1">Santiago Dussán (Sub-18)</option>
+              <option value="2">Nicole Dussán (Sub-12)</option>
+            </select>
+            ${err.pid&&html`<p class="err">${err.pid}</p>`}
           </div>
 
-          <div style={{position:'relative'}}>
-            <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>Tournament (optional)</label>
-            <input placeholder="Search or create..." value={form.tournamentSearch}
-              onChange={e => { set('tournamentSearch', e.target.value); set('tournamentId',''); setShowSug(true); }}
-              onFocus={() => setShowSug(true)} onBlur={() => setTimeout(() => setShowSug(false), 150)} />
-            {showSug && suggestions.length > 0 && (
-              <div style={{position:'absolute',zIndex:10,width:'100%',background:'#fff',border:'1px solid #e5e7eb',borderRadius:8,marginTop:2,maxHeight:140,overflowY:'auto'}}>
-                {suggestions.map(t => (
-                  <button type="button" key={t.id} onClick={() => { set('tournamentSearch',t.name); set('tournamentId',String(t.id)); set('city',t.city); set('country',t.country); set('surface',t.surface); setShowSug(false); }}
-                    style={{width:'100%',textAlign:'left',padding:'8px 12px',fontSize:13,background:'none',border:'none',cursor:'pointer',borderBottom:'1px solid #f3f4f6'}}>
-                    {t.name} — {t.city}, {t.country}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div class="grid2">
+            ${Inp('Fecha','date','date')}
+            ${Sel('Resultado','result',[{v:'W',l:'W – Ganó'},{v:'L',l:'L – Perdió'},{v:'WO',l:'WO – Walkover'},{v:'P',l:'P – Pendiente'}])}
           </div>
 
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            {sel('Round','round', ROUNDS)}
-            {sel('Surface','surface', SURFACES)}
+          <div style="position:relative">
+            <label class="lbl">Torneo (opcional)</label>
+            <input placeholder="Buscar o crear torneo..." value=${f.ts}
+              oninput=${e=>{up('ts',e.target.value);up('tid','');setShowSug(true)}}
+              onfocus=${()=>setShowSug(true)} onblur=${()=>setTimeout(()=>setShowSug(false),160)}/>
+            ${showSug&&sugs.length>0&&html`
+              <div class="sug-list">
+                ${sugs.map(t=>html`
+                  <button type="button" class="sug-item"
+                    onclick=${()=>{up('ts',t.name);up('tid',String(t.id));up('city',t.city);up('country',t.country);up('surface',t.surface);setShowSug(false)}}>
+                    ${t.name} — ${t.city}, ${t.country}
+                  </button>`)}
+              </div>`}
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            {inp('City','city','text',{placeholder:'Bogotá'})}
-            {sel('Country','country', COUNTRIES)}
+
+          <div class="grid2">
+            ${Sel('Ronda','round',ROUNDS)}
+            ${Sel('Superficie','surface',SURFACES)}
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            {inp('Opponent name','opponentName','text',{placeholder:'J. Pérez'})}
-            {inp('Opponent nationality','opponentNationality','text',{placeholder:'Colombian'})}
+          <div class="grid2">
+            ${Inp('Ciudad','city','text','Bogotá')}
+            ${Sel('País','country',COUNTRIES)}
           </div>
-          {inp('Score','score','text',{placeholder:'6-3, 4-6, 7-5'})}
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-            {inp('Duration (min)','duration','number',{placeholder:'90'})}
+          <div class="grid2">
+            <div>
+              <label class="lbl">Nombre del rival</label>
+              <input value=${f.opp} oninput=${e=>up('opp',e.target.value)} placeholder="J. Pérez"/>
+              ${err.opp&&html`<p class="err">${err.opp}</p>`}
+            </div>
+            ${Inp('Nacionalidad rival','oppNat','text','Colombian')}
+          </div>
+          ${Inp('Marcador','score','text','6-3, 4-6, 7-5')}
+          ${err.score&&html`<p class="err" style="margin-top:-8px">${err.score}</p>`}
+          <div class="grid2">
+            ${Inp('Duración (min)','dur','number','90')}
+            <div></div>
           </div>
           <div>
-            <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:4}}>Notes</label>
-            <textarea rows={2} value={form.notes} onChange={e => set('notes',e.target.value)} placeholder="Optional..." style={{resize:'none'}} />
+            <label class="lbl">Notas</label>
+            <textarea rows="2" style="resize:none" value=${f.notes} oninput=${e=>up('notes',e.target.value)} placeholder="Opcional..."></textarea>
           </div>
-          <button type="submit" disabled={saving} style={{background:'#3266ad',color:'#fff',border:'none',borderRadius:12,padding:'12px',fontSize:14,fontWeight:600,cursor:'pointer',opacity:saving?0.6:1}}>
-            {saving ? 'Saving...' : 'Save match'}
+          <button type="submit" class="btn btn-blue" style="width:100%;padding:12px" disabled=${saving}>
+            ${saving?'Guardando...':'Guardar partido'}
           </button>
         </form>
       </div>
-    </div>
-  );
+    </div>`;
 }
 
-// ─── Dashboard ────────────────────────────────────────────────────────
-function Dashboard({ nav, refresh }) {
-  const [showModal, setShowModal] = useState(false);
-  const players = DB.get('players', []);
-  const allMatches = DB.get('matches', []);
-  const recent = [...allMatches].sort((a,b) => b.date.localeCompare(a.date)).slice(0,8);
+// ── Dashboard ─────────────────────────────────────────────────────────
+function Dashboard({nav, tick}) {
+  const [modal, setModal] = useState(false);
+  const players = S.get('players',[]);
+  const allM = S.get('matches',[]);
+  const recent = [...allM].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,8);
 
-  function deleteMatch(id) {
-    DB.set('matches', DB.get('matches',[]).filter(m => m.id !== id));
-    refresh();
-  }
+  function delMatch(id){ S.set('matches',S.get('matches',[]).filter(m=>m.id!==id)); nav('dashboard'); }
 
-  return (
-    <div style={{maxWidth:640,margin:'0 auto'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <h1 style={{fontWeight:700,fontSize:20}}>Dashboard</h1>
-        <button onClick={() => setShowModal(true)} style={{background:'#3266ad',color:'#fff',border:'none',borderRadius:12,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer'}}>+ Add match</button>
+  return html`
+    <div style="max-width:640px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h1 style="font-weight:700;font-size:20px">Dashboard</h1>
+        <button class="btn btn-blue" onclick=${()=>setModal(true)}>+ Agregar partido</button>
       </div>
 
-      <div style={{display:'flex',gap:12,marginBottom:20}}>
-        {players.map(p => {
-          const pm = allMatches.filter(m => m.playerId === p.id);
-          const s = computeStats(pm);
-          const isS = p.id === 1;
-          const c = isS ? '#3266ad' : '#D4537E';
-          const bg = isS ? '#E6F1FB' : '#FBEAF0';
-          return (
-            <div key={p.id} onClick={() => nav('player', p.id)} style={{flex:1,border:`2px solid ${c}`,background:bg,borderRadius:16,padding:16,cursor:'pointer'}}>
-              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:10}}>
-                <div style={{width:44,height:44,borderRadius:'50%',background:c,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:700}}>{p.name[0]}</div>
-                <div>
-                  <div style={{fontWeight:700,fontSize:13,color:c}}>{p.name}</div>
-                  <div style={{fontSize:11,color:'#6b7280'}}>{p.category} · 🇨🇴</div>
+      <div style="display:flex;gap:12px;margin-bottom:18px">
+        ${players.map(p=>{
+          const pm=allM.filter(m=>m.pid===p.id);
+          const s=calcStats(pm);
+          const isS=p.id===1, c=isS?C_S:C_N, bg=isS?BG_S:BG_N;
+          return html`
+            <div onclick=${()=>nav('player',p.id)} style="flex:1;min-width:0;border:2px solid ${c};background:${bg};border-radius:16px;padding:14px;cursor:pointer">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div style="width:42px;height:42px;border-radius:50%;background:${c};color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0">${p.name[0]}</div>
+                <div style="min-width:0">
+                  <div style="font-weight:700;font-size:13px;color:${c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${p.name}</div>
+                  <div style="font-size:11px;color:#9ca3af">${p.category} · 🇨🇴</div>
                 </div>
-                {s.streak > 0 && (
-                  <div style={{marginLeft:'auto',fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:99,background:s.streakType==='W'?'#EAF3DE':'#FCEBEB',color:s.streakType==='W'?'#3B6D11':'#A32D2D'}}>
-                    🔥 {s.streak}{s.streakType}
-                  </div>
-                )}
+                ${s.streak>0&&html`<div style="margin-left:auto;font-size:11px;font-weight:700;padding:2px 7px;border-radius:99px;background:${s.streakType==='W'?'#EAF3DE':'#FCEBEB'};color:${s.streakType==='W'?'#3B6D11':'#A32D2D'};flex-shrink:0">🔥${s.streak}${s.streakType}</div>`}
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',textAlign:'center',gap:4}}>
-                {[{l:'Matches',v:s.total},{l:'Wins',v:s.wins,c:'#3B6D11'},{l:'Win %',v:`${s.winRate}%`,c}].map(st => (
-                  <div key={st.l}>
-                    <div style={{fontWeight:700,fontSize:18,color:st.c||'inherit'}}>{st.v}</div>
-                    <div style={{fontSize:10,color:'#9ca3af'}}>{st.l}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16}}>
-        <div style={{fontWeight:600,fontSize:13,color:'#374151',marginBottom:10}}>Recent matches</div>
-        {recent.length === 0
-          ? <div style={{textAlign:'center',color:'#9ca3af',padding:'20px 0',fontSize:13}}>No matches yet. Add your first match!</div>
-          : recent.map(m => <MatchRow key={m.id} match={m} showPlayer onDelete={deleteMatch} />)}
-      </div>
-
-      {showModal && <MatchModal onClose={() => setShowModal(false)} onSaved={refresh} />}
-    </div>
-  );
-}
-
-// ─── Player Profile ───────────────────────────────────────────────────
-function PlayerProfile({ playerId, refresh }) {
-  const [showModal, setShowModal] = useState(false);
-  const [fTournament, setFT] = useState('');
-  const [fSurface, setFS] = useState('');
-  const [fResult, setFR] = useState('');
-  const [fFrom, setFF] = useState('');
-
-  const player = DB.get('players',[]).find(p => p.id === playerId);
-  const allMatches = DB.get('matches',[]).filter(m => m.playerId === playerId);
-  const tournaments = DB.get('tournaments',[]);
-  const isS = playerId === 1;
-  const c = isS ? '#3266ad' : '#D4537E';
-  const bg = isS ? '#E6F1FB' : '#FBEAF0';
-
-  const s = computeStats(allMatches);
-
-  const filtered = allMatches
-    .filter(m => !fTournament || m.tournamentId === Number(fTournament))
-    .filter(m => !fSurface || m.surface === fSurface)
-    .filter(m => !fResult || m.result === fResult)
-    .filter(m => !fFrom || m.date >= fFrom)
-    .sort((a,b) => b.date.localeCompare(a.date));
-
-  const h2h = {};
-  for (const m of allMatches) {
-    if (!h2h[m.opponentName]) h2h[m.opponentName] = { w:0, l:0 };
-    if (m.result==='W') h2h[m.opponentName].w++;
-    if (m.result==='L') h2h[m.opponentName].l++;
-  }
-  const h2hList = Object.entries(h2h).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).slice(0,8);
-
-  function deleteMatch(id) {
-    DB.set('matches', DB.get('matches',[]).filter(m => m.id !== id));
-    refresh();
-  }
-
-  if (!player) return null;
-
-  return (
-    <div style={{maxWidth:640,margin:'0 auto'}}>
-      <div style={{display:'flex',alignItems:'center',gap:14,padding:16,border:`2px solid ${c}`,background:bg,borderRadius:16,marginBottom:16}}>
-        <div style={{width:56,height:56,borderRadius:'50%',background:c,color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontSize:26,fontWeight:700}}>{player.name[0]}</div>
-        <div>
-          <h1 style={{fontWeight:700,fontSize:20,color:c,margin:0}}>{player.name}</h1>
-          <div style={{fontSize:12,color:'#6b7280'}}>{player.category} · 🇨🇴 Colombian</div>
-        </div>
-        <button onClick={() => setShowModal(true)} style={{marginLeft:'auto',background:c,color:'#fff',border:'none',borderRadius:12,padding:'8px 14px',fontSize:12,fontWeight:600,cursor:'pointer'}}>+ Add match</button>
-      </div>
-
-      <div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:10,marginBottom:16}}>
-        {[{l:'Matches',v:s.total},{l:'Wins',v:s.wins,col:'#3B6D11'},{l:'Losses',v:s.losses,col:'#A32D2D'},{l:'Win %',v:`${s.winRate}%`,col:c},{l:'Tournaments',v:s.tournamentsPlayed},{l:'Countries',v:s.countries}].map(st => (
-          <div key={st.l} style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:12,padding:'10px',textAlign:'center'}}>
-            <div style={{fontWeight:700,fontSize:20,color:st.col||'inherit'}}>{st.v}</div>
-            <div style={{fontSize:10,color:'#9ca3af'}}>{st.l}</div>
-          </div>
-        ))}
-      </div>
-
-      {s.streak > 0 && (
-        <div style={{padding:'10px 14px',borderRadius:12,marginBottom:16,fontWeight:600,fontSize:13,background:s.streakType==='W'?'#EAF3DE':'#FCEBEB',color:s.streakType==='W'?'#3B6D11':'#A32D2D'}}>
-          🔥 Current streak: {s.streak} {s.streakType==='W'?'wins':'losses'} in a row · Longest win streak: {s.longest}
-        </div>
-      )}
-
-      {s.monthlyChart.some(m => m.matches > 0) && (
-        <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,marginBottom:16}}>
-          <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>Monthly win rate (last 12 months)</div>
-          <ResponsiveContainer width="100%" height={160}>
-            <LineChart data={s.monthlyChart} margin={{top:5,right:10,bottom:5,left:-20}}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="month" tick={{fontSize:9}} tickFormatter={m=>m.slice(5)} />
-              <YAxis domain={[0,100]} tick={{fontSize:9}} unit="%" />
-              <Tooltip formatter={v=>[`${v}%`,'Win rate']} />
-              <Line type="monotone" dataKey="winRate" stroke={c} strokeWidth={2} dot connectNulls />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {s.statsBySurface.length > 0 && (
-        <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,marginBottom:16}}>
-          <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>Stats by surface</div>
-          {s.statsBySurface.map(sf => (
-            <div key={sf.surface} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
-              <span style={{width:22,textAlign:'center'}}>{surfaceIcon[sf.surface]||'🎾'}</span>
-              <span style={{fontSize:13,width:72}}>{sf.surface}</span>
-              <div style={{flex:1,background:'#f3f4f6',borderRadius:99,height:6}}>
-                <div style={{height:6,borderRadius:99,background:c,width:`${sf.winRate}%`}} />
-              </div>
-              <span style={{fontSize:11,color:'#9ca3af',width:90,textAlign:'right'}}>{sf.wins}W / {sf.matches-sf.wins}L · {sf.winRate}%</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,marginBottom:16}}>
-        <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>Match history</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
-          <select value={fTournament} onChange={e=>setFT(e.target.value)} style={{fontSize:12}}>
-            <option value="">All tournaments</option>
-            {tournaments.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-          <select value={fSurface} onChange={e=>setFS(e.target.value)} style={{fontSize:12}}>
-            <option value="">All surfaces</option>
-            {SURFACES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={fResult} onChange={e=>setFR(e.target.value)} style={{fontSize:12}}>
-            <option value="">All results</option>
-            <option value="W">Wins</option>
-            <option value="L">Losses</option>
-          </select>
-          <input type="date" value={fFrom} onChange={e=>setFF(e.target.value)} style={{fontSize:12}} />
-        </div>
-        {filtered.length === 0
-          ? <div style={{textAlign:'center',color:'#9ca3af',padding:'12px 0',fontSize:13}}>No matches found</div>
-          : filtered.map(m => <MatchRow key={m.id} match={m} onDelete={deleteMatch} />)}
-      </div>
-
-      {h2hList.length > 0 && (
-        <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,marginBottom:16}}>
-          <div style={{fontWeight:600,fontSize:13,marginBottom:10}}>Head-to-head records</div>
-          {h2hList.map(([name, rec]) => (
-            <div key={name} style={{display:'flex',justifyContent:'space-between',alignItems:'center',fontSize:13,padding:'4px 0',borderBottom:'1px solid #f3f4f6'}}>
-              <span style={{fontWeight:500}}>{name}</span>
-              <span><span style={{color:'#3B6D11',fontWeight:700}}>{rec.w}W</span> – <span style={{color:'#A32D2D',fontWeight:700}}>{rec.l}L</span></span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {showModal && <MatchModal onClose={() => setShowModal(false)} onSaved={refresh} defaultPlayerId={playerId} />}
-    </div>
-  );
-}
-
-// ─── Tournaments ──────────────────────────────────────────────────────
-function Tournaments({ refresh }) {
-  const [expanded, setExpanded] = useState(null);
-  const [showForm, setShowForm] = useState(false);
-  const [fCountry, setFC] = useState('');
-  const [fSurface, setFS] = useState('');
-  const [fYear, setFY] = useState('');
-  const [form, setForm] = useState({ name:'', city:'', country:'Colombia', startDate:'', endDate:'', surface:'Clay', players:'Both', level:'Club' });
-
-  const tournaments = DB.get('tournaments',[])
-    .filter(t => !fCountry || t.country === fCountry)
-    .filter(t => !fSurface || t.surface === fSurface)
-    .filter(t => !fYear || t.startDate.startsWith(fYear))
-    .sort((a,b) => b.startDate.localeCompare(a.startDate));
-
-  const allMatches = DB.get('matches',[]);
-
-  function handleCreate(e) {
-    e.preventDefault();
-    const ts = DB.get('tournaments',[]);
-    DB.set('tournaments', [...ts, {...form, id: nextId('tournaments')}]);
-    setShowForm(false); setForm({ name:'', city:'', country:'Colombia', startDate:'', endDate:'', surface:'Clay', players:'Both', level:'Club' });
-    refresh();
-  }
-
-  function deleteMatch(id) { DB.set('matches', DB.get('matches',[]).filter(m => m.id !== id)); refresh(); }
-
-  const years = Array.from({length:5},(_,i)=>String(new Date().getFullYear()-i));
-
-  return (
-    <div style={{maxWidth:640,margin:'0 auto'}}>
-      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-        <h1 style={{fontWeight:700,fontSize:20}}>Tournaments</h1>
-        <button onClick={() => setShowForm(s=>!s)} style={{background:'#3266ad',color:'#fff',border:'none',borderRadius:12,padding:'8px 16px',fontSize:13,fontWeight:600,cursor:'pointer'}}>+ Add tournament</button>
-      </div>
-
-      {showForm && (
-        <form onSubmit={handleCreate} style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,marginBottom:16,display:'flex',flexDirection:'column',gap:10}}>
-          <div style={{display:'grid',gridTemplateColumns:'1fr',gap:8}}>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Name</label><input required value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Tournament name" /></div>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>City</label><input required value={form.city} onChange={e=>setForm(f=>({...f,city:e.target.value}))} /></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Country</label><select value={form.country} onChange={e=>setForm(f=>({...f,country:e.target.value}))}>{COUNTRIES.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Start date</label><input type="date" required value={form.startDate} onChange={e=>setForm(f=>({...f,startDate:e.target.value}))} /></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>End date</label><input type="date" required value={form.endDate} onChange={e=>setForm(f=>({...f,endDate:e.target.value}))} /></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Surface</label><select value={form.surface} onChange={e=>setForm(f=>({...f,surface:e.target.value}))}>{SURFACES.map(s=><option key={s} value={s}>{s}</option>)}</select></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Players</label><select value={form.players} onChange={e=>setForm(f=>({...f,players:e.target.value}))}><option>Both</option><option>Santiago</option><option>Nicole</option></select></div>
-            <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Level</label><select value={form.level} onChange={e=>setForm(f=>({...f,level:e.target.value}))}>{LEVELS.map(l=><option key={l} value={l}>{l}</option>)}</select></div>
-          </div>
-          <div style={{display:'flex',gap:8,marginTop:4}}>
-            <button type="submit" style={{flex:1,background:'#3266ad',color:'#fff',border:'none',borderRadius:10,padding:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>Save</button>
-            <button type="button" onClick={()=>setShowForm(false)} style={{flex:1,background:'none',border:'1px solid #e5e7eb',borderRadius:10,padding:10,fontSize:13,cursor:'pointer'}}>Cancel</button>
-          </div>
-        </form>
-      )}
-
-      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:14}}>
-        <select style={{fontSize:12}} value={fCountry} onChange={e=>setFC(e.target.value)}><option value="">All countries</option>{COUNTRIES.map(c=><option key={c} value={c}>{c}</option>)}</select>
-        <select style={{fontSize:12}} value={fSurface} onChange={e=>setFS(e.target.value)}><option value="">All surfaces</option>{SURFACES.map(s=><option key={s} value={s}>{s}</option>)}</select>
-        <select style={{fontSize:12}} value={fYear} onChange={e=>setFY(e.target.value)}><option value="">All years</option>{years.map(y=><option key={y} value={y}>{y}</option>)}</select>
-      </div>
-
-      {tournaments.length === 0
-        ? <div style={{textAlign:'center',color:'#9ca3af',padding:'40px 0',fontSize:13}}>No tournaments yet. Add one above!</div>
-        : tournaments.map(t => {
-          const tm = allMatches.filter(m => m.tournamentId === t.id);
-          const wins = tm.filter(m=>m.result==='W').length;
-          const losses = tm.filter(m=>m.result==='L').length;
-          const santiagoPct = tm.length > 0 ? Math.round(tm.filter(m=>m.playerId===1).length/tm.length*100) : 0;
-          return (
-            <div key={t.id} style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,marginBottom:10,overflow:'hidden'}}>
-              <button style={{width:'100%',textAlign:'left',padding:14,background:'none',border:'none',cursor:'pointer'}} onClick={()=>setExpanded(e=>e===t.id?null:t.id)}>
-                <div style={{display:'flex',justifyContent:'space-between',gap:8}}>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);text-align:center;gap:4px">
+                ${[{l:'Partidos',v:s.total},{l:'Ganados',v:s.wins,c:'#3B6D11'},{l:'Win %',v:s.winRate+'%',c}].map(st=>html`
                   <div>
-                    <div style={{fontWeight:600,fontSize:14}}>{t.name}</div>
-                    <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>{countryFlag[t.country]||''} {t.city}, {t.country} · {surfaceIcon[t.surface]||''} {t.surface}</div>
-                    <div style={{fontSize:11,color:'#d1d5db'}}>{t.startDate} → {t.endDate}</div>
-                  </div>
-                  <div style={{textAlign:'right',flexShrink:0}}>
-                    <div style={{fontSize:12,fontWeight:600}}><span style={{color:'#3B6D11'}}>{wins}W</span> / <span style={{color:'#A32D2D'}}>{losses}L</span></div>
-                    <div style={{fontSize:11,color:'#9ca3af'}}>{t.level}</div>
-                    <div style={{color:'#9ca3af',marginTop:4}}>{expanded===t.id?'▲':'▼'}</div>
-                  </div>
-                </div>
-                {tm.length > 0 && (
-                  <div style={{marginTop:8,display:'flex',height:4,borderRadius:99,overflow:'hidden',background:'#f3f4f6',gap:1}}>
-                    <div style={{background:'#3266ad',width:`${santiagoPct}%`}} />
-                    <div style={{background:'#D4537E',flex:1}} />
-                  </div>
-                )}
-                <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>{t.players} · {tm.length} match{tm.length!==1?'es':''}</div>
-              </button>
-              {expanded === t.id && (
-                <div style={{borderTop:'1px solid #f3f4f6',padding:'0 14px 14px'}}>
-                  {tm.length === 0
-                    ? <div style={{fontSize:12,color:'#9ca3af',padding:'8px 0'}}>No matches recorded</div>
-                    : tm.sort((a,b)=>b.date.localeCompare(a.date)).map(m => <MatchRow key={m.id} match={m} showPlayer onDelete={deleteMatch} />)}
-                </div>
-              )}
-            </div>
-          );
+                    <div style="font-weight:700;font-size:18px;color:${st.c||'inherit'}">${st.v}</div>
+                    <div style="font-size:10px;color:#9ca3af">${st.l}</div>
+                  </div>`)}
+              </div>
+            </div>`;
         })}
-    </div>
-  );
+      </div>
+
+      <div class="card">
+        <div class="sec-title">Partidos recientes</div>
+        ${recent.length===0
+          ? html`<div style="text-align:center;color:#9ca3af;padding:24px 0;font-size:13px">Sin partidos aún. ¡Agrega el primero!</div>`
+          : recent.map(m=>html`<${MatchRow} m=${m} showPlayer=${true} onDel=${delMatch}/>`)}
+      </div>
+
+      ${modal&&html`<${MatchModal} onClose=${()=>setModal(false)} onSaved=${()=>{setModal(false);nav('dashboard');}}/>`}
+    </div>`;
 }
 
-// ─── Reports ──────────────────────────────────────────────────────────
+// ── Player Profile ────────────────────────────────────────────────────
+function PlayerProfile({pid, nav, tick}) {
+  const [modal, setModal] = useState(false);
+  const [fT, setFT] = useState('');
+  const [fS, setFS] = useState('');
+  const [fR, setFR] = useState('');
+  const [fFrom, setFFrom] = useState('');
+
+  const player = S.get('players',[]).find(p=>p.id===pid);
+  const allM = S.get('matches',[]).filter(m=>m.pid===pid);
+  const tournaments = S.get('tournaments',[]);
+  const isS=pid===1, c=isS?C_S:C_N, bg=isS?BG_S:BG_N;
+  const s = calcStats(allM);
+
+  const filtered = allM
+    .filter(m=>!fT||m.tid===Number(fT))
+    .filter(m=>!fS||m.surface===fS)
+    .filter(m=>!fR||m.result===fR)
+    .filter(m=>!fFrom||m.date>=fFrom)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+
+  const h2h={};
+  for(const m of allM){
+    if(!h2h[m.opp]) h2h[m.opp]={w:0,l:0};
+    if(m.result==='W') h2h[m.opp].w++;
+    if(m.result==='L') h2h[m.opp].l++;
+  }
+  const h2hList=Object.entries(h2h).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).slice(0,8);
+
+  function delMatch(id){ S.set('matches',S.get('matches',[]).filter(m=>m.id!==id)); nav('player',pid); }
+
+  if(!player) return null;
+  return html`
+    <div style="max-width:640px;margin:0 auto">
+      <div style="display:flex;align-items:center;gap:14px;padding:14px;border:2px solid ${c};background:${bg};border-radius:16px;margin-bottom:16px">
+        <div style="width:52px;height:52px;border-radius:50%;background:${c};color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;flex-shrink:0">${player.name[0]}</div>
+        <div>
+          <h1 style="font-weight:700;font-size:19px;color:${c}">${player.name}</h1>
+          <div style="font-size:12px;color:#9ca3af">${player.category} · 🇨🇴 Colombian</div>
+        </div>
+        <button class="btn" style="margin-left:auto;background:${c};color:#fff;flex-shrink:0" onclick=${()=>setModal(true)}>+ Partido</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+        ${[{l:'Partidos',v:s.total},{l:'Ganados',v:s.wins,col:'#3B6D11'},{l:'Perdidos',v:s.losses,col:'#A32D2D'},
+           {l:'Win %',v:s.winRate+'%',col:c},{l:'Torneos',v:s.tourns},{l:'Países',v:s.countries}].map(st=>html`
+          <div class="stat-box">
+            <div class="stat-n" style="color:${st.col||'inherit'}">${st.v}</div>
+            <div class="stat-l">${st.l}</div>
+          </div>`)}
+      </div>
+
+      ${s.streak>0&&html`
+        <div class="streak-box" style="background:${s.streakType==='W'?'#EAF3DE':'#FCEBEB'};color:${s.streakType==='W'?'#3B6D11':'#A32D2D'}">
+          🔥 Racha actual: ${s.streak} ${s.streakType==='W'?'victorias':'derrotas'} seguidas · Mejor racha: ${s.longest} victorias
+        </div>`}
+
+      ${s.chart.some(x=>x.n>0)&&html`
+        <div class="card" style="margin-bottom:14px">
+          <div class="sec-title">Win rate mensual (últimos 12 meses)</div>
+          <${LineChart} data=${s.chart} color=${c}/>
+        </div>`}
+
+      ${s.bySurface.length>0&&html`
+        <div class="card" style="margin-bottom:14px">
+          <div class="sec-title">Estadísticas por superficie</div>
+          ${s.bySurface.map(sf=>html`
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <span style="width:20px;text-align:center">${SI[sf.s]||'🎾'}</span>
+              <span style="font-size:13px;width:72px">${sf.s}</span>
+              <div style="flex:1;background:#f1f5f9;border-radius:99px;height:6px">
+                <div style="height:6px;border-radius:99px;background:${c};width:${sf.pct}%"></div>
+              </div>
+              <span style="font-size:11px;color:#9ca3af;width:90px;text-align:right">${sf.w}G / ${sf.n-sf.w}P · ${sf.pct}%</span>
+            </div>`)}
+        </div>`}
+
+      <div class="card" style="margin-bottom:14px">
+        <div class="sec-title">Historial de partidos</div>
+        <div class="grid2" style="margin-bottom:10px">
+          <select style="font-size:12px" value=${fT} onchange=${e=>setFT(e.target.value)}>
+            <option value="">Todos los torneos</option>
+            ${tournaments.map(t=>html`<option value=${t.id}>${t.name}</option>`)}
+          </select>
+          <select style="font-size:12px" value=${fS} onchange=${e=>setFS(e.target.value)}>
+            <option value="">Todas las superficies</option>
+            ${SURFACES.map(s=>html`<option value=${s}>${s}</option>`)}
+          </select>
+          <select style="font-size:12px" value=${fR} onchange=${e=>setFR(e.target.value)}>
+            <option value="">Todos los resultados</option>
+            <option value="W">Ganados</option>
+            <option value="L">Perdidos</option>
+          </select>
+          <input type="date" style="font-size:12px" value=${fFrom} onchange=${e=>setFFrom(e.target.value)}/>
+        </div>
+        ${filtered.length===0
+          ? html`<div style="text-align:center;color:#9ca3af;padding:12px;font-size:13px">Sin partidos</div>`
+          : filtered.map(m=>html`<${MatchRow} m=${m} onDel=${delMatch}/>`)}
+      </div>
+
+      ${h2hList.length>0&&html`
+        <div class="card" style="margin-bottom:14px">
+          <div class="sec-title">Head-to-head</div>
+          ${h2hList.map(([name,r])=>html`
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:5px 0;border-bottom:1px solid #f8fafc">
+              <span style="font-weight:500">${name}</span>
+              <span><span style="color:#3B6D11;font-weight:700">${r.w}G</span> – <span style="color:#A32D2D;font-weight:700">${r.l}P</span></span>
+            </div>`)}
+        </div>`}
+
+      ${modal&&html`<${MatchModal} onClose=${()=>setModal(false)} onSaved=${()=>{setModal(false);nav('player',pid);}} defPid=${pid}/>`}
+    </div>`;
+}
+
+// ── Tournaments ───────────────────────────────────────────────────────
+function Tournaments({nav, tick}) {
+  const [exp, setExp] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [fC, setFC] = useState('');
+  const [fS, setFS] = useState('');
+  const [fY, setFY] = useState('');
+  const [f, setF] = useState({name:'',city:'',country:'Colombia',startDate:'',endDate:'',surface:'Clay',players:'Both',level:'Club'});
+
+  const allT = S.get('tournaments',[])
+    .filter(t=>!fC||t.country===fC)
+    .filter(t=>!fS||t.surface===fS)
+    .filter(t=>!fY||t.startDate.startsWith(fY))
+    .sort((a,b)=>b.startDate.localeCompare(a.startDate));
+  const allM = S.get('matches',[]);
+
+  function save(e){
+    e.preventDefault();
+    S.set('tournaments',[...S.get('tournaments',[]),{...f,id:nid('t')}]);
+    setShowForm(false);
+    setF({name:'',city:'',country:'Colombia',startDate:'',endDate:'',surface:'Clay',players:'Both',level:'Club'});
+    nav('tournaments');
+  }
+
+  function delMatch(id){ S.set('matches',S.get('matches',[]).filter(m=>m.id!==id)); nav('tournaments'); }
+
+  const years=Array.from({length:5},(_,i)=>String(new Date().getFullYear()-i));
+  const up=(k,v)=>setF(x=>({...x,[k]:v}));
+
+  return html`
+    <div style="max-width:640px;margin:0 auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h1 style="font-weight:700;font-size:20px">Torneos</h1>
+        <button class="btn btn-blue" onclick=${()=>setShowForm(s=>!s)}>+ Agregar torneo</button>
+      </div>
+
+      ${showForm&&html`
+        <div class="card" style="margin-bottom:14px">
+          <form onsubmit=${save} style="display:flex;flex-direction:column;gap:10px">
+            <div><label class="lbl">Nombre</label><input required value=${f.name} oninput=${e=>up('name',e.target.value)} placeholder="Nombre del torneo"/></div>
+            <div class="grid2">
+              <div><label class="lbl">Ciudad</label><input required value=${f.city} oninput=${e=>up('city',e.target.value)}/></div>
+              <div><label class="lbl">País</label><select value=${f.country} onchange=${e=>up('country',e.target.value)}>${COUNTRIES.map(c=>html`<option value=${c}>${c}</option>`)}</select></div>
+              <div><label class="lbl">Inicio</label><input type="date" required value=${f.startDate} onchange=${e=>up('startDate',e.target.value)}/></div>
+              <div><label class="lbl">Fin</label><input type="date" required value=${f.endDate} onchange=${e=>up('endDate',e.target.value)}/></div>
+              <div><label class="lbl">Superficie</label><select value=${f.surface} onchange=${e=>up('surface',e.target.value)}>${SURFACES.map(s=>html`<option value=${s}>${s}</option>`)}</select></div>
+              <div><label class="lbl">Jugadores</label><select value=${f.players} onchange=${e=>up('players',e.target.value)}><option>Both</option><option>Santiago</option><option>Nicole</option></select></div>
+              <div><label class="lbl">Nivel</label><select value=${f.level} onchange=${e=>up('level',e.target.value)}>${LEVELS.map(l=>html`<option value=${l}>${l}</option>`)}</select></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn btn-blue" style="flex:1">Guardar</button>
+              <button type="button" class="btn btn-ghost" style="flex:1" onclick=${()=>setShowForm(false)}>Cancelar</button>
+            </div>
+          </form>
+        </div>`}
+
+      <div class="grid2" style="margin-bottom:14px">
+        <select style="font-size:12px" value=${fC} onchange=${e=>setFC(e.target.value)}><option value="">Todos los países</option>${COUNTRIES.map(c=>html`<option value=${c}>${c}</option>`)}</select>
+        <select style="font-size:12px" value=${fS} onchange=${e=>setFS(e.target.value)}><option value="">Todas las superficies</option>${SURFACES.map(s=>html`<option value=${s}>${s}</option>`)}</select>
+        <select style="font-size:12px" value=${fY} onchange=${e=>setFY(e.target.value)}><option value="">Todos los años</option>${years.map(y=>html`<option value=${y}>${y}</option>`)}</select>
+      </div>
+
+      ${allT.length===0
+        ? html`<div style="text-align:center;color:#9ca3af;padding:40px 0;font-size:13px">Sin torneos. ¡Agrega uno arriba!</div>`
+        : allT.map(t=>{
+            const tm=allM.filter(m=>m.tid===t.id);
+            const wins=tm.filter(m=>m.result==='W').length;
+            const losses=tm.filter(m=>m.result==='L').length;
+            const sPct=tm.length>0?Math.round(tm.filter(m=>m.pid===1).length/tm.length*100):0;
+            return html`
+              <div class="card" style="margin-bottom:10px;padding:0;overflow:hidden">
+                <button style="width:100%;text-align:left;padding:14px;background:none;border:none;cursor:pointer" onclick=${()=>setExp(x=>x===t.id?null:t.id)}>
+                  <div style="display:flex;justify-content:space-between;gap:8px">
+                    <div>
+                      <div style="font-weight:600;font-size:14px">${t.name}</div>
+                      <div style="font-size:11px;color:#9ca3af;margin-top:2px">${CF[t.country]||''} ${t.city}, ${t.country} · ${SI[t.surface]||''} ${t.surface}</div>
+                      <div style="font-size:11px;color:#d1d5db">${t.startDate} → ${t.endDate}</div>
+                    </div>
+                    <div style="text-align:right;flex-shrink:0">
+                      <div style="font-size:12px;font-weight:600"><span style="color:#3B6D11">${wins}G</span> / <span style="color:#A32D2D">${losses}P</span></div>
+                      <div style="font-size:11px;color:#9ca3af">${t.level}</div>
+                      <div style="color:#9ca3af;margin-top:4px">${exp===t.id?'▲':'▼'}</div>
+                    </div>
+                  </div>
+                  ${tm.length>0&&html`
+                    <div class="bar-wrap">
+                      <div class="bar-fill" style="background:${C_S};width:${sPct}%;display:inline-block"></div>
+                      <div class="bar-fill" style="background:${C_N};width:${100-sPct}%;display:inline-block"></div>
+                    </div>`}
+                  <div style="font-size:11px;color:#9ca3af;margin-top:4px">${t.players} · ${tm.length} partido${tm.length!==1?'s':''}</div>
+                </button>
+                ${exp===t.id&&html`
+                  <div style="border-top:1px solid #f1f5f9;padding:0 14px 14px">
+                    ${tm.length===0
+                      ? html`<div style="font-size:12px;color:#9ca3af;padding:8px 0">Sin partidos</div>`
+                      : tm.sort((a,b)=>b.date.localeCompare(a.date)).map(m=>html`<${MatchRow} m=${m} showPlayer=${true} onDel=${delMatch}/>`)}
+                  </div>`}
+              </div>`;
+          })}
+    </div>`;
+}
+
+// ── Reports ───────────────────────────────────────────────────────────
 function Reports() {
-  const [playerId, setPlayerId] = useState('');
+  const [pid, setPid] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [country, setCountry] = useState('');
 
-  function exportCSV() {
-    const matches = DB.get('matches',[])
-      .filter(m => !playerId || m.playerId === Number(playerId))
-      .filter(m => !from || m.date >= from)
-      .filter(m => !to || m.date <= to)
-      .filter(m => !country || m.country === country)
-      .sort((a,b) => b.date.localeCompare(a.date));
-    const players = DB.get('players',[]);
-    const tournaments = DB.get('tournaments',[]);
-    const header = ['Date','Player','Tournament','Round','Result','Opponent','Opp. Nationality','Score','Surface','City','Country','Duration','Notes'];
-    const rows = matches.map(m => [
-      m.date,
-      (players.find(p=>p.id===m.playerId)||{}).name||'',
-      (tournaments.find(t=>t.id===m.tournamentId)||{}).name||'',
-      m.round||'', m.result, m.opponentName,
-      m.opponentNationality||'', m.score||'', m.surface||'',
-      m.city||'', m.country||'', m.duration||'', m.notes||''
-    ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(','));
-    const csv = [header.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], {type:'text/csv'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'tennis-matches.csv';
-    a.click();
+  function exportCSV(){
+    const matches=S.get('matches',[]).filter(m=>(!pid||m.pid===Number(pid))&&(!from||m.date>=from)&&(!to||m.date<=to)&&(!country||m.country===country)).sort((a,b)=>b.date.localeCompare(a.date));
+    const players=S.get('players',[]); const ts=S.get('tournaments',[]);
+    const rows=[['Fecha','Jugador','Torneo','Ronda','Resultado','Rival','Nac. Rival','Marcador','Superficie','Ciudad','País','Duración','Notas'].join(',')];
+    for(const m of matches){
+      const p=(players.find(x=>x.id===m.pid)||{}).name||'';
+      const t=(ts.find(x=>x.id===m.tid)||{}).name||'';
+      rows.push([m.date,p,t,m.round||'',m.result,m.opp,m.oppNat||'',m.score||'',m.surface||'',m.city||'',m.country||'',m.dur||'',m.notes||''].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+    }
+    dl(rows.join('\n'),'text/csv',`tennis-${new Date().toISOString().slice(0,10)}.csv`);
   }
 
-  function exportJSON() {
-    const data = {
-      players: DB.get('players',[]),
-      tournaments: DB.get('tournaments',[]),
-      matches: DB.get('matches',[]),
-    };
-    const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `tennis-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
+  function exportJSON(){
+    const data={players:S.get('players',[]),tournaments:S.get('tournaments',[]),matches:S.get('matches',[])};
+    dl(JSON.stringify(data,null,2),'application/json',`tennis-backup-${new Date().toISOString().slice(0,10)}.json`);
   }
 
-  return (
-    <div style={{maxWidth:480,margin:'0 auto'}}>
-      <h1 style={{fontWeight:700,fontSize:20,marginBottom:20}}>Reports</h1>
-      <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,display:'flex',flexDirection:'column',gap:14}}>
-        <div style={{fontWeight:600,fontSize:13,color:'#374151'}}>Filter before export</div>
+  function dl(content,type,name){
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([content],{type}));
+    a.download=name; a.click();
+  }
+
+  return html`
+    <div style="max-width:480px;margin:0 auto">
+      <h1 style="font-weight:700;font-size:20px;margin-bottom:18px">Reportes</h1>
+      <div class="card" style="display:flex;flex-direction:column;gap:12px">
+        <div class="sec-title">Filtrar antes de exportar</div>
         <div>
-          <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Player</label>
-          <select value={playerId} onChange={e=>setPlayerId(e.target.value)}>
-            <option value="">Both players</option>
+          <label class="lbl">Jugador</label>
+          <select value=${pid} onchange=${e=>setPid(e.target.value)}>
+            <option value="">Ambos jugadores</option>
             <option value="1">Santiago Dussán</option>
             <option value="2">Nicole Dussán</option>
           </select>
         </div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
-          <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>From</label><input type="date" value={from} onChange={e=>setFrom(e.target.value)} /></div>
-          <div><label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>To</label><input type="date" value={to} onChange={e=>setTo(e.target.value)} /></div>
+        <div class="grid2">
+          <div><label class="lbl">Desde</label><input type="date" value=${from} onchange=${e=>setFrom(e.target.value)}/></div>
+          <div><label class="lbl">Hasta</label><input type="date" value=${to} onchange=${e=>setTo(e.target.value)}/></div>
         </div>
         <div>
-          <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Country</label>
-          <select value={country} onChange={e=>setCountry(e.target.value)}>
-            <option value="">All countries</option>
+          <label class="lbl">País</label>
+          <select value=${country} onchange=${e=>setCountry(e.target.value)}>
+            <option value="">Todos los países</option>
             <option value="Colombia">Colombia 🇨🇴</option>
             <option value="USA">USA 🇺🇸</option>
-            <option value="Other">Other</option>
+            <option value="Other">Otro</option>
           </select>
         </div>
-        <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4}}>
-          <button onClick={exportCSV} style={{background:'#3B6D11',color:'#fff',border:'none',borderRadius:12,padding:12,fontSize:13,fontWeight:600,cursor:'pointer'}}>📊 Export CSV (Excel compatible)</button>
-          <button onClick={exportJSON} style={{background:'#1e293b',color:'#fff',border:'none',borderRadius:12,padding:12,fontSize:13,fontWeight:600,cursor:'pointer'}}>💾 Export JSON backup</button>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+          <button class="btn" style="background:#3B6D11;color:#fff;padding:12px" onclick=${exportCSV}>📊 Exportar CSV (Excel / Google Sheets)</button>
+          <button class="btn" style="background:#1e293b;color:#fff;padding:12px" onclick=${exportJSON}>💾 Exportar respaldo JSON</button>
         </div>
       </div>
-      <div style={{marginTop:12,fontSize:11,color:'#9ca3af',textAlign:'center'}}>
-        CSV se abre en Excel/Google Sheets con todos los partidos.<br/>
-        JSON sirve como respaldo completo de la base de datos.
+      <div style="margin-top:10px;font-size:11px;color:#9ca3af;text-align:center">
+        El CSV se abre directamente en Excel o Google Sheets.<br/>
+        El JSON sirve como respaldo completo de la base de datos.
       </div>
-    </div>
-  );
+    </div>`;
 }
 
-// ─── Settings ─────────────────────────────────────────────────────────
-function Settings({ refresh }) {
-  const [players, setPlayers] = useState(DB.get('players',[]));
+// ── Settings ──────────────────────────────────────────────────────────
+function SettingsPage({nav}) {
+  const [players, setPlayers] = useState(S.get('players',[]));
   const [editing, setEditing] = useState({});
   const [saved, setSaved] = useState('');
 
-  function setField(id, k, v) { setEditing(e => ({...e, [id]: {...e[id], [k]: v}})); }
+  function upField(id,k,v){ setEditing(e=>({...e,[id]:{...e[id],[k]:v}})); }
 
-  function savePlayer(id) {
-    const ps = DB.get('players',[]).map(p => p.id === id ? {...p, ...editing[id]} : p);
-    DB.set('players', ps);
-    setPlayers(ps);
-    setSaved('Saved!'); setTimeout(() => setSaved(''), 2000);
-    refresh();
+  function savePlayer(id){
+    const ps=S.get('players',[]).map(p=>p.id===id?{...p,...editing[id]}:p);
+    S.set('players',ps); setPlayers(ps);
+    setSaved('¡Guardado!'); setTimeout(()=>setSaved(''),2000);
+    nav('settings');
   }
 
-  function importJSON(e) {
-    const file = e.target.files?.[0]; if (!file) return;
-    file.text().then(text => {
-      const data = JSON.parse(text);
-      if (data.players) DB.set('players', data.players);
-      if (data.tournaments) DB.set('tournaments', data.tournaments);
-      if (data.matches) DB.set('matches', data.matches);
-      setPlayers(DB.get('players',[]));
-      setSaved('Data restored!'); setTimeout(() => setSaved(''), 2000);
-      refresh();
+  function importJSON(e){
+    const file=e.target.files?.[0]; if(!file) return;
+    file.text().then(text=>{
+      const d=JSON.parse(text);
+      if(d.players) S.set('players',d.players);
+      if(d.tournaments) S.set('tournaments',d.tournaments);
+      if(d.matches) S.set('matches',d.matches);
+      setPlayers(S.get('players',[]));
+      setSaved('¡Datos restaurados!'); setTimeout(()=>setSaved(''),2000);
+      nav('settings');
     });
   }
 
-  function clearAll() {
-    if (!confirm('This will delete ALL matches and tournaments. Are you sure?')) return;
-    DB.set('matches', []); DB.set('tournaments', []);
-    DB.set('nextId', { players: 3, tournaments: 1, matches: 1 });
-    setSaved('Data cleared!'); setTimeout(() => setSaved(''), 2000);
-    refresh();
+  function clearAll(){
+    if(!confirm('Esto borrará TODOS los partidos y torneos. ¿Continuar?')) return;
+    S.set('matches',[]); S.set('tournaments',[]);
+    S.set('nid',{t:1,m:1});
+    setSaved('¡Datos borrados!'); setTimeout(()=>setSaved(''),2000);
+    nav('settings');
   }
 
-  return (
-    <div style={{maxWidth:480,margin:'0 auto'}}>
-      <h1 style={{fontWeight:700,fontSize:20,marginBottom:20}}>Settings</h1>
-      {saved && <div style={{background:'#EAF3DE',color:'#3B6D11',padding:'10px 14px',borderRadius:10,marginBottom:14,fontSize:13,fontWeight:600}}>{saved}</div>}
+  return html`
+    <div style="max-width:480px;margin:0 auto">
+      <h1 style="font-weight:700;font-size:20px;margin-bottom:18px">Configuración</h1>
+      ${saved&&html`<div style="background:#EAF3DE;color:#3B6D11;padding:10px 14px;border-radius:10px;margin-bottom:12px;font-size:13px;font-weight:600">${saved}</div>`}
 
-      <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16,marginBottom:14}}>
-        <div style={{fontWeight:600,fontSize:13,color:'#374151',marginBottom:12}}>Player profiles</div>
-        {players.map(p => (
-          <div key={p.id} style={{marginBottom:16}}>
-            <div style={{fontWeight:600,fontSize:13,color:p.id===1?'#3266ad':'#D4537E',marginBottom:8}}>{p.name}</div>
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
-              <div>
-                <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Name</label>
-                <input defaultValue={p.name} onChange={e=>setField(p.id,'name',e.target.value)} />
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
-                <div>
-                  <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Category</label>
-                  <select defaultValue={p.category} onChange={e=>setField(p.id,'category',e.target.value)}>
-                    {['Sub-12','Sub-14','Sub-16','Sub-18'].map(c=><option key={c} value={c}>{c}</option>)}
+      <div class="card" style="margin-bottom:12px">
+        <div class="sec-title">Perfiles de jugadores</div>
+        ${players.map(p=>html`
+          <div style="margin-bottom:14px">
+            <div style="font-weight:600;font-size:13px;color:${p.id===1?C_S:C_N};margin-bottom:8px">${p.name}</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div><label class="lbl">Nombre</label><input defaultValue=${p.name} oninput=${e=>upField(p.id,'name',e.target.value)}/></div>
+              <div class="grid2">
+                <div><label class="lbl">Categoría</label>
+                  <select defaultValue=${p.category} onchange=${e=>upField(p.id,'category',e.target.value)}>
+                    ${['Sub-12','Sub-14','Sub-16','Sub-18'].map(c=>html`<option value=${c} selected=${c===p.category}>${c}</option>`)}
                   </select>
                 </div>
-                <div>
-                  <label style={{fontSize:11,fontWeight:600,color:'#6b7280',display:'block',marginBottom:3}}>Birthdate</label>
-                  <input type="date" defaultValue={p.birthdate||''} onChange={e=>setField(p.id,'birthdate',e.target.value)} />
-                </div>
+                <div><label class="lbl">Fecha de nacimiento</label><input type="date" defaultValue=${p.birthdate||''} onchange=${e=>upField(p.id,'birthdate',e.target.value)}/></div>
               </div>
-              <button onClick={()=>savePlayer(p.id)} style={{background:p.id===1?'#3266ad':'#D4537E',color:'#fff',border:'none',borderRadius:10,padding:9,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-                Save {p.name.split(' ')[0]}
+              <button class="btn" style="background:${p.id===1?C_S:C_N};color:#fff;width:100%;padding:9px" onclick=${()=>savePlayer(p.id)}>
+                Guardar ${p.name.split(' ')[0]}
               </button>
             </div>
-          </div>
-        ))}
+          </div>`)}
       </div>
 
-      <div style={{background:'#fff',border:'1px solid #e5e7eb',borderRadius:16,padding:16}}>
-        <div style={{fontWeight:600,fontSize:13,color:'#374151',marginBottom:12}}>Data</div>
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <label style={{border:'1px solid #e5e7eb',borderRadius:10,padding:10,fontSize:13,fontWeight:600,textAlign:'center',cursor:'pointer',display:'block'}}>
-            📂 Import JSON backup
-            <input type="file" accept=".json" style={{display:'none'}} onChange={importJSON} />
+      <div class="card">
+        <div class="sec-title">Datos</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="border:1px solid #e2e8f0;border-radius:10px;padding:10px;font-size:13px;font-weight:600;text-align:center;cursor:pointer;display:block">
+            📂 Importar respaldo JSON
+            <input type="file" accept=".json" style="display:none" onchange=${importJSON}/>
           </label>
-          <button onClick={clearAll} style={{background:'#fee2e2',color:'#A32D2D',border:'none',borderRadius:10,padding:10,fontSize:13,fontWeight:600,cursor:'pointer'}}>
-            🗑️ Clear all matches & tournaments
-          </button>
+          <button class="btn" style="background:#fee2e2;color:#A32D2D;border:none;padding:10px" onclick=${clearAll}>🗑️ Borrar todos los partidos y torneos</button>
         </div>
       </div>
-    </div>
-  );
+    </div>`;
 }
 
-// ─── App ──────────────────────────────────────────────────────────────
+// ── App ───────────────────────────────────────────────────────────────
 function App() {
   const [page, setPage] = useState('dashboard');
-  const [pageParam, setPageParam] = useState(null);
-  const [dark, setDark] = useState(localStorage.getItem('dtt_dark') === '1');
+  const [param, setParam] = useState(null);
+  const [dark, setDark] = useState(S.get('dark',false));
   const [tick, setTick] = useState(0);
 
-  useEffect(() => { initDB(); }, []);
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', dark);
-    localStorage.setItem('dtt_dark', dark ? '1' : '0');
-  }, [dark]);
+  useEffect(()=>{ boot(); },[]);
+  useEffect(()=>{
+    document.body.style.background = dark ? '#0f172a' : '#f8fafc';
+    document.body.style.color = dark ? '#f1f5f9' : '#111';
+    S.set('dark', dark);
+  },[dark]);
 
-  function nav(p, param) { setPage(p); setPageParam(param || null); }
-  function refresh() { setTick(t => t+1); }
+  function nav(p, pm=null){ setPage(p); setParam(pm); setTick(t=>t+1); }
 
-  const tabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-    { id: 'player1', label: 'Santiago', icon: '🎾' },
-    { id: 'player2', label: 'Nicole', icon: '🎾' },
-    { id: 'tournaments', label: 'Tournaments', icon: '🏆' },
-    { id: 'reports', label: 'Reports', icon: '📊' },
+  const tabs=[
+    {id:'dashboard',label:'Dashboard',ico:'🏠'},
+    {id:'player1',label:'Santiago',ico:'🎾'},
+    {id:'player2',label:'Nicole',ico:'🎾'},
+    {id:'tournaments',label:'Torneos',ico:'🏆'},
+    {id:'reports',label:'Reportes',ico:'📊'},
   ];
+  const active = page==='player'?(param===1?'player1':'player2'):page;
 
-  const activePage = page === 'player' ? (pageParam === 1 ? 'player1' : 'player2') : page;
-
-  return (
-    <div style={{minHeight:'100vh',paddingBottom:70}}>
-      {/* Header */}
-      <header style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'12px 16px',borderBottom:'1px solid #e5e7eb',background:'#fff',position:'sticky',top:0,zIndex:30}}>
-        <span style={{fontWeight:700,color:'#3266ad',fontSize:15}}>🎾 Dussán Tennis Tracker</span>
-        <div style={{display:'flex',gap:8,alignItems:'center'}}>
-          <button onClick={()=>nav('settings')} style={{background:'none',border:'none',fontSize:18,cursor:'pointer'}}>⚙️</button>
-          <button onClick={()=>setDark(d=>!d)} style={{background:'none',border:'none',fontSize:18,cursor:'pointer'}}>{dark?'☀️':'🌙'}</button>
+  return html`
+    <div>
+      <header class="top" style="background:${dark?'#1e293b':'#fff'};border-color:${dark?'#334155':'#e2e8f0'}">
+        <span style="font-weight:700;color:${C_S};font-size:15px">🎾 Dussán Tennis Tracker</span>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button onclick=${()=>nav('settings')} style="background:none;border:none;font-size:18px">⚙️</button>
+          <button onclick=${()=>setDark(d=>!d)} style="background:none;border:none;font-size:18px">${dark?'☀️':'🌙'}</button>
         </div>
       </header>
 
-      {/* Content */}
-      <main style={{padding:16,maxWidth:680,margin:'0 auto'}}>
-        {page === 'dashboard' && <Dashboard key={tick} nav={nav} refresh={refresh} />}
-        {page === 'player' && <PlayerProfile key={tick + '-' + pageParam} playerId={pageParam} refresh={refresh} />}
-        {page === 'tournaments' && <Tournaments key={tick} refresh={refresh} />}
-        {page === 'reports' && <Reports key={tick} />}
-        {page === 'settings' && <Settings key={tick} refresh={refresh} />}
+      <main style="padding:16px;max-width:680px;margin:0 auto">
+        ${page==='dashboard'&&html`<${Dashboard} nav=${nav} tick=${tick}/>`}
+        ${page==='player'&&html`<${PlayerProfile} pid=${param} nav=${nav} tick=${tick}/>`}
+        ${page==='tournaments'&&html`<${Tournaments} nav=${nav} tick=${tick}/>`}
+        ${page==='reports'&&html`<${Reports}/>`}
+        ${page==='settings'&&html`<${SettingsPage} nav=${nav}/>`}
       </main>
 
-      {/* Bottom nav */}
-      <nav style={{position:'fixed',bottom:0,left:0,right:0,background:'#fff',borderTop:'1px solid #e5e7eb',display:'flex',zIndex:40}}>
-        {tabs.map(t => {
-          const active = activePage === t.id;
-          const pId = t.id === 'player1' ? 1 : t.id === 'player2' ? 2 : null;
-          return (
-            <button key={t.id}
-              onClick={() => pId ? nav('player', pId) : nav(t.id)}
-              style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'6px 0',background:'none',border:'none',cursor:'pointer',color:active?'#3266ad':'#9ca3af',fontWeight:active?700:400}}>
-              <span style={{fontSize:18}}>{t.icon}</span>
-              <span style={{fontSize:10,marginTop:1}}>{t.label}</span>
-            </button>
-          );
+      <nav class="bottom" style="background:${dark?'#1e293b':'#fff'};border-color:${dark?'#334155':'#e2e8f0'}">
+        ${tabs.map(t=>{
+          const pid = t.id==='player1'?1:t.id==='player2'?2:null;
+          return html`
+            <button class=${active===t.id?'active':''} onclick=${()=>pid?nav('player',pid):nav(t.id)}>
+              <span class="ico">${t.ico}</span>${t.label}
+            </button>`;
         })}
       </nav>
-    </div>
-  );
+    </div>`;
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+render(html`<${App}/>`, document.getElementById('root'));
 </script>
 </body>
 </html>
