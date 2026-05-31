@@ -141,7 +141,7 @@ export function ReviewImportPanel({ hotelId, onImport, onDownloadTemplate }: Rev
                   <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
                     {TRIPADVISOR_TEMPLATE_HEADERS.map(h => (
                       <td key={h} style={{ padding: '3px 8px', maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {String((row as Record<string, unknown>)[h] ?? '')}
+                        {String((row as unknown as Record<string, unknown>)[h] ?? '')}
                       </td>
                     ))}
                   </tr>
