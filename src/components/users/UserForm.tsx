@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import type { User, UserRole } from '../../types/auth';
+import type { User, UserRole, AuthProvider } from '../../types/auth';
 import { ROLE_LABELS } from '../../lib/auth/permissions';
 
-type AuthProvider = 'email' | 'google' | 'magic_link';
-
-interface UserFormProps {
+export interface UserFormProps {
   initial?: Partial<User>;
   hotels: string[];
-  onSave: (data: Partial<User> & { password?: string }) => void;
+  onSave: (data: Partial<User> & { password?: string; allowedProviders?: AuthProvider[] }) => void;
   onCancel: () => void;
 }
 
