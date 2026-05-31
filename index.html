@@ -629,6 +629,25 @@
   .main-sidebar.sb-collapsed .sb-item-label { opacity:1;max-width:200px; }
   .main-sidebar.sb-collapsed .sb-group-label { opacity:1; }
 }
+/* ── GOOGLE AUTH ────────────────────────────────────────────── */
+.auth-google-btn {
+  width:100%;padding:11px 16px;background:#fff;border:1.5px solid #dadce0;border-radius:8px;
+  font-size:.82rem;font-weight:600;color:#3c4043;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;gap:10px;transition:box-shadow .15s,border-color .15s;margin-bottom:2px;
+  font-family:inherit;
+}
+.auth-google-btn:hover { box-shadow:0 1px 6px rgba(0,0,0,.15);border-color:#bbb; }
+.auth-google-btn:disabled { opacity:.5;cursor:not-allowed; }
+.auth-google-btn svg { width:18px;height:18px;flex-shrink:0; }
+.auth-divider { display:flex;align-items:center;gap:12px;margin:18px 0 14px;color:var(--gray3);font-size:.72rem; }
+.auth-divider::before,.auth-divider::after { content:'';flex:1;border-top:1px solid var(--gold-border); }
+.auth-provider-badge {
+  display:inline-flex;align-items:center;gap:4px;font-size:.64rem;padding:2px 7px;border-radius:10px;
+  background:#e8f5e9;color:#2e7d32;font-weight:700;border:1px solid #c8e6c9;
+}
+.auth-provider-badge.google { background:#e8f0fe;color:#1a73e8;border-color:#c5d8fd; }
+.auth-provider-badge.email  { background:#fff3e0;color:#e65100;border-color:#ffe0b2; }
+.auth-google-notice { font-size:.66rem;color:var(--gray3);text-align:center;margin-top:4px;padding:0 4px; }
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -638,6 +657,8 @@
   if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
 </script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<!-- Google Identity Services — loaded async; disabled until GOOGLE_CLIENT_ID is configured -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -657,6 +678,22 @@
     <div class="auth-subtitle">Pricing Strategy · OTA Channels · Net Revenue Control</div>
     <div class="auth-restricted">Acceso exclusivo para usuarios autorizados de GEH Suites.</div>
     <div id="auth-session-msg" style="display:none;background:#fff3cd;border:1px solid #f5c842;color:#856404;border-radius:6px;padding:8px 12px;font-size:.74rem;margin-bottom:10px;"></div>
+
+    <!-- Google Sign-In -->
+    <button type="button" class="auth-google-btn" id="google-signin-btn" onclick="handleGoogleSignInClick()">
+      <svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <path fill="none" d="M0 0h48v48H0z"/>
+      </svg>
+      Continuar con Google
+    </button>
+    <div id="google-signin-notice" class="auth-google-notice" style="display:none"></div>
+
+    <div class="auth-divider"><span>o ingresa con tu correo</span></div>
+
     <form onsubmit="handleLoginSubmit(event)">
       <div class="auth-form-group">
         <label>Correo electrónico</label>
@@ -840,6 +877,11 @@ const USERS_STORAGE_KEY = 'rmd_users';
 const AUDIT_STORAGE_KEY = 'rmd_audit_log';
 const SESSION_INACTIVITY_HOURS = 24;
 
+// Google OAuth Client ID — public identifier, safe to store here.
+// Register at https://console.cloud.google.com → APIs & Services → Credentials.
+// Leave empty to disable Google Sign-In. Add your domain to "Authorized JavaScript origins".
+const GEH_GOOGLE_CLIENT_ID = '';
+
 // Simple deterministic hash (DEV ONLY — replace with real crypto in production)
 function _hashPassword(raw) {
   let h = 0x811c9dc5;
@@ -857,6 +899,8 @@ const MASTER_USER = {
   passwordHash: _hashPassword('GEH2024master'),
   role: 'master_admin',
   status: 'active',
+  allowedProviders: ['email', 'google'], // providers this user may use to log in
+  authProvider: 'email',                  // how the user last logged in
   hotelAccess: [], // empty = all hotels (master sees all)
   permissions: [
     'canViewDashboard','canViewAllHotels','canManageUsers','canCreateUsers',
@@ -948,7 +992,7 @@ function usersSaveAll(users) {
 function usersCreate(data) {
   const users = usersGetAll();
   const now = new Date().toISOString();
-  const u = Object.assign({ id:'u_'+Date.now(), createdAt:now, updatedAt:now, lastLoginAt:null, createdBy: AUTH_SESSION?.userId || 'system', status:'active' }, data);
+  const u = Object.assign({ id:'u_'+Date.now(), createdAt:now, updatedAt:now, lastLoginAt:null, createdBy: AUTH_SESSION?.userId || 'system', status:'active', allowedProviders:['email','google'], authProvider:null }, data);
   if (data.password) { u.passwordHash = _hashPassword(data.password); delete u.password; }
   users.push(u);
   usersSaveAll(users);
@@ -979,25 +1023,59 @@ function usersEnable(id) {
 function authLogin(email, password) {
   const users = usersGetAll();
   const user = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
-  if (!user) return { ok:false, error:'Usuario no encontrado.' };
-  if (user.status === 'inactive') return { ok:false, error:'Usuario desactivado. Contacte al administrador.' };
+  if (!user) {
+    authWriteAudit('login_failed', null, null, null, null, null, { email, provider:'email', reason:'not_found' });
+    return { ok:false, error:'Usuario no encontrado. Contacte al administrador.' };
+  }
+  if (user.status === 'inactive') {
+    authWriteAudit('login_failed', user.id, user.name, null, null, null, { email, provider:'email', reason:'inactive' });
+    return { ok:false, error:'Usuario desactivado. Contacte al administrador.' };
+  }
+  // Check provider is allowed for this user
+  if (user.allowedProviders && user.allowedProviders.length > 0 && !user.allowedProviders.includes('email')) {
+    authWriteAudit('login_failed', user.id, user.name, null, null, null, { email, provider:'email', reason:'provider_not_allowed' });
+    return { ok:false, error:'Este usuario no puede iniciar sesión con contraseña. Use Google Sign-In.' };
+  }
   const hash = _hashPassword(password);
   if (user.passwordHash !== hash) {
-    authWriteAudit('login_failed', user.id, user.name, null, null, null, { email });
+    authWriteAudit('login_failed', user.id, user.name, null, null, null, { email, provider:'email', reason:'wrong_password' });
     return { ok:false, error:'Contraseña incorrecta.' };
   }
+  return _buildSession(user, 'email');
+}
+
+function authLoginWithGoogle(googleEmail, googleName) {
+  const users = usersGetAll();
+  const user = users.find(u => u.email.toLowerCase() === googleEmail.toLowerCase().trim());
+  if (!user) {
+    authWriteAudit('unauthorized_email_attempt', null, null, null, null, null, { email:googleEmail, provider:'google' });
+    return { ok:false, error:'Tu correo no está autorizado para acceder al Revenue Master Dashboard. Contacta al administrador.' };
+  }
+  if (user.status === 'inactive') {
+    authWriteAudit('login_google_failed', user.id, user.name, null, null, null, { email:googleEmail, provider:'google', reason:'inactive' });
+    return { ok:false, error:'Usuario desactivado. Contacte al administrador.' };
+  }
+  if (user.allowedProviders && user.allowedProviders.length > 0 && !user.allowedProviders.includes('google')) {
+    authWriteAudit('login_google_failed', user.id, user.name, null, null, null, { email:googleEmail, provider:'google', reason:'provider_not_allowed' });
+    return { ok:false, error:'Este usuario no tiene habilitado el acceso con Google. Inicie sesión con correo y contraseña.' };
+  }
+  return _buildSession(user, 'google');
+}
+
+function _buildSession(user, provider) {
   const now = new Date().toISOString();
   const session = {
     userId: user.id, userName: user.name, email: user.email,
     role: user.role, permissions: user.permissions || DEFAULT_ROLE_PERMISSIONS[user.role] || [],
     hotelAccess: user.hotelAccess || [],
     activeHotelId: (user.hotelAccess && user.hotelAccess.length > 0) ? user.hotelAccess[0] : null,
+    authProvider: provider,
     createdAt: now, lastActivityAt: now,
     expiresAt: new Date(Date.now() + SESSION_INACTIVITY_HOURS * 3600000).toISOString()
   };
   authSaveSession(session);
-  usersUpdate(user.id, { lastLoginAt: now });
-  authWriteAudit('login_success', user.id, user.name, session.activeHotelId, null, null);
+  usersUpdate(user.id, { lastLoginAt: now, authProvider: provider });
+  authWriteAudit(provider === 'google' ? 'login_google_success' : 'login_success', user.id, user.name, session.activeHotelId, null, null, { provider });
   return { ok:true, session };
 }
 
@@ -1008,6 +1086,78 @@ function authLogout(reason) {
   AUTH_SESSION = null;
   localStorage.removeItem(AUTH_STORAGE_KEY);
   showLogin(reason === 'session_expired_inactivity' ? 'Tu sesión se cerró por inactividad. Inicia sesión nuevamente para continuar.' : null);
+}
+
+// ── GOOGLE SIGN-IN ──────────────────────────────────────────────
+function decodeGoogleJWT(token) {
+  try {
+    const payload = token.split('.')[1];
+    const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
+    return JSON.parse(atob(padded.replace(/-/g,'+').replace(/_/g,'/')));
+  } catch(e) { return null; }
+}
+
+function initGoogleSignIn() {
+  const btn = document.getElementById('google-signin-btn');
+  const notice = document.getElementById('google-signin-notice');
+  if (!GEH_GOOGLE_CLIENT_ID) {
+    if (btn) btn.disabled = true;
+    if (notice) { notice.textContent = 'Google Sign-In no configurado. Contacte al administrador.'; notice.style.display = 'block'; }
+    return;
+  }
+  // GSI library may still be loading; retry if not ready
+  if (typeof google === 'undefined' || !google.accounts) {
+    setTimeout(initGoogleSignIn, 500);
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GEH_GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+    auto_select: false,
+    cancel_on_tap_outside: true
+  });
+}
+
+function handleGoogleCredential(response) {
+  const payload = decodeGoogleJWT(response.credential);
+  if (!payload || !payload.email) {
+    showAuthError('No se pudo obtener la información de Google. Intente nuevamente.');
+    return;
+  }
+  const result = authLoginWithGoogle(payload.email, payload.name || payload.email);
+  if (result.ok) {
+    clearAuthError();
+    if (result.session.activeHotelId && typeof HOTELS !== 'undefined') {
+      const h = HOTELS.find(x => x === result.session.activeHotelId);
+      if (h) currentHotel = h;
+    }
+    showDashboard();
+  } else {
+    showAuthError(result.error);
+  }
+}
+
+function handleGoogleSignInClick() {
+  if (!GEH_GOOGLE_CLIENT_ID) return;
+  if (typeof google === 'undefined' || !google.accounts) { showAuthError('Google Sign-In aún no está listo. Intente en un momento.'); return; }
+  google.accounts.id.prompt(notification => {
+    if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+      // Popup blocked or dismissed — use the One Tap button flow
+      google.accounts.id.renderButton(
+        document.getElementById('google-signin-btn').parentElement,
+        { theme:'outline', size:'large', width:320, text:'continue_with' }
+      );
+    }
+  });
+}
+
+function showAuthError(msg) {
+  const errEl = document.getElementById('login-error');
+  if (errEl) { errEl.textContent = msg; errEl.classList.add('show'); }
+}
+function clearAuthError() {
+  const errEl = document.getElementById('login-error');
+  if (errEl) errEl.classList.remove('show');
 }
 
 // ── AUDIT ───────────────────────────────────────────────────────
@@ -1229,11 +1379,14 @@ function updateHeaderUser() {
   if (!s) return;
   const el = document.getElementById('header-user-area');
   if (!el) return;
+  const providerBadge = s.authProvider
+    ? `<span class="auth-provider-badge ${s.authProvider}">${s.authProvider === 'google' ? '🔵 Google' : '✉ Email'}</span>`
+    : '';
   el.innerHTML = `
     <div class="header-user">
       <div class="header-user-info">
-        <div class="header-user-name">${s.userName} <span style="font-weight:400;opacity:.7">· ${ROLE_LABELS[s.role]||s.role}</span></div>
-        <div class="header-user-role">${s.activeHotelId || 'Todos los hoteles'}</div>
+        <div class="header-user-name">${s.userName} <span style="font-weight:400;opacity:.7">· ${ROLE_LABELS[s.role]||s.role}</span> ${providerBadge}</div>
+        <div class="header-user-role">${s.email || s.activeHotelId || 'Todos los hoteles'}</div>
       </div>
       <button class="header-logout-btn" onclick="authLogout()">Cerrar sesión</button>
     </div>
@@ -1262,26 +1415,23 @@ function handleLoginSubmit(e) {
   if (e) e.preventDefault();
   const email = document.getElementById('login-email')?.value || '';
   const password = document.getElementById('login-password')?.value || '';
-  const errEl = document.getElementById('login-error');
-  if (!email || !password) {
-    if (errEl) { errEl.textContent = 'Ingrese correo y contraseña.'; errEl.classList.add('show'); }
-    return;
-  }
+  if (!email || !password) { showAuthError('Ingrese correo y contraseña.'); return; }
   const result = authLogin(email, password);
   if (result.ok) {
-    if (errEl) errEl.classList.remove('show');
+    clearAuthError();
     if (result.session.activeHotelId && typeof HOTELS !== 'undefined') {
       const h = HOTELS.find(x => x === result.session.activeHotelId);
       if (h) currentHotel = h;
     }
     showDashboard();
   } else {
-    if (errEl) { errEl.textContent = result.error; errEl.classList.add('show'); }
+    showAuthError(result.error);
   }
 }
 
 // ── INIT AUTH ───────────────────────────────────────────────────
 function initAuth() {
+  initGoogleSignIn();
   const session = authGetSession();
   if (session) {
     AUTH_SESSION = session;

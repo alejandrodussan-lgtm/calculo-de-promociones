@@ -13,6 +13,8 @@ export type UserRole =
 
 export type UserStatus = 'active' | 'inactive';
 
+export type AuthProvider = 'email' | 'google' | 'magic_link';
+
 export type Permission =
   | 'canViewDashboard'
   | 'canViewAllHotels'
@@ -56,6 +58,8 @@ export interface User {
   updatedAt: string;
   createdBy: string;
   lastLoginAt: string | null;
+  authProvider: AuthProvider;
+  allowedProviders: AuthProvider[];
 }
 
 export interface AuthSession {
@@ -69,6 +73,16 @@ export interface AuthSession {
   createdAt: string;
   lastActivityAt: string;
   expiresAt: string;
+  authProvider: AuthProvider;
+}
+
+export interface AuthorizedEmail {
+  email: string;
+  userId: string;
+  allowedProviders: AuthProvider[];
+  status: UserStatus;
+  addedAt: string;
+  addedBy: string;
 }
 
 export interface UserHotelAccess {
@@ -81,6 +95,7 @@ export interface UserHotelAccess {
 
 export type AuditAction =
   | 'login_success' | 'login_failed' | 'logout'
+  | 'login_google_success' | 'login_google_failed' | 'unauthorized_email_attempt'
   | 'session_expired_inactivity' | 'session_restored'
   | 'user_created' | 'user_updated' | 'user_disabled' | 'permissions_updated'
   | 'create_note' | 'update_note' | 'delete_note' | 'close_note'
