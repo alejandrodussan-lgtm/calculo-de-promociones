@@ -47,8 +47,12 @@
   .hotel-toggle-btn .htb-name{font-size:.74rem;font-weight:700;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .hotel-toggle-btn .htb-arrow{font-size:.65rem;opacity:.7;}
 
+  /* SIMULATOR MODULE HEADER */
+  .sim-module-header{display:flex;align-items:center;justify-content:space-between;padding:10px 24px 10px;border-bottom:1.5px solid var(--gold-border);background:var(--gold-pale);flex-shrink:0;}
+  .sim-module-title{font-size:.9rem;font-weight:900;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;}
+  .sim-module-subtitle{font-size:.68rem;color:var(--gray3);margin-top:2px;letter-spacing:.3px;}
   /* CHANNEL TABS */
-  .channel-tabs{background:var(--white);display:flex;overflow-x:auto;border-bottom:2px solid var(--gold-border);scrollbar-width:none;box-shadow:0 2px 6px rgba(175,118,43,.06);position:sticky;top:116px;z-index:100;}
+  .channel-tabs{background:var(--white);display:flex;overflow-x:auto;border-bottom:2px solid var(--gold-border);scrollbar-width:none;box-shadow:0 2px 6px rgba(175,118,43,.06);position:sticky;top:0;z-index:100;flex-shrink:0;}
   .channel-tabs::-webkit-scrollbar{display:none;}
   .channel-tab{padding:12px 22px;border:none;background:none;font-size:.78rem;font-weight:700;cursor:pointer;white-space:nowrap;border-bottom:3px solid transparent;color:var(--gray4);transition:all .2s;letter-spacing:.8px;text-transform:uppercase;margin-bottom:-2px;}
   .channel-tab:hover{color:var(--gold);background:var(--gold-subtle);}
@@ -604,7 +608,10 @@
 .sb-divider { border:none;border-top:1px solid var(--gold-border);margin:6px 10px; }
 .content-area { flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0; }
 .content-area > .action-bar { flex-shrink:0; }
-.content-area > [id^="module-"] { flex:1;overflow-y:auto; }
+.content-area > [id^="module-"] { flex:1;overflow-y:auto;min-height:0; }
+#module-simulator { display:flex;flex-direction:column;overflow:hidden; }
+#module-simulator .channel-tabs { position:static;flex-shrink:0;box-shadow:0 2px 6px rgba(175,118,43,.06); }
+#module-simulator .content { flex:1;overflow-y:auto;min-height:0; }
 /* hamburger for mobile */
 .sb-hamburger {
   display:none;background:none;border:none;cursor:pointer;padding:6px 10px;
@@ -760,6 +767,12 @@
 
 <!-- SIMULATOR MODULE -->
 <div id="module-simulator">
+  <div class="sim-module-header">
+    <div>
+      <div class="sim-module-title">📊 Simulador de Tarifas</div>
+      <div class="sim-module-subtitle">Estrategia tarifaria · Canales OTA · Rentabilidad neta</div>
+    </div>
+  </div>
   <div class="channel-tabs" id="tabs"></div>
   <div class="content"><div id="pages"></div></div>
 </div>
