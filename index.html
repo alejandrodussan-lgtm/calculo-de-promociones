@@ -476,6 +476,79 @@
 .agenda-drawer-value.empty { color: var(--gray2); font-style: italic; }
 .agenda-drawer-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
 .agenda-drawer-footer { padding: 14px 20px; border-top: 1px solid var(--gold-border); display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+
+/* ═══ AUTH SYSTEM ═══ */
+.auth-overlay { position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a0e00 0%,#2d1a00 40%,#1a1000 100%); }
+.auth-overlay.hidden { display:none; }
+.auth-box { background:#fff;border-radius:18px;padding:44px 40px 36px;width:100%;max-width:420px;box-shadow:0 24px 80px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:0; }
+.auth-logo { display:flex;align-items:center;gap:14px;margin-bottom:6px; }
+.auth-logo svg { width:130px;height:42px; }
+.auth-title { font-size:1.05rem;font-weight:900;color:var(--gold-dark);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:2px;margin-top:16px; }
+.auth-subtitle { font-size:.7rem;color:var(--gray3);letter-spacing:.5px;margin-bottom:22px; }
+.auth-form-group { display:flex;flex-direction:column;gap:4px;margin-bottom:14px; }
+.auth-form-group label { font-size:.64rem;font-weight:800;color:var(--gray3);text-transform:uppercase;letter-spacing:.6px; }
+.auth-form-group input { border:1.5px solid var(--gold-border);border-radius:8px;padding:10px 14px;font-size:.85rem;color:var(--text);outline:none;font-family:inherit;transition:border-color .15s; }
+.auth-form-group input:focus { border-color:var(--gold); }
+.auth-btn { width:100%;padding:12px;background:var(--gold);color:#fff;border:none;border-radius:8px;font-size:.82rem;font-weight:800;text-transform:uppercase;letter-spacing:.8px;cursor:pointer;margin-top:8px;transition:background .15s; }
+.auth-btn:hover { background:var(--gold-dark); }
+.auth-error { background:#fff0f0;border:1px solid #f5c6cb;color:#c00;border-radius:6px;padding:8px 12px;font-size:.74rem;margin-top:10px;display:none; }
+.auth-error.show { display:block; }
+.auth-footer { font-size:.62rem;color:var(--gray3);text-align:center;margin-top:18px;line-height:1.5; }
+.auth-restricted { font-size:.7rem;color:#7a4f00;background:#fff8e1;border:1px solid #f5c842;border-radius:6px;padding:8px 12px;text-align:center;margin-bottom:18px; }
+/* User info in header */
+.header-user { display:flex;align-items:center;gap:10px;margin-left:auto; }
+.header-user-info { text-align:right; }
+.header-user-name { font-size:.72rem;font-weight:800;color:var(--gold-dark); }
+.header-user-role { font-size:.6rem;color:var(--gray3); }
+.header-logout-btn { padding:5px 14px;border:1.5px solid var(--gold-border);border-radius:16px;background:var(--white);font-size:.68rem;font-weight:700;color:var(--gold-dark);cursor:pointer;transition:all .15s; }
+.header-logout-btn:hover { background:var(--gold-pale);border-color:var(--gold); }
+/* Session expired toast */
+.session-expired-msg { position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#fff8e1;border:1.5px solid #f5c842;color:#7a4f00;padding:10px 20px;border-radius:8px;font-size:.78rem;font-weight:700;z-index:10000;display:none;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.12); }
+.session-expired-msg.show { display:block; }
+/* Permission denied state */
+.perm-denied { opacity:.4;pointer-events:none;position:relative; }
+.perm-denied::after { content:attr(data-perm-tip);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#c00; }
+/* Users module */
+.users-section { padding:20px 24px; }
+.users-kpi-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:20px; }
+.users-kpi-card { background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius);padding:14px 16px;text-align:center; }
+.users-kpi-num { font-size:1.6rem;font-weight:900;color:var(--gold-dark);line-height:1; }
+.users-kpi-label { font-size:.62rem;color:var(--gray3);text-transform:uppercase;letter-spacing:.8px;margin-top:4px; }
+.users-table-wrap { overflow-x:auto;background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius); }
+.users-table { width:100%;border-collapse:collapse;font-size:.75rem;min-width:800px; }
+.users-table thead th { background:var(--gold-pale);padding:7px 10px;text-align:left;font-size:.62rem;font-weight:800;color:var(--gold-dark);border-bottom:1.5px solid var(--gold-border); }
+.users-table tbody td { padding:7px 10px;border-bottom:1px solid var(--gray2);vertical-align:middle; }
+.users-table tbody tr:hover td { background:var(--gold-subtle); }
+.badge-role { display:inline-block;padding:2px 8px;border-radius:10px;font-size:.6rem;font-weight:800;text-transform:uppercase;letter-spacing:.5px; }
+.badge-role.master_admin { background:#ffe0e0;color:#c00; }
+.badge-role.admin { background:#d0e4f7;color:#0d6efd; }
+.badge-role.revenue_manager { background:#d1e7dd;color:#0a3622; }
+.badge-role.revenue_assistant { background:#fff3cd;color:#856404; }
+.badge-role.operations { background:#ede8ff;color:#5a3fa0; }
+.badge-role.viewer { background:#e2e3e5;color:#41464b; }
+.badge-active { background:#d1e7dd;color:#0a3622;padding:2px 8px;border-radius:10px;font-size:.6rem;font-weight:800; }
+.badge-inactive { background:#f8d7da;color:#842029;padding:2px 8px;border-radius:10px;font-size:.6rem;font-weight:800; }
+/* Audit */
+.audit-table-wrap { overflow-x:auto;background:var(--white);border:1px solid var(--gold-border);border-radius:var(--radius); }
+.audit-table { width:100%;border-collapse:collapse;font-size:.72rem;min-width:900px; }
+.audit-table thead th { background:var(--gold-pale);padding:6px 10px;text-align:left;font-size:.6rem;font-weight:800;color:var(--gold-dark);border-bottom:1.5px solid var(--gold-border); }
+.audit-table tbody td { padding:5px 10px;border-bottom:1px solid var(--gray2); }
+/* User form modal */
+.user-modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto; }
+.user-modal-overlay.open { display:flex; }
+.user-modal { background:var(--white);border-radius:14px;width:100%;max-width:580px;box-shadow:0 8px 40px rgba(0,0,0,.18); }
+.user-modal-head { padding:18px 22px 14px;border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between; }
+.user-modal-head h3 { font-size:.9rem;font-weight:800;color:var(--gold-dark);margin:0;text-transform:uppercase;letter-spacing:.8px; }
+.user-modal-body { padding:18px 22px;display:flex;flex-direction:column;gap:12px; }
+.user-modal-footer { padding:14px 22px 18px;border-top:1px solid var(--gold-border);display:flex;gap:8px;justify-content:flex-end; }
+.user-form-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+.user-form-row.full { grid-template-columns:1fr; }
+.user-form-group { display:flex;flex-direction:column;gap:4px; }
+.user-form-group label { font-size:.64rem;font-weight:800;color:var(--gray3);text-transform:uppercase;letter-spacing:.6px; }
+.user-form-group input,.user-form-group select,.user-form-group textarea { border:1px solid var(--gold-border);border-radius:6px;padding:7px 10px;font-size:.78rem;color:var(--text);background:var(--white);outline:none;font-family:inherit; }
+.user-form-group input:focus,.user-form-group select:focus { border-color:var(--gold); }
+.hotels-checkbox-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;border:1px solid var(--gold-border);border-radius:6px;padding:10px;max-height:160px;overflow-y:auto; }
+.hotels-checkbox-grid label { display:flex;align-items:center;gap:6px;font-size:.74rem;cursor:pointer; }
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -487,6 +560,40 @@
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 </head>
 <body>
+
+<!-- AUTH LOGIN OVERLAY -->
+<div class="auth-overlay" id="auth-overlay">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <svg viewBox="0 0 230 72" xmlns="http://www.w3.org/2000/svg">
+        <text x="2" y="54" font-family="'Segoe UI',Arial,sans-serif" font-size="54" font-weight="900" fill="#CE7E1F">g</text>
+        <text x="36" y="54" font-family="'Segoe UI',Arial,sans-serif" font-size="54" font-weight="900" fill="#AF762B">e</text>
+        <text x="70" y="54" font-family="'Segoe UI',Arial,sans-serif" font-size="54" font-weight="900" fill="#CE7E1F">h</text>
+        <text x="110" y="46" font-family="'Segoe UI',Arial,sans-serif" font-size="32" font-weight="400" fill="#CE7E1F">suites</text>
+        <text x="115" y="64" font-family="'Segoe UI',Arial,sans-serif" font-size="15" font-weight="400" fill="#AF762B" letter-spacing="3">Hotels</text>
+      </svg>
+    </div>
+    <div class="auth-title">Revenue Master Dashboard</div>
+    <div class="auth-subtitle">Pricing Strategy · OTA Channels · Net Revenue Control</div>
+    <div class="auth-restricted">Acceso exclusivo para usuarios autorizados de GEH Suites.</div>
+    <div id="auth-session-msg" style="display:none;background:#fff3cd;border:1px solid #f5c842;color:#856404;border-radius:6px;padding:8px 12px;font-size:.74rem;margin-bottom:10px;"></div>
+    <form onsubmit="handleLoginSubmit(event)">
+      <div class="auth-form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="login-email" placeholder="usuario@gehsuites.com" autocomplete="email" required>
+      </div>
+      <div class="auth-form-group">
+        <label>Contraseña</label>
+        <input type="password" id="login-password" placeholder="Contraseña" autocomplete="current-password" required>
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button type="submit" class="auth-btn">Iniciar sesión</button>
+    </form>
+    <div class="auth-footer">Las acciones realizadas dentro del sistema quedan registradas<br>para fines de control, seguridad y trazabilidad.</div>
+  </div>
+</div>
+
+<div id="dashboard-root">
 
 <header>
   <div class="header-logo">
@@ -502,11 +609,14 @@
       <p>Pricing Strategy · OTA Channels · Net Revenue Control</p>
     </div>
   </div>
-  <button class="hotel-toggle-btn" id="hotel-toggle-btn" onclick="openSidebar()">
-    <span class="htb-icon">🏨</span>
-    <span class="htb-name" id="hotel-badge">GEH Suites Hotels</span>
-    <span class="htb-arrow">▼</span>
-  </button>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <button class="hotel-toggle-btn" id="hotel-toggle-btn" onclick="openSidebar()">
+      <span class="htb-icon">🏨</span>
+      <span class="htb-name" id="hotel-badge">GEH Suites Hotels</span>
+      <span class="htb-arrow">▼</span>
+    </button>
+    <div id="header-user-area"></div>
+  </div>
 </header>
 
 <!-- MODULE NAV BAR -->
@@ -523,6 +633,10 @@
     <button class="module-nav-btn" id="nav-agenda" onclick="switchModule('agenda')">
       <span class="mnb-icon">📋</span>
       <span class="mnb-label">Agenda Revenue</span>
+    </button>
+    <button class="module-nav-btn" id="nav-users" onclick="switchModule('users')" style="display:none">
+      <span class="mnb-icon">👤</span>
+      <span class="mnb-label">Usuarios</span>
     </button>
     <span class="module-nav-future">Forecast · Reportes · Configuración</span>
   </div>
@@ -554,6 +668,12 @@
   <span class="save-status" id="agenda-save-status"></span>
 </div>
 
+<!-- USERS ACTION BAR -->
+<div class="action-bar" id="action-bar-users" style="display:none;">
+  <button class="save-btn primary" onclick="usersOpenCreate()">👤 Nuevo usuario</button>
+  <button class="save-btn" onclick="usersRenderAuditPanel()">📋 Ver auditoría</button>
+</div>
+
 <!-- HOTEL SIDEBAR -->
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <div class="hotel-sidebar" id="hotel-sidebar">
@@ -578,6 +698,11 @@
 <!-- AGENDA MODULE -->
 <div id="module-agenda" style="display:none;">
   <div id="page-agenda"></div>
+</div>
+
+<!-- USERS MODULE -->
+<div id="module-users" style="display:none;">
+  <div id="page-users"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -618,6 +743,326 @@
 </div>
 
 <script>
+// DEV NOTE: Passwords use a simple hash (not cryptographically secure). Replace with real auth provider (Supabase/Firebase/JWT) in production.
+// ═══════════════════════════════════════════════════════════════
+// AUTH SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+const AUTH_STORAGE_KEY = 'rmd_auth_session';
+const USERS_STORAGE_KEY = 'rmd_users';
+const AUDIT_STORAGE_KEY = 'rmd_audit_log';
+const SESSION_INACTIVITY_HOURS = 24;
+
+// Simple deterministic hash (DEV ONLY — replace with real crypto in production)
+function _hashPassword(raw) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < raw.length; i++) {
+    h ^= raw.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return 'h' + h.toString(16).padStart(8, '0') + btoa(raw.slice(0,3)).replace(/=/g,'');
+}
+
+const MASTER_USER = {
+  id: 'u_master',
+  name: 'Alejandro',
+  email: 'alejandro@gehsuites.com',
+  passwordHash: _hashPassword('GEH2024master'),
+  role: 'master_admin',
+  status: 'active',
+  hotelAccess: [], // empty = all hotels (master sees all)
+  permissions: [
+    'canViewDashboard','canViewAllHotels','canManageUsers','canCreateUsers',
+    'canEditUsers','canDisableUsers','canAssignHotels','canManageRoles',
+    'canManagePermissions','canViewAuditLog','canEditRateSimulator',
+    'canEditPromotions','canEditBookingConfig','canEditOtb','canUploadOtbFiles',
+    'canCreateNotes','canEditOwnNotes','canEditAllNotes','canDeleteNotes',
+    'canExportReports','canRestoreConfigurations','canManageGlobalSettings',
+    'canViewAllActivity','canManageAgenda','canManageOfficialHotelConfig','canManageHotelAssignments'
+  ],
+  createdAt: '2024-01-01T00:00:00.000Z',
+  updatedAt: '2024-01-01T00:00:00.000Z',
+  createdBy: 'system',
+  lastLoginAt: null
+};
+
+const ROLE_LABELS = {
+  master_admin:'Master Admin', admin:'Admin',
+  revenue_manager:'Revenue Manager', revenue_assistant:'Revenue Auxiliar',
+  operations:'Operaciones', viewer:'Solo Lectura'
+};
+
+const DEFAULT_ROLE_PERMISSIONS = {
+  master_admin: MASTER_USER.permissions,
+  admin: ['canViewDashboard','canViewAllHotels','canEditRateSimulator','canEditPromotions','canEditBookingConfig','canEditOtb','canUploadOtbFiles','canCreateNotes','canEditOwnNotes','canEditAllNotes','canDeleteNotes','canExportReports','canManageAgenda','canViewAuditLog'],
+  revenue_manager: ['canViewDashboard','canEditRateSimulator','canEditPromotions','canEditBookingConfig','canEditOtb','canUploadOtbFiles','canCreateNotes','canEditOwnNotes','canExportReports','canManageAgenda'],
+  revenue_assistant: ['canViewDashboard','canCreateNotes','canEditOwnNotes','canEditOtb','canManageAgenda'],
+  operations: ['canViewDashboard','canCreateNotes','canEditOwnNotes','canManageAgenda'],
+  viewer: ['canViewDashboard']
+};
+
+// ── SESSION ────────────────────────────────────────────────────
+let AUTH_SESSION = null;
+
+function authGetSession() {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    const inactiveMs = Date.now() - new Date(s.lastActivityAt).getTime();
+    if (inactiveMs > SESSION_INACTIVITY_HOURS * 3600 * 1000) {
+      authWriteAudit('session_expired_inactivity', s.userId, s.userName, s.activeHotelId, null, null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return null;
+    }
+    return s;
+  } catch(e) { return null; }
+}
+
+function authSaveSession(session) {
+  AUTH_SESSION = session;
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+}
+
+function authUpdateActivity() {
+  if (!AUTH_SESSION) return;
+  AUTH_SESSION.lastActivityAt = new Date().toISOString();
+  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(AUTH_SESSION));
+}
+
+function authGetCurrentUser() { return AUTH_SESSION; }
+
+function hasPermission(perm) {
+  if (!AUTH_SESSION) return false;
+  return (AUTH_SESSION.permissions || []).includes(perm);
+}
+
+function canAccessHotel(hotelName) {
+  if (!AUTH_SESSION) return false;
+  if (AUTH_SESSION.role === 'master_admin' || (AUTH_SESSION.permissions||[]).includes('canViewAllHotels')) return true;
+  return (AUTH_SESSION.hotelAccess || []).includes(hotelName);
+}
+
+// ── USER STORAGE ────────────────────────────────────────────────
+function usersGetAll() {
+  try {
+    const raw = localStorage.getItem(USERS_STORAGE_KEY);
+    const stored = raw ? JSON.parse(raw) : [];
+    if (!stored.find(u => u.id === MASTER_USER.id)) stored.unshift({...MASTER_USER});
+    return stored;
+  } catch(e) { return [{...MASTER_USER}]; }
+}
+
+function usersSaveAll(users) {
+  if (!users.find(u => u.id === MASTER_USER.id)) users.unshift({...MASTER_USER});
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+}
+
+function usersCreate(data) {
+  const users = usersGetAll();
+  const now = new Date().toISOString();
+  const u = Object.assign({ id:'u_'+Date.now(), createdAt:now, updatedAt:now, lastLoginAt:null, createdBy: AUTH_SESSION?.userId || 'system', status:'active' }, data);
+  if (data.password) { u.passwordHash = _hashPassword(data.password); delete u.password; }
+  users.push(u);
+  usersSaveAll(users);
+  authWriteAudit('user_created', AUTH_SESSION?.userId, AUTH_SESSION?.userName, null, null, u.id);
+  return u;
+}
+
+function usersUpdate(id, updates) {
+  const users = usersGetAll();
+  const idx = users.findIndex(u => u.id === id);
+  if (idx < 0) return null;
+  if (updates.password) { updates.passwordHash = _hashPassword(updates.password); delete updates.password; }
+  users[idx] = Object.assign({}, users[idx], updates, { updatedAt: new Date().toISOString() });
+  usersSaveAll(users);
+  authWriteAudit('user_updated', AUTH_SESSION?.userId, AUTH_SESSION?.userName, null, null, id);
+  return users[idx];
+}
+
+function usersDisable(id) {
+  return usersUpdate(id, { status: 'inactive' });
+}
+
+function usersEnable(id) {
+  return usersUpdate(id, { status: 'active' });
+}
+
+// ── LOGIN / LOGOUT ──────────────────────────────────────────────
+function authLogin(email, password) {
+  const users = usersGetAll();
+  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase().trim());
+  if (!user) return { ok:false, error:'Usuario no encontrado.' };
+  if (user.status === 'inactive') return { ok:false, error:'Usuario desactivado. Contacte al administrador.' };
+  const hash = _hashPassword(password);
+  if (user.passwordHash !== hash) {
+    authWriteAudit('login_failed', user.id, user.name, null, null, null, { email });
+    return { ok:false, error:'Contraseña incorrecta.' };
+  }
+  const now = new Date().toISOString();
+  const session = {
+    userId: user.id, userName: user.name, email: user.email,
+    role: user.role, permissions: user.permissions || DEFAULT_ROLE_PERMISSIONS[user.role] || [],
+    hotelAccess: user.hotelAccess || [],
+    activeHotelId: (user.hotelAccess && user.hotelAccess.length > 0) ? user.hotelAccess[0] : null,
+    createdAt: now, lastActivityAt: now,
+    expiresAt: new Date(Date.now() + SESSION_INACTIVITY_HOURS * 3600000).toISOString()
+  };
+  authSaveSession(session);
+  usersUpdate(user.id, { lastLoginAt: now });
+  authWriteAudit('login_success', user.id, user.name, session.activeHotelId, null, null);
+  return { ok:true, session };
+}
+
+function authLogout(reason) {
+  if (AUTH_SESSION) {
+    authWriteAudit(reason || 'logout', AUTH_SESSION.userId, AUTH_SESSION.userName, AUTH_SESSION.activeHotelId, null, null);
+  }
+  AUTH_SESSION = null;
+  localStorage.removeItem(AUTH_STORAGE_KEY);
+  showLogin(reason === 'session_expired_inactivity' ? 'Tu sesión se cerró por inactividad. Inicia sesión nuevamente para continuar.' : null);
+}
+
+// ── AUDIT ───────────────────────────────────────────────────────
+function authWriteAudit(action, userId, userName, hotelId, prevVal, newVal, meta) {
+  try {
+    const logs = JSON.parse(localStorage.getItem(AUDIT_STORAGE_KEY) || '[]');
+    logs.unshift({ id:'al_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), userId, userName, hotelId, action, previousValue:prevVal, newValue:newVal, createdAt:new Date().toISOString(), metadata:meta||null });
+    if (logs.length > 2000) logs.splice(2000);
+    localStorage.setItem(AUDIT_STORAGE_KEY, JSON.stringify(logs));
+  } catch(e) {}
+}
+
+function auditGetAll() {
+  try { return JSON.parse(localStorage.getItem(AUDIT_STORAGE_KEY) || '[]'); }
+  catch(e) { return []; }
+}
+
+// ── ACTIVITY TRACKING ───────────────────────────────────────────
+let _lastActivityCheck = Date.now();
+(function initActivityTracking() {
+  ['click','keydown','scroll','mousemove','touchstart'].forEach(ev => {
+    document.addEventListener(ev, () => {
+      const now = Date.now();
+      if (now - _lastActivityCheck > 60000) {
+        _lastActivityCheck = now;
+        if (AUTH_SESSION) authUpdateActivity();
+      }
+    }, { passive: true });
+  });
+  setInterval(() => {
+    if (AUTH_SESSION) {
+      const s = authGetSession();
+      if (!s) { authLogout('session_expired_inactivity'); }
+    }
+  }, 5 * 60 * 1000);
+})();
+
+// ── LOGIN/LOGOUT UI ─────────────────────────────────────────────
+function showLogin(message) {
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+  const errEl = document.getElementById('auth-session-msg');
+  if (errEl) { errEl.textContent = message || ''; errEl.style.display = message ? 'block' : 'none'; }
+  const dashboard = document.getElementById('dashboard-root');
+  if (dashboard) dashboard.style.display = 'none';
+}
+
+function showDashboard() {
+  const overlay = document.getElementById('auth-overlay');
+  if (overlay) overlay.classList.add('hidden');
+  const dashboard = document.getElementById('dashboard-root');
+  if (dashboard) dashboard.style.display = '';
+  updateHeaderUser();
+  updateHotelSelectorForUser();
+  // Show/hide users nav based on permissions
+  const usersNav = document.getElementById('nav-users');
+  if (usersNav) usersNav.style.display = (AUTH_SESSION && (AUTH_SESSION.role === 'master_admin' || hasPermission('canManageUsers'))) ? '' : 'none';
+}
+
+function updateHeaderUser() {
+  const s = AUTH_SESSION;
+  if (!s) return;
+  const el = document.getElementById('header-user-area');
+  if (!el) return;
+  el.innerHTML = `
+    <div class="header-user">
+      <div class="header-user-info">
+        <div class="header-user-name">${s.userName} <span style="font-weight:400;opacity:.7">· ${ROLE_LABELS[s.role]||s.role}</span></div>
+        <div class="header-user-role">${s.activeHotelId || 'Todos los hoteles'}</div>
+      </div>
+      <button class="header-logout-btn" onclick="authLogout()">Cerrar sesión</button>
+    </div>
+  `;
+}
+
+function updateHotelSelectorForUser() {
+  const hotelList = document.getElementById('hotel-list');
+  if (!hotelList) return;
+  hotelList.innerHTML = '';
+  const allowedHotels = (typeof HOTELS !== 'undefined' ? HOTELS : []).filter(h => canAccessHotel(h));
+  allowedHotels.forEach((hotel, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'hotel-item' + (hotel === currentHotel ? ' active' : '');
+    btn.dataset.hotel = hotel;
+    btn.textContent = hotel;
+    btn.addEventListener('click', () => switchHotel(hotel));
+    hotelList.appendChild(btn);
+  });
+  if (allowedHotels.length > 0 && !canAccessHotel(currentHotel)) {
+    switchHotel(allowedHotels[0]);
+  }
+}
+
+function handleLoginSubmit(e) {
+  if (e) e.preventDefault();
+  const email = document.getElementById('login-email')?.value || '';
+  const password = document.getElementById('login-password')?.value || '';
+  const errEl = document.getElementById('login-error');
+  if (!email || !password) {
+    if (errEl) { errEl.textContent = 'Ingrese correo y contraseña.'; errEl.classList.add('show'); }
+    return;
+  }
+  const result = authLogin(email, password);
+  if (result.ok) {
+    if (errEl) errEl.classList.remove('show');
+    if (result.session.activeHotelId && typeof HOTELS !== 'undefined') {
+      const h = HOTELS.find(x => x === result.session.activeHotelId);
+      if (h) currentHotel = h;
+    }
+    showDashboard();
+  } else {
+    if (errEl) { errEl.textContent = result.error; errEl.classList.add('show'); }
+  }
+}
+
+// ── INIT AUTH ───────────────────────────────────────────────────
+function initAuth() {
+  const session = authGetSession();
+  if (session) {
+    AUTH_SESSION = session;
+    if (session.activeHotelId && typeof HOTELS !== 'undefined') {
+      const h = HOTELS.find(x => x === session.activeHotelId);
+      if (h) currentHotel = h;
+    }
+    authWriteAudit('session_restored', session.userId, session.userName, session.activeHotelId, null, null);
+    showDashboard();
+  } else {
+    showLogin();
+  }
+}
+
+// ── SESSION HOTEL SYNC ─────────────────────────────────────────
+function authSyncHotel(hotelName) {
+  if (AUTH_SESSION) {
+    AUTH_SESSION.activeHotelId = hotelName;
+    authUpdateActivity();
+  }
+}
+// ═══════════════════════════════════════════════════════════════
+// END AUTH SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
 // ── HOTELS ──────────────────────────────────────────────────────────────────
 const HOTELS = [
   'Hotel Madison Inn','Hotel Windsor House','Hotel Sansiraka',
@@ -1445,7 +1890,10 @@ function closeSidebar() {
 
 // ── SWITCH HOTEL ─────────────────────────────────────────────────────────────
 function switchHotel(name) {
+  const _prevHotel = currentHotel;
   currentHotel = name;
+  authSyncHotel(name);
+  if (AUTH_SESSION) authWriteAudit('switch_hotel', AUTH_SESSION.userId, AUTH_SESSION.userName, name, _prevHotel, name);
   document.querySelectorAll('.hotel-item').forEach(b=>b.classList.toggle('active', b.dataset.hotel===name));
   document.getElementById('hotel-badge').textContent = name;
   closeSidebar();
@@ -1530,9 +1978,24 @@ function init() {
   currentChannelKey = CHANNELS[0].key;
   renderSections(CHANNELS[0]);
   document.getElementById('hotel-badge').textContent = HOTELS[0];
+
+  // Show users nav button if admin
+  setTimeout(() => {
+    if (AUTH_SESSION && (AUTH_SESSION.role === 'master_admin' || hasPermission('canManageUsers'))) {
+      const btn = document.getElementById('nav-users');
+      if (btn) btn.style.display = '';
+    }
+  }, 100);
 }
 
 init();
+
+// Start auth after DOM is ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initAuth);
+} else {
+  initAuth();
+}
 
 // ── SAVE / RESTORE ───────────────────────────────────────────────────────────
 function applyNameOverrides() {
@@ -1607,27 +2070,38 @@ document.getElementById('btn-restore').addEventListener('click', ()=>{
 function switchModule(mod) {
   const isOTB = mod === 'otb';
   const isAgenda = mod === 'agenda';
-  const isSim = !isOTB && !isAgenda;
+  const isUsers = mod === 'users';
+  const isSim = !isOTB && !isAgenda && !isUsers;
   // Nav buttons
   document.getElementById('nav-simulator').classList.toggle('active', isSim);
   document.getElementById('nav-otb').classList.toggle('active', isOTB);
   const navAgenda = document.getElementById('nav-agenda');
   if (navAgenda) navAgenda.classList.toggle('active', isAgenda);
+  const navUsers = document.getElementById('nav-users');
+  if (navUsers) navUsers.classList.toggle('active', isUsers);
   // Action bars
   document.getElementById('action-bar-simulator').style.display = isSim ? '' : 'none';
   document.getElementById('action-bar-otb').style.display       = isOTB ? '' : 'none';
   const abarAgenda = document.getElementById('action-bar-agenda');
   if (abarAgenda) abarAgenda.style.display = isAgenda ? '' : 'none';
+  const abarUsers = document.getElementById('action-bar-users');
+  if (abarUsers) abarUsers.style.display = isUsers ? '' : 'none';
   // Modules
   document.getElementById('module-simulator').style.display = isSim ? '' : 'none';
   document.getElementById('module-otb').style.display       = isOTB ? '' : 'none';
   const modAgenda = document.getElementById('module-agenda');
   if (modAgenda) modAgenda.style.display = isAgenda ? '' : 'none';
+  const modUsers = document.getElementById('module-users');
+  if (modUsers) modUsers.style.display = isUsers ? '' : 'none';
   // Init OTB on first open
   const otbPage = document.getElementById('page-otb');
   if (isOTB && !otbPage._initialized) { initOTB(otbPage); otbPage._initialized = true; }
   // Init Agenda on first open
   if (isAgenda) initAgenda();
+  // Init Users on first open
+  if (isUsers) initUsersModule();
+  // Audit
+  if (AUTH_SESSION) authWriteAudit('navigate_module', AUTH_SESSION.userId, AUTH_SESSION.userName, currentHotel, null, mod);
 }
 
 // Load from localStorage on startup
@@ -5136,8 +5610,11 @@ function agendaCreate(item) {
   item.id = 'ag_' + Date.now() + '_' + Math.random().toString(36).slice(2,7);
   item.createdAt = new Date().toISOString();
   item.updatedAt = item.createdAt;
+  if (AUTH_SESSION) { item.createdByUserId = AUTH_SESSION.userId; item.createdByUserName = AUTH_SESSION.userName; }
+  if (!item.visibility) item.visibility = 'private';
   items.unshift(item);
   agendaSaveAll(items);
+  if (AUTH_SESSION) authWriteAudit('create_note', AUTH_SESSION.userId, AUTH_SESSION.userName, item.hotelId, null, item.id);
   return item;
 }
 function agendaUpdate(id, updates) {
@@ -5147,6 +5624,7 @@ function agendaUpdate(id, updates) {
   return null;
 }
 function agendaDelete(id) {
+  if (AUTH_SESSION) authWriteAudit('delete_note', AUTH_SESSION.userId, AUTH_SESSION.userName, null, id, null);
   agendaSaveAll(agendaGetAll().filter(i => i.id !== id));
 }
 function agendaGetStats() {
@@ -5308,8 +5786,20 @@ function agendaSetView(v) {
   agendaRender();
 }
 
+function agendaGetVisible() {
+  const all = agendaGetAll();
+  if (!AUTH_SESSION || AUTH_SESSION.role === 'master_admin') return all;
+  return all.filter(i => {
+    if (!i.createdByUserId || i.createdByUserId === AUTH_SESSION.userId) return true;
+    if (i.visibility === 'hotel' && canAccessHotel(i.hotelName || i.hotelId)) return true;
+    if (i.visibility === 'team') return true;
+    if (i.visibility === 'admin' && (AUTH_SESSION.role === 'admin' || AUTH_SESSION.role === 'master_admin')) return true;
+    return false;
+  });
+}
+
 function agendaGetFiltered() {
-  let items = agendaGetAll();
+  let items = agendaGetVisible();
   const f = agendaFilters;
   if (f.text) { const t = f.text.toLowerCase(); items = items.filter(i => (i.title||'').toLowerCase().includes(t) || (i.description||'').toLowerCase().includes(t) || (i.notes||'').toLowerCase().includes(t)); }
   if (f.hotel) items = items.filter(i => i.hotelId === f.hotel || i.hotelName === f.hotel);
@@ -5652,6 +6142,7 @@ function agendaFillModal(data) {
   f('am-responsible', data.responsible);
   f('am-tags', (data.tags||[]).join(', '));
   f('am-notes', data.notes);
+  f('am-visibility', data.visibility || 'private');
 }
 
 function agendaCloseModal() {
@@ -5672,7 +6163,7 @@ function agendaSaveModal(andNew) {
     moduleSource: gv('am-module'), channelId: gv('am-channel'), channelName: gv('am-channel'),
     category: gv('am-category'), status: gv('am-status'), priority: gv('am-priority'),
     followUpDate: gv('am-follow-date'), responsible: gv('am-responsible'),
-    tags, notes: gv('am-notes')
+    tags, notes: gv('am-notes'), visibility: gv('am-visibility') || 'private'
   };
   if (agendaEditingId) { agendaUpdate(agendaEditingId, item); }
   else { agendaCreate(item); }
@@ -5716,6 +6207,173 @@ function agendaExport() {
 }
 
 // ── END AGENDA MODULE ─────────────────────────────────────────
+
+// ═══════════════════════════════════════════════════════════════
+// USER MANAGEMENT MODULE
+// ═══════════════════════════════════════════════════════════════
+let _editingUserId = null;
+
+function initUsersModule() {
+  const page = document.getElementById('page-users');
+  if (!page || page._initialized) { usersRenderPage(); return; }
+  page._initialized = true;
+  page.innerHTML = `
+    <div class="users-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div>
+          <div style="font-size:1.05rem;font-weight:900;color:var(--gold-dark);text-transform:uppercase;letter-spacing:1px;">👤 Gestión de Usuarios</div>
+          <div style="font-size:.7rem;color:var(--gray3);margin-top:2px;">Roles · Permisos · Hoteles asignados</div>
+        </div>
+        <button class="save-btn primary" onclick="usersOpenCreate()">+ Nuevo usuario</button>
+      </div>
+      <div id="users-kpi-area" class="users-kpi-grid"></div>
+      <div id="users-table-area"></div>
+      <div id="users-audit-area" style="margin-top:24px;"></div>
+    </div>
+  `;
+  usersRenderPage();
+}
+
+function usersRenderPage() {
+  usersRenderKPIs();
+  usersRenderTable();
+}
+
+function usersRenderKPIs() {
+  const el = document.getElementById('users-kpi-area');
+  if (!el) return;
+  const users = usersGetAll();
+  const active = users.filter(u => u.status === 'active').length;
+  const inactive = users.filter(u => u.status === 'inactive').length;
+  const roleCount = {};
+  users.forEach(u => { roleCount[u.role] = (roleCount[u.role]||0)+1; });
+  el.innerHTML = [
+    ['Total usuarios', users.length, ''],
+    ['Activos', active, ''],
+    ['Inactivos', inactive, ''],
+    ['Master Admin', roleCount.master_admin||0, ''],
+    ['Revenue Manager', roleCount.revenue_manager||0, ''],
+    ['Solo Lectura', roleCount.viewer||0, ''],
+  ].map(([l,n,c]) => `<div class="users-kpi-card ${c}"><div class="users-kpi-num">${n}</div><div class="users-kpi-label">${l}</div></div>`).join('');
+}
+
+function usersRenderTable() {
+  const el = document.getElementById('users-table-area');
+  if (!el) return;
+  const users = usersGetAll();
+  const rows = users.map(u => {
+    const isMaster = u.id === 'u_master';
+    const hotelsStr = u.hotelAccess && u.hotelAccess.length > 0 ? u.hotelAccess.slice(0,2).join(', ')+(u.hotelAccess.length>2?` +${u.hotelAccess.length-2}`:'') : '<em style="color:var(--gray3)">Todos</em>';
+    return `<tr>
+      <td style="font-weight:700">${u.name}</td>
+      <td style="font-size:.72rem">${u.email}</td>
+      <td><span class="badge-role ${u.role}">${ROLE_LABELS[u.role]||u.role}</span></td>
+      <td><span class="${u.status==='active'?'badge-active':'badge-inactive'}">${u.status==='active'?'Activo':'Inactivo'}</span></td>
+      <td style="font-size:.7rem;max-width:200px">${hotelsStr}</td>
+      <td style="font-size:.68rem;color:var(--gray3)">${u.lastLoginAt?u.lastLoginAt.slice(0,10):'Nunca'}</td>
+      <td style="display:flex;gap:4px;white-space:nowrap">
+        ${!isMaster ? `<button style="padding:2px 8px;border:1px solid var(--gold-border);border-radius:4px;background:var(--white);font-size:.67rem;font-weight:700;cursor:pointer" onclick="usersOpenEdit('${u.id}')">✏ Editar</button>` : ''}
+        ${!isMaster && u.status==='active' ? `<button style="padding:2px 8px;border:1px solid #f5c6cb;border-radius:4px;background:var(--white);font-size:.67rem;font-weight:700;cursor:pointer;color:#c00" onclick="usersToggleStatus('${u.id}','inactive')">Desactivar</button>` : ''}
+        ${!isMaster && u.status==='inactive' ? `<button style="padding:2px 8px;border:1px solid #d1e7dd;border-radius:4px;background:var(--white);font-size:.67rem;font-weight:700;cursor:pointer;color:#0a3622" onclick="usersToggleStatus('${u.id}','active')">Activar</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<div class="users-table-wrap"><table class="users-table">
+    <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Hoteles</th><th>Último acceso</th><th>Acciones</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function usersRenderAuditPanel() {
+  const el = document.getElementById('users-audit-area');
+  if (!el) return;
+  const logs = auditGetAll().slice(0, 200);
+  if (!logs.length) { el.innerHTML = '<div style="color:var(--gray3);font-size:.8rem;padding:16px">No hay registros de auditoría aún.</div>'; return; }
+  const rows = logs.map(l => `<tr>
+    <td style="white-space:nowrap;font-size:.68rem;color:var(--gray3)">${(l.createdAt||'').slice(0,16).replace('T',' ')}</td>
+    <td style="font-weight:700;font-size:.72rem">${l.userName||'—'}</td>
+    <td style="font-size:.68rem">${l.hotelId||'—'}</td>
+    <td><code style="background:var(--gold-subtle);padding:1px 6px;border-radius:4px;font-size:.65rem">${l.action||'—'}</code></td>
+    <td style="font-size:.68rem;color:var(--gray3)">${l.previousValue||''}</td>
+    <td style="font-size:.68rem">${l.newValue||''}</td>
+  </tr>`).join('');
+  el.innerHTML = `<div style="font-size:.82rem;font-weight:800;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">📋 Registro de Auditoría</div>
+  <div class="audit-table-wrap"><table class="audit-table">
+    <thead><tr><th>Fecha</th><th>Usuario</th><th>Hotel</th><th>Acción</th><th>Valor anterior</th><th>Nuevo valor</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function usersOpenCreate() {
+  if (!hasPermission('canCreateUsers')) { alert('No tiene permisos para crear usuarios.'); return; }
+  _editingUserId = null;
+  document.getElementById('user-modal-title').textContent = 'Nuevo usuario';
+  document.getElementById('um-name').value = '';
+  document.getElementById('um-email').value = '';
+  document.getElementById('um-password').value = '';
+  document.getElementById('um-role').value = 'revenue_manager';
+  usersPopulateHotelsGrid([]);
+  document.getElementById('user-modal-overlay').classList.add('open');
+}
+
+function usersOpenEdit(id) {
+  if (!hasPermission('canEditUsers')) { alert('No tiene permisos para editar usuarios.'); return; }
+  const user = usersGetAll().find(u => u.id === id);
+  if (!user) return;
+  _editingUserId = id;
+  document.getElementById('user-modal-title').textContent = 'Editar usuario';
+  document.getElementById('um-name').value = user.name || '';
+  document.getElementById('um-email').value = user.email || '';
+  document.getElementById('um-password').value = '';
+  document.getElementById('um-role').value = user.role || 'revenue_manager';
+  usersPopulateHotelsGrid(user.hotelAccess || []);
+  document.getElementById('user-modal-overlay').classList.add('open');
+}
+
+function usersPopulateHotelsGrid(selected) {
+  const grid = document.getElementById('um-hotels-grid');
+  if (!grid) return;
+  grid.innerHTML = (typeof HOTELS !== 'undefined' ? HOTELS : []).map(h =>
+    `<label><input type="checkbox" value="${h}" ${selected.includes(h)?'checked':''}> ${h}</label>`
+  ).join('');
+}
+
+function usersCloseModal() {
+  document.getElementById('user-modal-overlay').classList.remove('open');
+  _editingUserId = null;
+}
+
+function usersSaveModal() {
+  const name = document.getElementById('um-name').value.trim();
+  const email = document.getElementById('um-email').value.trim();
+  const password = document.getElementById('um-password').value;
+  const role = document.getElementById('um-role').value;
+  if (!name || !email) { alert('Nombre y correo son obligatorios.'); return; }
+  if (!_editingUserId && !password) { alert('La contraseña es obligatoria para nuevos usuarios.'); return; }
+  const hotelAccess = Array.from(document.querySelectorAll('#um-hotels-grid input:checked')).map(cb => cb.value);
+  const data = { name, email, role, hotelAccess, permissions: DEFAULT_ROLE_PERMISSIONS[role] || [] };
+  if (password) data.password = password;
+  if (_editingUserId) { usersUpdate(_editingUserId, data); }
+  else {
+    const exists = usersGetAll().find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (exists) { alert('Ya existe un usuario con ese correo.'); return; }
+    usersCreate(data);
+  }
+  usersCloseModal();
+  usersRenderPage();
+}
+
+function usersToggleStatus(id, newStatus) {
+  if (!hasPermission('canDisableUsers')) { alert('No tiene permisos para cambiar el estado de usuarios.'); return; }
+  const msg = newStatus === 'inactive' ? '¿Desactivar este usuario?' : '¿Reactivar este usuario?';
+  if (!confirm(msg)) return;
+  usersUpdate(id, { status: newStatus });
+  authWriteAudit(newStatus === 'inactive' ? 'user_disabled' : 'user_updated', AUTH_SESSION?.userId, AUTH_SESSION?.userName, null, null, id);
+  usersRenderPage();
+}
+// ═══════════════════════════════════════════════════════════════
+// END USER MANAGEMENT MODULE
+// ═══════════════════════════════════════════════════════════════
 </script>
 
 <!-- AGENDA DETAIL DRAWER -->
@@ -5755,6 +6413,17 @@ function agendaExport() {
             <option value="agendaGeneral">Agenda general</option>
             <option value="rateSimulator">Simulador de Tarifas</option>
             <option value="otbComparison">Comparativa OTB</option>
+          </select>
+        </div>
+      </div>
+      <div class="agenda-form-row">
+        <div class="agenda-form-group">
+          <label>Visibilidad</label>
+          <select id="am-visibility">
+            <option value="private">🔒 Privada (solo yo)</option>
+            <option value="hotel">🏨 Compartida con hotel</option>
+            <option value="team">👥 Compartida con equipo</option>
+            <option value="admin">🔑 Administradores</option>
           </select>
         </div>
       </div>
@@ -5821,5 +6490,55 @@ function agendaExport() {
     </div>
   </div>
 </div>
+
+<!-- USER CREATE/EDIT MODAL -->
+<div class="user-modal-overlay" id="user-modal-overlay" onclick="if(event.target===this)usersCloseModal()">
+  <div class="user-modal">
+    <div class="user-modal-head">
+      <h3 id="user-modal-title">Nuevo usuario</h3>
+      <button onclick="usersCloseModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;color:var(--gray3)">✕</button>
+    </div>
+    <div class="user-modal-body">
+      <div class="user-form-row">
+        <div class="user-form-group">
+          <label>Nombre *</label>
+          <input type="text" id="um-name" placeholder="Nombre completo">
+        </div>
+        <div class="user-form-group">
+          <label>Correo *</label>
+          <input type="email" id="um-email" placeholder="usuario@gehsuites.com">
+        </div>
+      </div>
+      <div class="user-form-row">
+        <div class="user-form-group">
+          <label>Contraseña *</label>
+          <input type="password" id="um-password" placeholder="Contraseña inicial">
+        </div>
+        <div class="user-form-group">
+          <label>Rol</label>
+          <select id="um-role">
+            <option value="revenue_manager">Revenue Manager</option>
+            <option value="admin">Admin</option>
+            <option value="revenue_assistant">Revenue Auxiliar</option>
+            <option value="operations">Operaciones</option>
+            <option value="viewer">Solo Lectura</option>
+          </select>
+        </div>
+      </div>
+      <div class="user-form-row full">
+        <div class="user-form-group">
+          <label>Hoteles asignados (vacío = según rol)</label>
+          <div class="hotels-checkbox-grid" id="um-hotels-grid"></div>
+        </div>
+      </div>
+    </div>
+    <div class="user-modal-footer">
+      <button class="save-btn" onclick="usersCloseModal()">Cancelar</button>
+      <button class="save-btn primary" onclick="usersSaveModal()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end #dashboard-root -->
 </body>
 </html>
