@@ -648,6 +648,101 @@
 .auth-provider-badge.google { background:#e8f0fe;color:#1a73e8;border-color:#c5d8fd; }
 .auth-provider-badge.email  { background:#fff3e0;color:#e65100;border-color:#ffe0b2; }
 .auth-google-notice { font-size:.66rem;color:var(--gray3);text-align:center;margin-top:4px;padding:0 4px; }
+
+/* ── REPUTATION MODULE ──────────────────────────────────────────── */
+#module-reputation { display:flex;flex-direction:column;overflow:hidden; }
+.rep-module-header { display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1.5px solid var(--gold-border);background:var(--gold-pale);flex-shrink:0; }
+.rep-module-title { font-size:.9rem;font-weight:900;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px; }
+.rep-module-subtitle { font-size:.68rem;color:var(--gray3);margin-top:2px; }
+.rep-body { display:flex;flex:1;overflow:hidden; }
+/* LEFT list panel */
+.rep-list-panel { width:440px;min-width:300px;max-width:480px;display:flex;flex-direction:column;border-right:1.5px solid var(--gold-border);overflow:hidden; }
+.rep-filters { padding:10px 12px;border-bottom:1px solid var(--gold-border);display:flex;flex-direction:column;gap:6px;flex-shrink:0; }
+.rep-filters-row { display:flex;gap:6px;flex-wrap:wrap; }
+.rep-filter-select { flex:1;min-width:100px;padding:5px 8px;border:1px solid var(--gold-border);border-radius:6px;font-size:.72rem;font-family:inherit;background:var(--white); }
+.rep-filter-input { flex:1;padding:5px 10px;border:1px solid var(--gold-border);border-radius:6px;font-size:.72rem;font-family:inherit; }
+.rep-list { flex:1;overflow-y:auto;padding:8px; }
+/* Review card */
+.rep-card { border:1.5px solid var(--gold-border);border-radius:8px;padding:10px 14px;margin-bottom:7px;cursor:pointer;transition:all .13s;background:var(--white); }
+.rep-card:hover { background:var(--gold-subtle); }
+.rep-card.active { border-color:var(--gold);background:var(--gold-subtle); }
+.rep-card.risk-critical { border-left:4px solid #b71c1c; }
+.rep-card.risk-high { border-left:4px solid #e65100; }
+.rep-card.risk-medium { border-left:4px solid #f57f17; }
+.rep-card-top { display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:5px; }
+.rep-card-author { font-weight:700;font-size:.8rem; }
+.rep-card-meta { font-size:.66rem;color:var(--gray3);margin-top:1px; }
+.rep-card-comment { font-size:.72rem;color:#444;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%; }
+.rep-card-footer { display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap; }
+.rep-badge { font-size:.62rem;padding:2px 7px;border-radius:10px;font-weight:700;white-space:nowrap; }
+.rep-badge.source-google { background:#e8f0fe;color:#1a73e8;border:1px solid #c5d8fd; }
+.rep-badge.source-booking { background:#e8f5e9;color:#0d47a1;border:1px solid #c8e6c9; }
+.rep-badge.source-tripadvisor { background:#fff3e0;color:#e65100;border:1px solid #ffe0b2; }
+.rep-badge.source-manual { background:#f3e5f5;color:#6a1b9a;border:1px solid #e1bee7; }
+.rep-badge.sentiment-positive { background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9; }
+.rep-badge.sentiment-neutral { background:#f5f5f5;color:#555;border:1px solid #ddd; }
+.rep-badge.sentiment-negative { background:#fff3e0;color:#bf360c;border:1px solid #ffccbc; }
+.rep-badge.sentiment-critical { background:#fce4ec;color:#b71c1c;border:1px solid #f8bbd0; }
+.rep-badge.status-pending { background:#fff8e1;color:#f57f17;border:1px solid #ffecb3; }
+.rep-badge.status-draft { background:#e3f2fd;color:#1565c0;border:1px solid #bbdefb; }
+.rep-badge.status-published { background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9; }
+.rep-badge.status-escalated { background:#fce4ec;color:#b71c1c;border:1px solid #f8bbd0; }
+.rep-badge.status-noreply { background:#f5f5f5;color:#777;border:1px solid #ddd; }
+.rep-badge.risk-critical { background:#b71c1c;color:#fff; }
+.rep-badge.risk-high { background:#e65100;color:#fff; }
+/* RIGHT detail panel */
+.rep-detail-panel { flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0; }
+.rep-detail-empty { flex:1;display:flex;align-items:center;justify-content:center;color:#bbb;font-size:.88rem;text-align:center;padding:40px; }
+.rep-detail-scroll { flex:1;overflow-y:auto;padding:20px; }
+.rep-detail-section { margin-bottom:18px; }
+.rep-detail-section-title { font-size:.68rem;font-weight:900;color:var(--gray3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid var(--gold-border); }
+.rep-response-editor { width:100%;padding:10px 14px;border:1.5px solid var(--gold-border);border-radius:8px;font-size:.8rem;font-family:inherit;line-height:1.6;resize:vertical;min-height:120px;box-sizing:border-box;transition:border-color .15s; }
+.rep-response-editor:focus { border-color:var(--gold);outline:none; }
+.rep-action-bar { display:flex;gap:6px;flex-wrap:wrap;padding:10px 20px;border-top:1px solid var(--gold-border);flex-shrink:0;background:var(--white); }
+.rep-action-btn { padding:6px 12px;border:1.5px solid var(--gold-border);border-radius:6px;font-size:.72rem;font-weight:700;cursor:pointer;background:var(--white);color:var(--text);transition:all .13s;font-family:inherit; }
+.rep-action-btn:hover { background:var(--gold-pale); }
+.rep-action-btn.primary { background:var(--gold);color:#fff;border-color:var(--gold); }
+.rep-action-btn.primary:hover { background:var(--gold-dark); }
+.rep-action-btn.success { background:#2e7d32;color:#fff;border-color:#2e7d32; }
+.rep-action-btn.danger { background:#c62828;color:#fff;border-color:#c62828; }
+.rep-action-btn:disabled { opacity:.4;cursor:not-allowed; }
+/* Stats panel */
+.rep-stats-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding:16px; }
+.rep-stat-card { background:var(--gold-pale);border:1px solid var(--gold-border);border-radius:8px;padding:12px 14px; }
+.rep-stat-label { font-size:.6rem;font-weight:900;color:var(--gray3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px; }
+.rep-stat-value { font-size:1.2rem;font-weight:900;color:var(--gold-dark); }
+.rep-charts-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;padding:0 16px 16px; }
+.rep-chart-card { background:var(--white);border:1.5px solid var(--gold-border);border-radius:8px;padding:14px; }
+.rep-chart-title { font-size:.72rem;font-weight:800;color:var(--gold-dark);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px; }
+.rep-chart-empty { font-size:.75rem;color:#bbb;text-align:center;padding:20px;font-style:italic; }
+/* Column mapping modal */
+.rep-map-overlay { position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:3000;display:none;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto; }
+.rep-map-overlay.open { display:flex; }
+.rep-map-box { background:var(--white);border-radius:12px;width:100%;max-width:580px;box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.rep-map-head { padding:16px 22px 12px;border-bottom:1px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between; }
+.rep-map-head h3 { font-size:.9rem;font-weight:800;color:var(--gold-dark);margin:0;text-transform:uppercase;letter-spacing:.6px; }
+.rep-map-body { padding:18px 22px;max-height:60vh;overflow-y:auto; }
+.rep-map-row { display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center;margin-bottom:10px; }
+.rep-map-col-name { font-size:.75rem;font-weight:700;color:var(--text);background:#f5f5f5;padding:5px 10px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.rep-map-footer { padding:12px 22px 16px;border-top:1px solid var(--gold-border);display:flex;gap:8px;justify-content:flex-end; }
+/* Change log */
+.rep-changelog { display:flex;flex-direction:column;gap:6px; }
+.rep-changelog-entry { display:flex;gap:10px;font-size:.7rem;padding:6px 0;border-bottom:1px solid #f0f0f0; }
+.rep-changelog-time { color:var(--gray3);white-space:nowrap;flex-shrink:0;padding-top:1px; }
+.rep-changelog-body { flex:1; }
+.rep-tone-bar { display:flex;gap:5px;flex-wrap:wrap; }
+/* Rating stars */
+.rep-stars { color:var(--gold);letter-spacing:-1px; }
+.rep-stars-empty { color:#ddd; }
+/* Import zone */
+.rep-import-zone { border:2px dashed var(--gold-border);border-radius:10px;padding:24px;text-align:center;background:#fdfaf5;cursor:pointer;transition:all .15s; }
+.rep-import-zone:hover,.rep-import-zone.dragover { border-color:var(--gold);background:var(--gold-subtle); }
+.rep-import-zone-icon { font-size:2rem;margin-bottom:8px; }
+.rep-import-zone-text { font-size:.8rem;color:#666;line-height:1.5; }
+/* Tab bar inside detail */
+.rep-detail-tabs { display:flex;border-bottom:2px solid var(--gold-border);flex-shrink:0; }
+.rep-detail-tab { padding:8px 16px;border:none;background:none;font-size:.75rem;font-weight:700;cursor:pointer;color:var(--gray3);border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;text-transform:uppercase;letter-spacing:.5px; }
+.rep-detail-tab.active { color:var(--gold);border-bottom-color:var(--gold);background:none; }
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -827,6 +922,124 @@
 <!-- USERS MODULE -->
 <div id="module-users" style="display:none;">
   <div id="page-users"></div>
+</div>
+
+<!-- REPUTATION MODULE -->
+<div id="module-reputation" style="display:none;">
+  <div class="rep-module-header">
+    <div>
+      <div class="rep-module-title">🏆 Reputación y Respuestas IA</div>
+      <div class="rep-module-subtitle">Gestión de reseñas · Análisis IA · Respuestas profesionales</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="rep-action-btn" onclick="repShowImportModal()">📂 Importar reseñas</button>
+      <button class="rep-action-btn" onclick="repLoadDemoData()">🎭 Demo</button>
+      <button class="rep-action-btn" onclick="repShowStats()">📊 Estadísticas</button>
+      <button class="rep-action-btn" onclick="repExportExcel()">⬇ Exportar</button>
+    </div>
+  </div>
+  <div class="rep-body" id="rep-body">
+    <!-- LEFT PANEL -->
+    <div class="rep-list-panel">
+      <div class="rep-filters">
+        <input class="rep-filter-input" id="rep-search" placeholder="Buscar por autor, comentario, tema..." oninput="repRenderList()">
+        <div class="rep-filters-row">
+          <select class="rep-filter-select" id="rep-f-source" onchange="repRenderList()">
+            <option value="">Todos los canales</option>
+            <option value="google_business">🔵 Google Business</option>
+            <option value="booking">🏨 Booking.com</option>
+            <option value="tripadvisor">🦉 TripAdvisor</option>
+            <option value="manual">📋 Manual</option>
+          </select>
+          <select class="rep-filter-select" id="rep-f-status" onchange="repRenderList()">
+            <option value="">Todos los estados</option>
+            <option value="pending_response">⏳ Pendiente</option>
+            <option value="response_draft">✏️ Borrador</option>
+            <option value="response_published">🟢 Publicada</option>
+            <option value="escalated">🔴 Escalada</option>
+            <option value="no_response_needed">— Sin respuesta</option>
+          </select>
+        </div>
+        <div class="rep-filters-row">
+          <select class="rep-filter-select" id="rep-f-sentiment" onchange="repRenderList()">
+            <option value="">Todos los sentimientos</option>
+            <option value="positive">👍 Positivo</option>
+            <option value="neutral">😐 Neutral</option>
+            <option value="negative">👎 Negativo</option>
+            <option value="critical">🚨 Crítico</option>
+          </select>
+          <select class="rep-filter-select" id="rep-f-hotel" onchange="repRenderList()">
+            <option value="">Todos los hoteles</option>
+          </select>
+        </div>
+        <div id="rep-list-count" style="font-size:.66rem;color:#888;padding-top:2px;"></div>
+      </div>
+      <div class="rep-list" id="rep-list"></div>
+    </div>
+    <!-- RIGHT PANEL -->
+    <div class="rep-detail-panel" id="rep-detail-panel">
+      <div class="rep-detail-empty" id="rep-detail-empty">Selecciona una reseña para ver el detalle y gestionar la respuesta.</div>
+      <div id="rep-detail-content" style="display:none;display:flex;flex-direction:column;overflow:hidden;flex:1;">
+        <div class="rep-detail-tabs">
+          <button class="rep-detail-tab active" id="rep-tab-review" onclick="repSwitchTab('review')">📝 Reseña</button>
+          <button class="rep-detail-tab" id="rep-tab-ai" onclick="repSwitchTab('ai')">🤖 Análisis IA</button>
+          <button class="rep-detail-tab" id="rep-tab-response" onclick="repSwitchTab('response')">✍️ Respuesta</button>
+          <button class="rep-detail-tab" id="rep-tab-history" onclick="repSwitchTab('history')">📋 Historial</button>
+        </div>
+        <div class="rep-detail-scroll" id="rep-detail-scroll">
+          <div id="rep-tab-content-review"></div>
+          <div id="rep-tab-content-ai" style="display:none;"></div>
+          <div id="rep-tab-content-response" style="display:none;"></div>
+          <div id="rep-tab-content-history" style="display:none;"></div>
+        </div>
+        <div class="rep-action-bar" id="rep-action-bar"></div>
+      </div>
+    </div>
+  </div>
+  <!-- Stats overlay -->
+  <div id="rep-stats-overlay" style="display:none;position:absolute;inset:0;background:var(--white);overflow-y:auto;z-index:50;">
+    <div style="padding:14px 20px;border-bottom:1.5px solid var(--gold-border);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-weight:900;font-size:.88rem;color:var(--gold-dark);text-transform:uppercase;letter-spacing:.8px;">📊 Estadísticas de Reputación</span>
+      <button class="rep-action-btn" onclick="document.getElementById('rep-stats-overlay').style.display='none'">✕ Cerrar</button>
+    </div>
+    <div class="rep-stats-grid" id="rep-stats-grid"></div>
+    <div class="rep-charts-grid" id="rep-charts-grid"></div>
+  </div>
+</div>
+
+<!-- REPUTATION IMPORT MODAL -->
+<div class="rep-map-overlay" id="rep-import-modal">
+  <div class="rep-map-box">
+    <div class="rep-map-head">
+      <h3>📂 Importar reseñas</h3>
+      <button onclick="repCloseImportModal()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:#666;">✕</button>
+    </div>
+    <div class="rep-map-body">
+      <div class="rep-import-zone" id="rep-drop-zone" onclick="document.getElementById('rep-file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('dragover')"
+           ondragleave="this.classList.remove('dragover')"
+           ondrop="repHandleDrop(event)">
+        <div class="rep-import-zone-icon">📄</div>
+        <div class="rep-import-zone-text">
+          Arrastra tu archivo Excel o CSV aquí<br>
+          o haz clic para seleccionar
+        </div>
+        <div style="font-size:.66rem;color:#aaa;margin-top:6px;">Soporta .xlsx · .csv · Columnas flexibles</div>
+      </div>
+      <input type="file" id="rep-file-input" accept=".xlsx,.csv" style="display:none" onchange="repHandleFileSelect(event)">
+      <div id="rep-import-preview" style="margin-top:14px;display:none;">
+        <div style="font-size:.78rem;font-weight:700;margin-bottom:8px;" id="rep-import-filename"></div>
+        <div id="rep-col-map-section"></div>
+        <div id="rep-import-errors" style="display:none;background:#fff0f0;border:1px solid #f5c6cb;border-radius:6px;padding:8px 12px;font-size:.74rem;color:#c00;margin-top:8px;"></div>
+      </div>
+      <div id="rep-import-result" style="display:none;margin-top:12px;background:#e8f5e9;border:1px solid #c8e6c9;border-radius:6px;padding:10px 14px;font-size:.78rem;color:#2e7d32;"></div>
+    </div>
+    <div class="rep-map-footer">
+      <button class="rep-action-btn" onclick="repCloseImportModal()">Cancelar</button>
+      <button class="rep-action-btn primary" id="rep-import-btn" onclick="repExecuteImport()" style="display:none;">✅ Importar</button>
+      <button class="rep-action-btn primary" onclick="repDownloadTemplate()">⬇ Plantilla Excel</button>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -1239,6 +1452,7 @@ function getAvailableModulesForUser() {
     ]},
     { group:'Seguimiento', items:[
       { id:'agenda', icon:'📋', label:'Agenda Revenue' },
+      { id:'reputation', icon:'🏆', label:'Reputación IA' },
     ]},
   ];
   const isAdmin = AUTH_SESSION && (AUTH_SESSION.role === 'master_admin' || hasPermission('canManageUsers'));
@@ -1290,7 +1504,8 @@ function setupAppLayout() {
   // Move action bars and module panels into content-area
   const toMove = [
     'action-bar-simulator','action-bar-otb','action-bar-agenda','action-bar-users',
-    'module-simulator','module-otb','module-agenda','module-users',
+    'module-simulator','module-otb','module-agenda','module-users','module-reputation',
+    'rep-import-modal',
     'toast',
   ];
   // Also get hotel-sidebar overlay
@@ -2478,7 +2693,8 @@ function switchModule(mod) {
   const isOTB = mod === 'otb';
   const isAgenda = mod === 'agenda';
   const isUsers = mod === 'users';
-  const isSim = !isOTB && !isAgenda && !isUsers;
+  const isRep = mod === 'reputation';
+  const isSim = !isOTB && !isAgenda && !isUsers && !isRep;
   // Nav buttons
   document.getElementById('nav-simulator').classList.toggle('active', isSim);
   document.getElementById('nav-otb').classList.toggle('active', isOTB);
@@ -2500,13 +2716,14 @@ function switchModule(mod) {
   if (modAgenda) modAgenda.style.display = isAgenda ? '' : 'none';
   const modUsers = document.getElementById('module-users');
   if (modUsers) modUsers.style.display = isUsers ? '' : 'none';
-  // Init OTB on first open
+  const modRep = document.getElementById('module-reputation');
+  if (modRep) modRep.style.display = isRep ? '' : 'none';
+  // Init modules on first open
   const otbPage = document.getElementById('page-otb');
   if (isOTB && !otbPage._initialized) { initOTB(otbPage); otbPage._initialized = true; }
-  // Init Agenda on first open
   if (isAgenda) initAgenda();
-  // Init Users on first open
   if (isUsers) initUsersModule();
+  if (isRep) repInit();
   // Sidebar active state
   sidebarNavSetActive(mod);
   // Audit
@@ -6949,5 +7166,983 @@ function usersToggleStatus(id, newStatus) {
 </div>
 
 </div><!-- end #dashboard-root -->
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// REPUTATION MODULE
+// ═══════════════════════════════════════════════════════════════
+const REP_KEY = 'rmd_reputation_v2';
+const REP_ALERTS_KEY = 'rmd_rep_alerts';
+const REP_CHANGELOG_KEY = 'rmd_rep_changelog';
+
+// Source / status / sentiment helpers
+const REP_SOURCE_LABELS = { google_business:'🔵 Google', booking:'🏨 Booking.com', tripadvisor:'🦉 TripAdvisor', manual:'📋 Manual' };
+const REP_STATUS_LABELS = { pending_response:'⏳ Pendiente', response_draft:'✏️ Borrador', response_ready:'✅ Lista', response_published:'🟢 Publicada', no_response_needed:'— Sin respuesta', escalated:'🔴 Escalada' };
+const REP_SENTIMENT_LABELS = { positive:'👍 Positivo', neutral:'😐 Neutral', negative:'👎 Negativo', critical:'🚨 Crítico' };
+const REP_RISK_LABELS = { low:'Bajo', medium:'Medio', high:'Alto', critical:'Crítico' };
+
+// Flexible column name mapping — maps possible header names to our internal fields
+const REP_COL_ALIASES = {
+  authorName:     ['reviewer_name','guest','author','nombre','huésped','guest_name','name','autor','reviewer'],
+  rating:         ['rating','score','puntuación','calificación','nota','stars','estrellas','puntaje'],
+  comment:        ['comment','review','comentario','reseña','feedback','descripción','text','texto'],
+  positiveComment:['positive','liked','comentario_positivo','positivo','lo_que_gusto','pros'],
+  negativeComment:['negative','disliked','comentario_negativo','negativo','lo_que_no_gusto','cons'],
+  title:          ['title','título','subject','asunto','summary'],
+  reviewDate:     ['review_date','date','fecha','fecha_reseña','published_date','created_at','date_review'],
+  language:       ['language','idioma','lang','locale'],
+  sourceUrl:      ['review_url','url','enlace','link','source_url','tripadvisor_url'],
+  externalId:     ['review_id','id','external_id','booking_id','review_number'],
+  source:         ['source','canal','channel','platform','plataforma','fuente'],
+  hotelId:        ['hotel','property','hotel_name','property_name','hotel_id','propiedad'],
+  status:         ['status','estado','state'],
+};
+
+let _repReviews = [];
+let _repSelectedId = null;
+let _repCurrentTab = 'review';
+let _repImportRawRows = [];
+let _repImportHeaders = [];
+let _repColMap = {};
+let _repCharts = {};
+let _repInitialized = false;
+
+// ── Storage ───────────────────────────────────────────────────
+function repRead() {
+  try { return JSON.parse(localStorage.getItem(REP_KEY) || '[]'); } catch { return []; }
+}
+function repWrite(data) { localStorage.setItem(REP_KEY, JSON.stringify(data)); }
+function repReadChangelog() {
+  try { return JSON.parse(localStorage.getItem(REP_CHANGELOG_KEY) || '[]'); } catch { return []; }
+}
+function repWriteChangelog(log) { localStorage.setItem(REP_CHANGELOG_KEY, JSON.stringify(log.slice(0, 5000))); }
+
+function repLogChange(reviewId, field, prev, next, notes) {
+  const log = repReadChangelog();
+  log.unshift({
+    id: 'cl_' + Date.now() + '_' + Math.random().toString(36).slice(2,5),
+    reviewId, field,
+    previousValue: prev ?? null, newValue: next ?? null,
+    changedAt: new Date().toISOString(),
+    changedBy: AUTH_SESSION ? AUTH_SESSION.userName : 'sistema',
+    notes: notes || null
+  });
+  repWriteChangelog(log);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+function repInit() {
+  _repReviews = repRead();
+  repRenderList();
+  repPopulateHotelFilter();
+  if (!_repInitialized) {
+    _repInitialized = true;
+    // Restore module position for sticky
+    const mod = document.getElementById('module-reputation');
+    if (mod) mod.style.position = 'relative';
+  }
+}
+
+// ── Column detection ──────────────────────────────────────────
+function repDetectColumn(headers, field) {
+  const aliases = REP_COL_ALIASES[field] || [];
+  for (const h of headers) {
+    const hn = h.toLowerCase().replace(/[\s_\-\.]/g,'');
+    for (const alias of aliases) {
+      if (hn === alias.replace(/[\s_\-\.]/g,'')) return h;
+    }
+  }
+  return null;
+}
+
+function repBuildAutoMap(headers) {
+  const map = {};
+  for (const field of Object.keys(REP_COL_ALIASES)) {
+    const found = repDetectColumn(headers, field);
+    if (found) map[field] = found;
+  }
+  return map;
+}
+
+// ── Import modal ──────────────────────────────────────────────
+function repShowImportModal() {
+  document.getElementById('rep-import-modal').classList.add('open');
+  document.getElementById('rep-import-preview').style.display = 'none';
+  document.getElementById('rep-import-result').style.display = 'none';
+  document.getElementById('rep-import-btn').style.display = 'none';
+  document.getElementById('rep-import-errors').style.display = 'none';
+  _repImportRawRows = [];
+  _repImportHeaders = [];
+  _repColMap = {};
+}
+function repCloseImportModal() {
+  document.getElementById('rep-import-modal').classList.remove('open');
+}
+function repHandleDrop(e) {
+  e.preventDefault();
+  document.getElementById('rep-drop-zone').classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) repProcessFile(file);
+}
+function repHandleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) repProcessFile(file);
+  e.target.value = '';
+}
+async function repProcessFile(file) {
+  document.getElementById('rep-import-filename').textContent = '📄 ' + file.name;
+  document.getElementById('rep-import-preview').style.display = 'block';
+  document.getElementById('rep-import-result').style.display = 'none';
+  document.getElementById('rep-import-btn').style.display = 'none';
+  try {
+    const buf = await file.arrayBuffer();
+    let rows;
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const text = new TextDecoder('utf-8').decode(buf);
+      rows = repParseCSV(text);
+    } else {
+      const wb = XLSX.read(buf, { type:'array', cellDates:true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      rows = XLSX.utils.sheet_to_json(ws, { raw:false, defval:'' });
+    }
+    if (!rows.length) { repShowImportError('El archivo no contiene filas.'); return; }
+    _repImportHeaders = Object.keys(rows[0]);
+    _repImportRawRows = rows;
+    _repColMap = repBuildAutoMap(_repImportHeaders);
+    repRenderColMap();
+    document.getElementById('rep-import-btn').style.display = '';
+  } catch(e) {
+    repShowImportError('Error al leer el archivo: ' + e.message);
+  }
+}
+
+function repRenderColMap() {
+  const requiredFields = { authorName:'Nombre del huésped', rating:'Puntuación', comment:'Comentario' };
+  const optionalFields = { positiveComment:'Comentario positivo', negativeComment:'Comentario negativo', title:'Título', reviewDate:'Fecha de reseña', language:'Idioma', sourceUrl:'URL de reseña', externalId:'ID de reseña', source:'Canal / Fuente', hotelId:'Hotel', status:'Estado' };
+
+  let html = '<div style="font-size:.74rem;font-weight:700;color:var(--gold-dark);margin-bottom:10px;">Mapeo de columnas</div>';
+  html += '<div style="font-size:.66rem;color:#888;margin-bottom:10px;">Verifica que las columnas de tu archivo correspondan con los campos correctos.</div>';
+
+  const renderRow = (field, label, required) => {
+    const sel = `<select style="width:100%;padding:5px 8px;border:1px solid var(--gold-border);border-radius:6px;font-size:.72rem;font-family:inherit;" id="repmap_${field}" onchange="_repColMap['${field}']=this.value||null">
+      <option value="">${required ? '— Requerido —' : '— Ignorar —'}</option>
+      ${_repImportHeaders.map(h => `<option value="${h.replace(/"/g,'&quot;')}" ${(_repColMap[field]||'')==h?'selected':''}>${h}</option>`).join('')}
+    </select>`;
+    return `<div class="rep-map-row"><div class="rep-map-col-name">${label}${required?'<span style="color:#c00"> *</span>':''}</div>${sel}</div>`;
+  };
+  Object.entries(requiredFields).forEach(([f,l]) => html += renderRow(f, l, true));
+  html += '<details style="margin-top:8px;"><summary style="cursor:pointer;font-size:.7rem;color:var(--gray3);font-weight:700;user-select:none;">▶ Campos opcionales</summary><div style="margin-top:8px;">';
+  Object.entries(optionalFields).forEach(([f,l]) => html += renderRow(f, l, false));
+  html += '</div></details>';
+  html += `<div style="font-size:.66rem;color:#888;margin-top:10px;">Columnas detectadas: ${_repImportHeaders.length} · Filas: ${_repImportRawRows.length}</div>`;
+  document.getElementById('rep-col-map-section').innerHTML = html;
+}
+
+function repShowImportError(msg) {
+  const el = document.getElementById('rep-import-errors');
+  el.textContent = msg; el.style.display = '';
+}
+
+function repExecuteImport() {
+  // Re-read the map from selects
+  for (const field of Object.keys(REP_COL_ALIASES)) {
+    const el = document.getElementById('repmap_' + field);
+    if (el) _repColMap[field] = el.value || null;
+  }
+  if (!_repColMap.authorName && !_repColMap.rating && !_repColMap.comment) {
+    repShowImportError('Debes mapear al menos una columna de nombre, puntuación o comentario.'); return;
+  }
+  const now = new Date().toISOString();
+  const defaultHotel = currentHotel || (typeof HOTELS !== 'undefined' ? HOTELS[0] : 'GEH Suites');
+  const existing = repRead();
+  let imported = 0, skipped = 0, errors = 0;
+
+  for (let i = 0; i < _repImportRawRows.length; i++) {
+    const row = _repImportRawRows[i];
+    const get = f => _repColMap[f] ? String(row[_repColMap[f]] ?? '') : '';
+    const ratingRaw = parseFloat(get('rating'));
+    if (isNaN(ratingRaw)) { errors++; continue; }
+
+    // Normalize rating to 0-10
+    let rating10;
+    if (ratingRaw <= 5) rating10 = Math.round(ratingRaw * 2 * 10) / 10;
+    else if (ratingRaw <= 10) rating10 = ratingRaw;
+    else { errors++; continue; }
+
+    const sourceRaw = get('source').toLowerCase();
+    const source = sourceRaw.includes('google') ? 'google_business'
+      : sourceRaw.includes('booking') ? 'booking'
+      : sourceRaw.includes('tripadvisor') || sourceRaw.includes('trip') ? 'tripadvisor'
+      : 'manual';
+
+    const externalId = get('externalId') || null;
+    if (externalId && existing.find(r => r.externalId === externalId && r.source === source)) { skipped++; continue; }
+
+    const dateRaw = get('reviewDate');
+    const reviewDate = repParseDate(dateRaw) || now;
+
+    const review = {
+      id: 'rep_' + Date.now() + '_' + i,
+      source, externalId,
+      hotelId: get('hotelId') || defaultHotel,
+      authorName: get('authorName') || 'Huésped',
+      rating: rating10,
+      title: get('title') || null,
+      comment: get('comment') || null,
+      positiveComment: get('positiveComment') || null,
+      negativeComment: get('negativeComment') || null,
+      language: repNormLang(get('language')) || 'es',
+      reviewDate, publishedAt: reviewDate,
+      sourceUrl: get('sourceUrl') || null,
+      status: repNormStatus(get('status')) || 'pending_response',
+      createdAt: now, updatedAt: now,
+      tags: [], importedFromFile: (_repImportRawRows.length > 0 ? 'file_import' : null)
+    };
+    existing.push(review);
+    repLogChange(review.id, 'status', null, review.status, 'Importado desde archivo');
+    imported++;
+  }
+
+  repWrite(existing);
+  _repReviews = existing;
+  repRenderList();
+  repPopulateHotelFilter();
+  document.getElementById('rep-import-result').textContent = `✅ ${imported} reseñas importadas · ${skipped} ya existían · ${errors} filas con error`;
+  document.getElementById('rep-import-result').style.display = '';
+  document.getElementById('rep-import-btn').style.display = 'none';
+}
+
+function repParseDate(raw) {
+  if (!raw) return null;
+  const s = String(raw).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return new Date(s).toISOString();
+  const dmy = s.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+  if (dmy) return new Date(`${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`).toISOString();
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+function repNormLang(raw) {
+  if (!raw) return 'es';
+  const r = raw.toLowerCase().trim();
+  if (r.startsWith('es') || r === 'spanish') return 'es';
+  if (r.startsWith('en') || r === 'english') return 'en';
+  if (r.startsWith('pt') || r === 'portuguese') return 'pt';
+  if (r.startsWith('fr') || r === 'french') return 'fr';
+  if (r.startsWith('de') || r === 'german') return 'de';
+  if (r.startsWith('it') || r === 'italian') return 'it';
+  return r.slice(0, 2) || 'es';
+}
+
+function repNormStatus(raw) {
+  if (!raw) return null;
+  const r = raw.toLowerCase();
+  if (r.includes('publicad') || r.includes('published')) return 'response_published';
+  if (r.includes('borrador') || r.includes('draft')) return 'response_draft';
+  if (r.includes('escalad') || r.includes('escalated')) return 'escalated';
+  if (r.includes('sin respuesta') || r.includes('no_response')) return 'no_response_needed';
+  return 'pending_response';
+}
+
+// ── CSV parser ────────────────────────────────────────────────
+function repParseCSV(text) {
+  const lines = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').split('\n');
+  if (lines.length < 2) return [];
+  const headers = repCSVLine(lines[0]);
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const vals = repCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = vals[i] ?? ''; });
+    return obj;
+  });
+}
+function repCSVLine(line) {
+  const cols = []; let cur = ''; let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') { inQ = !inQ; }
+    else if (line[i] === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+    else cur += line[i];
+  }
+  cols.push(cur.trim());
+  return cols.map(c => c.replace(/^"|"$/g,'').replace(/""/g,'"'));
+}
+
+// ── Template download ──────────────────────────────────────────
+function repDownloadTemplate() {
+  const wb = XLSX.utils.book_new();
+  const headers = ['hotel','source','reviewer_name','rating','title','comment','positive','negative','review_date','language','review_url','review_id'];
+  const examples = [
+    ['GEH Suites Centro','booking','María García',9,'Excelente estadía','Todo fue perfecto, el personal muy amable','El personal y las instalaciones','El aire acondicionado un poco ruidoso','2025-05-15','es','https://booking.com/review/123','BK-001'],
+    ['GEH Suites Norte','tripadvisor','John Smith',7,'Good stay','Nice hotel but breakfast could be better','Location and staff','Breakfast quality','2025-05-10','en','https://tripadvisor.com/review/456','TA-002'],
+    ['GEH Suites Centro','google_business','Carlos Pérez',6,'Regular','Habitación pequeña y ruidosa','Ubicación céntrica','Habitación y ruido','2025-05-08','es','','GB-003'],
+  ];
+  const ws = XLSX.utils.aoa_to_sheet([headers, ...examples]);
+  XLSX.utils.book_append_sheet(wb, ws, 'Reseñas');
+  XLSX.writeFile(wb, 'plantilla_reseñas_geh.xlsx');
+}
+
+// ── List rendering ────────────────────────────────────────────
+function repGetFiltered() {
+  const search = (document.getElementById('rep-search')?.value || '').toLowerCase();
+  const fsource = document.getElementById('rep-f-source')?.value || '';
+  const fstatus = document.getElementById('rep-f-status')?.value || '';
+  const fsentiment = document.getElementById('rep-f-sentiment')?.value || '';
+  const fhotel = document.getElementById('rep-f-hotel')?.value || '';
+  return _repReviews.filter(r => {
+    if (fsource && r.source !== fsource) return false;
+    if (fstatus && r.status !== fstatus) return false;
+    if (fsentiment && r.sentiment !== fsentiment) return false;
+    if (fhotel && r.hotelId !== fhotel) return false;
+    if (search) {
+      const haystack = [(r.authorName||''),(r.comment||''),(r.positiveComment||''),(r.negativeComment||''),(r.mainTopic||'')].join(' ').toLowerCase();
+      if (!haystack.includes(search)) return false;
+    }
+    return true;
+  }).sort((a,b) => (b.reviewDate||'').localeCompare(a.reviewDate||''));
+}
+
+function repPopulateHotelFilter() {
+  const sel = document.getElementById('rep-f-hotel');
+  if (!sel) return;
+  const hotels = [...new Set(_repReviews.map(r => r.hotelId).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Todos los hoteles</option>' + hotels.map(h => `<option value="${repEsc(h)}">${repEsc(h)}</option>`).join('');
+}
+
+function repRenderList() {
+  const list = document.getElementById('rep-list');
+  const countEl = document.getElementById('rep-list-count');
+  if (!list) return;
+  const filtered = repGetFiltered();
+  if (countEl) countEl.textContent = `${filtered.length} de ${_repReviews.length} reseñas`;
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;color:#bbb;padding:40px;font-size:.8rem;">${_repReviews.length === 0 ? 'Importa reseñas con el botón "Importar reseñas" para comenzar.' : 'No hay reseñas con los filtros actuales.'}</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(r => repCardHTML(r)).join('');
+  list.querySelectorAll('.rep-card').forEach(card => {
+    card.addEventListener('click', () => { _repSelectedId = card.dataset.id; repRenderCard(); repRenderList(); });
+  });
+}
+
+function repCardHTML(r) {
+  const stars = repStarsHTML(r.rating);
+  const sourceBadge = `<span class="rep-badge source-${r.source}">${REP_SOURCE_LABELS[r.source]||r.source}</span>`;
+  const sentBadge = r.sentiment ? `<span class="rep-badge sentiment-${r.sentiment}">${REP_SENTIMENT_LABELS[r.sentiment]||r.sentiment}</span>` : '';
+  const statusBadge = `<span class="rep-badge status-${(r.status||'pending_response').replace('_response','').replace('response_','')}">${REP_STATUS_LABELS[r.status]||r.status}</span>`;
+  const riskClass = (r.riskLevel === 'critical' || r.riskLevel === 'high') ? `risk-${r.riskLevel}` : '';
+  const comment = r.comment || r.positiveComment || r.negativeComment || '(Sin comentario escrito)';
+  const daysAgo = r.reviewDate ? Math.round((Date.now() - new Date(r.reviewDate).getTime()) / 86400000) : null;
+  const timeStr = daysAgo !== null ? (daysAgo === 0 ? 'Hoy' : daysAgo === 1 ? 'Ayer' : `Hace ${daysAgo}d`) : '';
+  return `<div class="rep-card ${riskClass} ${_repSelectedId === r.id ? 'active' : ''}" data-id="${r.id}">
+    <div class="rep-card-top">
+      <div>
+        <div class="rep-card-author">${repEsc(r.authorName)}</div>
+        <div class="rep-card-meta">${stars} · ${repEsc(r.hotelId||'')} · ${timeStr}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">${statusBadge}</div>
+    </div>
+    <div class="rep-card-comment">${repEsc(comment)}</div>
+    <div class="rep-card-footer">${sourceBadge}${sentBadge}${r.riskLevel && r.riskLevel !== 'low' ? `<span class="rep-badge risk-${r.riskLevel}">${REP_RISK_LABELS[r.riskLevel]}</span>` : ''}${r.mainTopic ? `<span style="font-size:.62rem;color:#888;">📌 ${repEsc(r.mainTopic)}</span>` : ''}</div>
+  </div>`;
+}
+
+function repStarsHTML(rating) {
+  const filled = Math.round((rating || 0) / 2);
+  const stars = Array.from({length:5}, (_,i) => `<span class="${i < filled ? 'rep-stars' : 'rep-stars-empty'}">★</span>`).join('');
+  return `${stars} <span style="font-size:.68rem;color:#888;">${rating}/10</span>`;
+}
+
+// ── Detail panel ──────────────────────────────────────────────
+function repRenderCard() {
+  const review = _repReviews.find(r => r.id === _repSelectedId);
+  const emptyEl = document.getElementById('rep-detail-empty');
+  const contentEl = document.getElementById('rep-detail-content');
+  if (!review) {
+    if (emptyEl) emptyEl.style.display = '';
+    if (contentEl) contentEl.style.display = 'none';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+  if (contentEl) { contentEl.style.display = 'flex'; }
+  repRenderTab(_repCurrentTab, review);
+  repRenderActionBar(review);
+}
+
+function repSwitchTab(tab) {
+  _repCurrentTab = tab;
+  ['review','ai','response','history'].forEach(t => {
+    document.getElementById('rep-tab-' + t)?.classList.toggle('active', t === tab);
+    const c = document.getElementById('rep-tab-content-' + t);
+    if (c) c.style.display = t === tab ? '' : 'none';
+  });
+  const review = _repReviews.find(r => r.id === _repSelectedId);
+  if (review) repRenderTab(tab, review);
+}
+
+function repRenderTab(tab, review) {
+  const el = document.getElementById('rep-tab-content-' + tab);
+  if (!el) return;
+  if (tab === 'review') el.innerHTML = repReviewTabHTML(review);
+  else if (tab === 'ai') el.innerHTML = repAITabHTML(review);
+  else if (tab === 'response') el.innerHTML = repResponseTabHTML(review);
+  else if (tab === 'history') el.innerHTML = repHistoryTabHTML(review);
+}
+
+function repReviewTabHTML(r) {
+  const rows = [
+    ['Hotel', repEsc(r.hotelId||'—')],
+    ['Canal', REP_SOURCE_LABELS[r.source]||r.source],
+    ['Puntuación', repStarsHTML(r.rating)],
+    ['Fecha', r.reviewDate ? r.reviewDate.slice(0,10) : '—'],
+    ['Idioma', r.language || '—'],
+    ['Estado', REP_STATUS_LABELS[r.status]||r.status],
+    ['URL', r.sourceUrl ? `<a href="${repEsc(r.sourceUrl)}" target="_blank" rel="noopener" style="color:var(--gold);">Ver reseña ↗</a>` : '—'],
+  ];
+  let html = `<div class="rep-detail-section">
+    <div class="rep-detail-section-title">Información de la reseña</div>
+    <table style="width:100%;border-collapse:collapse;font-size:.76rem;">
+    ${rows.map(([l,v]) => `<tr><td style="padding:5px 8px;color:var(--gray3);font-weight:700;width:40%;white-space:nowrap;">${l}</td><td style="padding:5px 8px;">${v}</td></tr>`).join('')}
+    </table>
+  </div>`;
+  if (r.positiveComment) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">👍 Comentario positivo</div><div style="font-size:.8rem;line-height:1.6;background:#e8f5e9;border-radius:6px;padding:10px 14px;border:1px solid #c8e6c9;">${repEsc(r.positiveComment)}</div></div>`;
+  if (r.negativeComment) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">👎 Comentario negativo</div><div style="font-size:.8rem;line-height:1.6;background:#fce4ec;border-radius:6px;padding:10px 14px;border:1px solid #f8bbd0;">${repEsc(r.negativeComment)}</div></div>`;
+  if (r.comment && !r.positiveComment && !r.negativeComment) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">💬 Comentario</div><div style="font-size:.8rem;line-height:1.6;background:#f9f6f0;border-radius:6px;padding:10px 14px;border:1px solid var(--gold-border);">${repEsc(r.comment)}</div></div>`;
+  if ((r.tags||[]).includes('score_only_no_reply_allowed')) {
+    html += `<div style="background:#fff3cd;border:1px solid #f5c842;border-radius:6px;padding:8px 12px;font-size:.74rem;color:#856404;margin-top:8px;">ℹ️ Reseña solo con puntuación. Booking.com no permite responder a reseñas sin comentario escrito.</div>`;
+  }
+  // Notes
+  const notesId = 'rep-notes-' + r.id;
+  html += `<div class="rep-detail-section"><div class="rep-detail-section-title">📝 Notas internas</div>
+    <textarea id="${notesId}" style="width:100%;padding:8px 12px;border:1.5px solid var(--gold-border);border-radius:6px;font-size:.78rem;font-family:inherit;resize:vertical;box-sizing:border-box;" rows="3" placeholder="Notas internas (no visibles al huésped)...">${repEsc(r.internalNotes||'')}</textarea>
+    <button class="rep-action-btn" style="margin-top:6px;font-size:.7rem;" onclick="repSaveNotes('${r.id}','${notesId}')">💾 Guardar notas</button>
+  </div>`;
+  return html;
+}
+
+function repAITabHTML(r) {
+  if (!r.aiAnalysis) {
+    const canAnalyze = !!(r.comment || r.positiveComment || r.negativeComment || r.title);
+    return `<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:2rem;margin-bottom:12px;">🤖</div>
+      <div style="font-size:.84rem;font-weight:700;color:var(--text);margin-bottom:8px;">Sin análisis IA</div>
+      <div style="font-size:.74rem;color:#888;margin-bottom:20px;">${canAnalyze ? 'Haz clic en "Analizar con IA" para detectar sentimiento, temas y generar una respuesta.' : 'Esta reseña solo tiene puntuación sin comentario. El análisis IA no está disponible.'}</div>
+      ${canAnalyze ? `<button class="rep-action-btn primary" onclick="repAnalyzeReview('${r.id}')">🤖 Analizar con IA</button>` : ''}
+    </div>`;
+  }
+  const ai = r.aiAnalysis;
+  const scoreColor = ai.sentimentScore > 0.3 ? '#2e7d32' : ai.sentimentScore < -0.3 ? '#c62828' : '#f57f17';
+  let html = `<div class="rep-detail-section">
+    <div class="rep-detail-section-title">Resultados del análisis</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:.74rem;">
+      <div style="background:#f0f4ff;border-radius:6px;padding:8px 12px;"><strong>Sentimiento:</strong> ${REP_SENTIMENT_LABELS[ai.sentiment]||ai.sentiment}<br><strong>Score:</strong> <span style="color:${scoreColor};font-weight:800;">${ai.sentimentScore > 0 ? '+' : ''}${(ai.sentimentScore||0).toFixed(2)}</span></div>
+      <div style="background:#f0f4ff;border-radius:6px;padding:8px 12px;"><strong>Idioma:</strong> ${(ai.detectedLanguage||'').toUpperCase()}<br><strong>Urgencia:</strong> ${ai.urgencyScore||0}/10</div>
+      <div style="background:#f0f4ff;border-radius:6px;padding:8px 12px;"><strong>Riesgo:</strong> <span style="font-weight:800;color:${ai.riskLevel==='critical'?'#b71c1c':ai.riskLevel==='high'?'#e65100':'inherit'}">${REP_RISK_LABELS[ai.riskLevel]||ai.riskLevel}</span><br><strong>Dpto:</strong> ${ai.department||'—'}</div>
+      <div style="background:#f0f4ff;border-radius:6px;padding:8px 12px;"><strong>Tema:</strong> ${repEsc(ai.mainTopic||'—')}<br><strong>Responder:</strong> ${ai.responseRecommended ? '✅ Sí' : '— No'}</div>
+    </div>
+  </div>`;
+  if ((ai.secondaryTopics||[]).length) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">Temas secundarios</div><div style="display:flex;flex-wrap:wrap;gap:6px;">${ai.secondaryTopics.map(t => `<span style="background:#e8f0fe;color:#1565c0;border-radius:10px;padding:2px 8px;font-size:.68rem;font-weight:700;">${repEsc(t)}</span>`).join('')}</div></div>`;
+  if ((ai.complaints||[]).length) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">⚠️ Quejas detectadas</div><ul style="font-size:.76rem;margin:0;padding-left:18px;">${ai.complaints.map(c => `<li style="margin-bottom:3px;">${repEsc(c)}</li>`).join('')}</ul></div>`;
+  if ((ai.compliments||[]).length) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">✨ Halagos detectados</div><ul style="font-size:.76rem;margin:0;padding-left:18px;">${ai.compliments.map(c => `<li style="margin-bottom:3px;">${repEsc(c)}</li>`).join('')}</ul></div>`;
+  if ((ai.suggestions||[]).length) html += `<div class="rep-detail-section"><div class="rep-detail-section-title">💡 Sugerencias operativas</div><ul style="font-size:.76rem;margin:0;padding-left:18px;">${ai.suggestions.map(c => `<li style="margin-bottom:3px;">${repEsc(c)}</li>`).join('')}</ul></div>`;
+  html += `<div style="font-size:.64rem;color:#bbb;margin-top:12px;">Analizado: ${(ai.analyzedAt||'').slice(0,16).replace('T',' ')} · Modelo: ${ai.model||'—'}</div>`;
+  return html;
+}
+
+function repResponseTabHTML(r) {
+  const canReply = !(r.tags||[]).includes('score_only_no_reply_allowed');
+  const isPublished = r.status === 'response_published';
+  const draft = r.responseDraft || r.aiAnalysis?.generatedResponse || '';
+
+  if (!canReply) return `<div style="text-align:center;padding:40px 20px;font-size:.8rem;color:#888;">Esta reseña no puede recibir respuesta (solo puntuación).</div>`;
+
+  let html = '';
+  if (isPublished && r.responseText) {
+    html += `<div class="rep-detail-section"><div class="rep-detail-section-title">✅ Respuesta publicada</div>
+      <div style="background:#e8f5e9;border:1.5px solid #c8e6c9;border-radius:8px;padding:12px 16px;font-size:.8rem;line-height:1.7;white-space:pre-wrap;">${repEsc(r.responseText)}</div>
+      <div style="font-size:.65rem;color:#555;margin-top:6px;">Publicado por ${repEsc(r.responsePublishedBy||'—')} · ${(r.responsePublishedAt||'').slice(0,10)}</div>
+    </div>`;
+  }
+
+  if (!isPublished) {
+    const toneBtns = ['Más formal','Más cálida','Más breve','Más empática'].map(t =>
+      `<button class="rep-action-btn" style="font-size:.68rem;" onclick="repToneAdjust('${r.id}','${t.toLowerCase().replace(' ','_')}')">✨ ${t}</button>`
+    ).join('');
+    const langBtns = ['Español','Inglés','Portugués'].map(l =>
+      `<button class="rep-action-btn" style="font-size:.68rem;" onclick="repTranslate('${r.id}','${l}')">🌐 ${l}</button>`
+    ).join('');
+    html += `<div class="rep-detail-section"><div class="rep-detail-section-title">✍️ Respuesta</div>
+      ${!r.aiAnalysis ? `<button class="rep-action-btn primary" style="margin-bottom:10px;" onclick="repAnalyzeReview('${r.id}')">🤖 Generar respuesta con IA</button><br>` : ''}
+      <textarea class="rep-response-editor" id="rep-editor-${r.id}" placeholder="Escribe aquí la respuesta al huésped...">${repEsc(draft)}</textarea>
+      <div style="display:flex;justify-content:space-between;font-size:.66rem;color:#999;margin-top:4px;">
+        <span id="rep-char-count-${r.id}">${draft.length} caracteres</span>
+        ${draft.length > 3000 ? '<span style="color:#c00;">⚠️ Supera 3000 chars (Booking.com)</span>' : ''}
+      </div>
+    </div>
+    <div class="rep-detail-section"><div class="rep-detail-section-title">🎨 Ajustar tono</div><div class="rep-tone-bar">${toneBtns}</div></div>
+    <div class="rep-detail-section"><div class="rep-detail-section-title">🌐 Traducir respuesta</div><div class="rep-tone-bar">${langBtns}</div></div>`;
+    const textarea = document.getElementById('rep-editor-' + r.id);
+    if (textarea) {
+      textarea.addEventListener('input', () => {
+        const cc = document.getElementById('rep-char-count-' + r.id);
+        if (cc) cc.textContent = textarea.value.length + ' caracteres';
+      });
+    }
+  }
+  return html;
+}
+
+function repHistoryTabHTML(r) {
+  const log = repReadChangelog().filter(e => e.reviewId === r.id);
+  if (!log.length) return `<div style="text-align:center;color:#bbb;padding:40px;font-size:.8rem;">No hay historial de cambios para esta reseña.</div>`;
+  return `<div class="rep-detail-section"><div class="rep-detail-section-title">Historial de cambios</div>
+    <div class="rep-changelog">${log.map(e => `
+      <div class="rep-changelog-entry">
+        <div class="rep-changelog-time">${e.changedAt.slice(0,16).replace('T',' ')}</div>
+        <div class="rep-changelog-body">
+          <strong>${repEsc(e.changedBy||'Sistema')}</strong> cambió <em>${repEsc(e.field||'')}</em>
+          ${e.previousValue ? `de "<span style="color:#c00;">${repEsc(e.previousValue)}</span>"` : ''}
+          ${e.newValue ? `a "<span style="color:#2e7d32;">${repEsc(e.newValue)}</span>"` : ''}
+          ${e.notes ? `<br><span style="color:#888;font-size:.68rem;">${repEsc(e.notes)}</span>` : ''}
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+// ── Action bar ────────────────────────────────────────────────
+function repRenderActionBar(r) {
+  const ab = document.getElementById('rep-action-bar');
+  if (!ab) return;
+  const canReply = !(r.tags||[]).includes('score_only_no_reply_allowed');
+  const isPublished = r.status === 'response_published';
+  let btns = [];
+  if (canReply && !isPublished) {
+    btns.push(`<button class="rep-action-btn primary" onclick="repSaveDraft('${r.id}')">💾 Guardar borrador</button>`);
+    btns.push(`<button class="rep-action-btn success" onclick="repApproveAndCopy('${r.id}')">✅ Aprobar y copiar</button>`);
+    btns.push(`<button class="rep-action-btn success" onclick="repMarkPublished('${r.id}')">🟢 Marcar como publicada</button>`);
+    btns.push(`<button class="rep-action-btn" onclick="repRegenerateResponse('${r.id}')">🔄 Regenerar IA</button>`);
+  }
+  if (!isPublished) {
+    btns.push(`<button class="rep-action-btn" onclick="repSetStatus('${r.id}','escalated')">🔴 Escalar</button>`);
+    btns.push(`<button class="rep-action-btn" onclick="repSetStatus('${r.id}','no_response_needed')">— Sin respuesta</button>`);
+  }
+  if (isPublished) {
+    btns.push(`<button class="rep-action-btn" onclick="repCopyResponse('${r.id}')">📋 Copiar respuesta</button>`);
+  }
+  ab.innerHTML = btns.join('');
+}
+
+// ── AI Analysis ───────────────────────────────────────────────
+async function repAnalyzeReview(id) {
+  const review = _repReviews.find(r => r.id === id);
+  if (!review) return;
+  repShowToast('Analizando con IA...');
+  try {
+    const res = await fetch('/api/reputation/analyze', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify(review)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.ok && data.analysis) {
+      repUpdateReview(id, {
+        aiAnalysis: data.analysis,
+        sentiment: data.analysis.sentiment,
+        riskLevel: data.analysis.riskLevel,
+        mainTopic: data.analysis.mainTopic,
+        secondaryTopics: data.analysis.secondaryTopics,
+        department: data.analysis.department,
+        language: data.analysis.detectedLanguage,
+        responseDraft: data.analysis.generatedResponse || review.responseDraft,
+        status: (data.analysis.responseRecommended && review.status === 'pending_response') ? 'response_draft' : review.status,
+      }, 'ai_analysis', 'Análisis IA completado');
+      repShowToast('✅ Análisis completado');
+      repSwitchTab('ai');
+    } else {
+      repShowToast('⚠️ ' + (data.error || 'Error en análisis IA'));
+    }
+  } catch(e) {
+    repShowToast('⚠️ Error de conexión: ' + e.message + '. Si no hay API configurada, el análisis no está disponible.');
+  }
+}
+
+async function repToneAdjust(id, tone) {
+  const review = _repReviews.find(r => r.id === id);
+  const editorEl = document.getElementById('rep-editor-' + id);
+  const currentText = editorEl ? editorEl.value : (review?.responseDraft || '');
+  if (!currentText.trim()) { repShowToast('Escribe una respuesta primero.'); return; }
+
+  const toneMap = { 'más_formal':'más formal y corporativa', 'más_cálida':'más cálida y cercana', 'más_breve':'más breve (máximo 100 palabras)', 'más_empática':'más empática hacia el huésped' };
+  const instruction = toneMap[tone] || tone;
+
+  repShowToast('Ajustando tono...');
+  try {
+    const prompt = `Reescribe la siguiente respuesta de hotel para hacerla ${instruction}. Mantén el mismo idioma. Devuelve SOLO el texto de la respuesta, sin explicaciones.\n\n${currentText}`;
+    const res = await fetch('/api/reputation/analyze', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ id:'tone_adjust', source:'manual', hotelId: review?.hotelId || '', authorName:'', rating:7, language:'es', reviewDate: new Date().toISOString(), comment: prompt, status:'pending_response', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+    });
+    const data = await res.json();
+    if (data.ok && data.analysis?.generatedResponse) {
+      const newText = data.analysis.generatedResponse;
+      if (editorEl) editorEl.value = newText;
+      repUpdateReview(id, { responseDraft: newText }, 'tone_adjust', 'Tono ajustado: ' + tone);
+      repShowToast('✅ Tono ajustado');
+    } else { repShowToast('⚠️ No se pudo ajustar el tono. IA no disponible.'); }
+  } catch(e) { repShowToast('⚠️ Error: ' + e.message); }
+}
+
+async function repTranslate(id, lang) {
+  const editorEl = document.getElementById('rep-editor-' + id);
+  const currentText = editorEl ? editorEl.value : '';
+  if (!currentText.trim()) { repShowToast('Escribe una respuesta primero.'); return; }
+  repShowToast('Traduciendo...');
+  const langMap = { 'Español':'español', 'Inglés':'inglés', 'Portugués':'portugués' };
+  try {
+    const prompt = `Traduce el siguiente texto al ${langMap[lang]||lang}. Devuelve SOLO el texto traducido.\n\n${currentText}`;
+    const review = _repReviews.find(r => r.id === id);
+    const res = await fetch('/api/reputation/analyze', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({ id:'translate', source:'manual', hotelId: review?.hotelId || '', authorName:'', rating:7, language:'es', reviewDate: new Date().toISOString(), comment: prompt, status:'pending_response', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() })
+    });
+    const data = await res.json();
+    if (data.ok && data.analysis?.generatedResponse) {
+      if (editorEl) editorEl.value = data.analysis.generatedResponse;
+      repShowToast('✅ Traducido al ' + lang);
+    } else { repShowToast('⚠️ Traducción no disponible. IA no configurada.'); }
+  } catch(e) { repShowToast('⚠️ Error: ' + e.message); }
+}
+
+async function repRegenerateResponse(id) {
+  const review = _repReviews.find(r => r.id === id);
+  if (!review) return;
+  repShowToast('Regenerando respuesta...');
+  try {
+    const res = await fetch('/api/reputation/analyze', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(review) });
+    const data = await res.json();
+    if (data.ok && data.analysis?.generatedResponse) {
+      const editorEl = document.getElementById('rep-editor-' + id);
+      if (editorEl) editorEl.value = data.analysis.generatedResponse;
+      repUpdateReview(id, { responseDraft: data.analysis.generatedResponse, aiAnalysis: data.analysis }, 'regenerate', 'Respuesta regenerada por IA');
+      repShowToast('✅ Respuesta regenerada');
+    } else repShowToast('⚠️ ' + (data.error||'Error IA'));
+  } catch(e) { repShowToast('⚠️ ' + e.message); }
+}
+
+// ── Review state mutations ────────────────────────────────────
+function repSaveDraft(id) {
+  const editorEl = document.getElementById('rep-editor-' + id);
+  const draft = editorEl ? editorEl.value : '';
+  if (!draft.trim()) { repShowToast('Escribe una respuesta antes de guardar.'); return; }
+  repUpdateReview(id, { responseDraft: draft, status: 'response_draft' }, 'status', 'Borrador guardado');
+  repShowToast('💾 Borrador guardado');
+}
+
+function repApproveAndCopy(id) {
+  const editorEl = document.getElementById('rep-editor-' + id);
+  const text = editorEl ? editorEl.value : (_repReviews.find(r => r.id === id)?.responseDraft || '');
+  if (!text.trim()) { repShowToast('La respuesta está vacía.'); return; }
+  navigator.clipboard.writeText(text).then(() => repShowToast('📋 Respuesta copiada al portapapeles')).catch(() => repShowToast('⚠️ No se pudo copiar'));
+  repUpdateReview(id, { responseDraft: text, status: 'response_ready' }, 'status', 'Respuesta aprobada y copiada');
+}
+
+function repMarkPublished(id) {
+  const editorEl = document.getElementById('rep-editor-' + id);
+  const review = _repReviews.find(r => r.id === id);
+  const text = (editorEl ? editorEl.value : '') || review?.responseDraft || review?.responseText || '';
+  if (!text.trim()) { repShowToast('No hay respuesta para publicar.'); return; }
+  const publishedBy = AUTH_SESSION ? AUTH_SESSION.userName : 'Sistema';
+  repUpdateReview(id, {
+    responseText: text, responseDraft: null,
+    responsePublishedAt: new Date().toISOString(),
+    responsePublishedBy: publishedBy,
+    status: 'response_published',
+    manuallyMarkedPublished: true
+  }, 'status', 'Respuesta marcada como publicada por ' + publishedBy);
+  repShowToast('🟢 Marcada como publicada');
+}
+
+function repCopyResponse(id) {
+  const review = _repReviews.find(r => r.id === id);
+  const text = review?.responseText || review?.responseDraft || '';
+  if (!text) { repShowToast('No hay respuesta para copiar.'); return; }
+  navigator.clipboard.writeText(text).then(() => repShowToast('📋 Respuesta copiada')).catch(() => repShowToast('⚠️ Error al copiar'));
+}
+
+function repSetStatus(id, status) {
+  repUpdateReview(id, { status }, 'status', 'Estado cambiado a ' + (REP_STATUS_LABELS[status]||status));
+  repShowToast('Estado actualizado: ' + (REP_STATUS_LABELS[status]||status));
+}
+
+function repSaveNotes(id, notesId) {
+  const el = document.getElementById(notesId);
+  if (!el) return;
+  repUpdateReview(id, { internalNotes: el.value }, 'internalNotes', 'Notas internas actualizadas');
+  repShowToast('💾 Notas guardadas');
+}
+
+function repUpdateReview(id, changes, field, notes) {
+  const idx = _repReviews.findIndex(r => r.id === id);
+  if (idx < 0) return;
+  const old = _repReviews[idx];
+  _repReviews[idx] = { ...old, ...changes, updatedAt: new Date().toISOString() };
+  repWrite(_repReviews);
+  if (field) repLogChange(id, field, old[field] ? String(old[field]) : null, changes[field] ? String(changes[field]) : null, notes);
+  repRenderList();
+  repRenderCard();
+}
+
+// ── Stats ─────────────────────────────────────────────────────
+function repShowStats() {
+  const overlay = document.getElementById('rep-stats-overlay');
+  if (!overlay) return;
+  overlay.style.display = '';
+  repRenderStats();
+}
+
+function repRenderStats() {
+  const reviews = repGetFiltered();
+  const total = reviews.length;
+  const pending = reviews.filter(r => r.status === 'pending_response').length;
+  const published = reviews.filter(r => r.status === 'response_published').length;
+  const critical = reviews.filter(r => r.riskLevel === 'critical' || r.sentiment === 'critical').length;
+  const avgRating = total ? (reviews.reduce((s,r) => s + (r.rating||0), 0) / total).toFixed(1) : 0;
+  const responseRate = total ? Math.round(published / total * 100) : 0;
+  const escalated = reviews.filter(r => r.status === 'escalated').length;
+  const needsInternal = reviews.filter(r => r.riskLevel === 'critical' || r.riskLevel === 'high').length;
+
+  const statsGrid = document.getElementById('rep-stats-grid');
+  if (statsGrid) {
+    const stats = [
+      { label:'Total reseñas', value: total },
+      { label:'Pendientes', value: pending },
+      { label:'Respondidas', value: published },
+      { label:'Críticas', value: critical },
+      { label:'Rating promedio', value: '⭐ ' + avgRating + '/10' },
+      { label:'Tasa de respuesta', value: responseRate + '%' },
+      { label:'Escaladas', value: escalated },
+      { label:'Alto riesgo', value: needsInternal },
+    ];
+    statsGrid.innerHTML = stats.map(s => `<div class="rep-stat-card"><div class="rep-stat-label">${s.label}</div><div class="rep-stat-value">${s.value}</div></div>`).join('');
+  }
+
+  const chartsGrid = document.getElementById('rep-charts-grid');
+  if (!chartsGrid) return;
+  chartsGrid.innerHTML = '';
+
+  // Helper: create a chart canvas
+  const mkChart = (id, title) => {
+    const card = document.createElement('div');
+    card.className = 'rep-chart-card';
+    card.innerHTML = `<div class="rep-chart-title">${title}</div><canvas id="${id}" height="180"></canvas>`;
+    chartsGrid.appendChild(card);
+    return id;
+  };
+
+  // Destroy old charts
+  Object.values(_repCharts).forEach(c => { try { c.destroy(); } catch {} });
+  _repCharts = {};
+
+  if (!total) {
+    chartsGrid.innerHTML = '<div class="rep-chart-empty" style="padding:40px;">No hay datos suficientes para mostrar gráficos.</div>';
+    return;
+  }
+
+  // 1. Sentiment distribution
+  {
+    const id = mkChart('rep-ch-sentiment','Distribución de sentimiento');
+    const counts = { positive:0, neutral:0, negative:0, critical:0 };
+    reviews.forEach(r => { if (r.sentiment) counts[r.sentiment]++; });
+    if (Object.values(counts).some(v => v > 0)) {
+      _repCharts['sentiment'] = new Chart(document.getElementById(id), { type:'doughnut', data:{ labels:['Positivo','Neutral','Negativo','Crítico'], datasets:[{ data:Object.values(counts), backgroundColor:['#2e7d32','#757575','#ef6c00','#b71c1c'] }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 } } }, datalabels:{ display:false } }, maintainAspectRatio:false } });
+    } else document.getElementById(id).parentElement.querySelector('.rep-chart-title').insertAdjacentHTML('afterend','<div class="rep-chart-empty">Sin datos de sentimiento aún.</div>');
+  }
+
+  // 2. By channel
+  {
+    const id = mkChart('rep-ch-channel','Reseñas por canal');
+    const counts = {};
+    reviews.forEach(r => { counts[r.source] = (counts[r.source]||0) + 1; });
+    if (Object.keys(counts).length) {
+      const labels = Object.keys(counts).map(k => REP_SOURCE_LABELS[k]||k);
+      _repCharts['channel'] = new Chart(document.getElementById(id), { type:'bar', data:{ labels, datasets:[{ data:Object.values(counts), backgroundColor:'#CE7E1F' }] }, options:{ plugins:{ legend:{ display:false }, datalabels:{ display:false } }, maintainAspectRatio:false } });
+    }
+  }
+
+  // 3. Avg rating by channel
+  {
+    const id = mkChart('rep-ch-rating-channel','Rating promedio por canal');
+    const sums = {}, counts2 = {};
+    reviews.forEach(r => { sums[r.source] = (sums[r.source]||0) + r.rating; counts2[r.source] = (counts2[r.source]||0) + 1; });
+    const labels = Object.keys(sums).map(k => REP_SOURCE_LABELS[k]||k);
+    const data = Object.keys(sums).map(k => Math.round(sums[k]/counts2[k]*10)/10);
+    if (labels.length) {
+      _repCharts['rating_ch'] = new Chart(document.getElementById(id), { type:'bar', data:{ labels, datasets:[{ data, backgroundColor:'#AF762B', borderRadius:4 }] }, options:{ plugins:{ legend:{ display:false }, datalabels:{ display:false } }, scales:{ y:{ min:0, max:10 } }, maintainAspectRatio:false } });
+    }
+  }
+
+  // 4. Status distribution
+  {
+    const id = mkChart('rep-ch-status','Estado de respuestas');
+    const counts = {};
+    reviews.forEach(r => { const s = REP_STATUS_LABELS[r.status]||r.status; counts[s] = (counts[s]||0)+1; });
+    if (Object.keys(counts).length) {
+      _repCharts['status'] = new Chart(document.getElementById(id), { type:'doughnut', data:{ labels:Object.keys(counts), datasets:[{ data:Object.values(counts), backgroundColor:['#f57f17','#1565c0','#2e7d32','#b71c1c','#757575','#6a1b9a'] }] }, options:{ plugins:{ legend:{ position:'bottom', labels:{ font:{ size:10 } } }, datalabels:{ display:false } }, maintainAspectRatio:false } });
+    }
+  }
+
+  // 5. Monthly rating trend
+  {
+    const id = mkChart('rep-ch-trend','Evolución mensual del rating');
+    const monthly = {};
+    reviews.forEach(r => {
+      if (!r.reviewDate) return;
+      const mo = r.reviewDate.slice(0,7);
+      if (!monthly[mo]) monthly[mo] = { sum:0, count:0 };
+      monthly[mo].sum += r.rating; monthly[mo].count++;
+    });
+    const sorted = Object.keys(monthly).sort();
+    if (sorted.length > 1) {
+      _repCharts['trend'] = new Chart(document.getElementById(id), { type:'line', data:{ labels:sorted, datasets:[{ data:sorted.map(m => Math.round(monthly[m].sum/monthly[m].count*10)/10), borderColor:'#CE7E1F', backgroundColor:'rgba(206,126,31,.1)', fill:true, tension:0.3 }] }, options:{ plugins:{ legend:{ display:false }, datalabels:{ display:false } }, scales:{ y:{ min:0, max:10 } }, maintainAspectRatio:false } });
+    } else document.getElementById(id).insertAdjacentHTML('afterend','<div class="rep-chart-empty">Se necesitan al menos 2 meses de datos.</div>');
+  }
+
+  // 6. Top topics
+  {
+    const id = mkChart('rep-ch-topics','Temas más mencionados');
+    const counts = {};
+    reviews.forEach(r => { if (r.mainTopic) counts[r.mainTopic] = (counts[r.mainTopic]||0)+1; });
+    const top = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,8);
+    if (top.length) {
+      _repCharts['topics'] = new Chart(document.getElementById(id), { type:'bar', data:{ labels:top.map(t => t[0]), datasets:[{ data:top.map(t => t[1]), backgroundColor:'#6a1b9a', borderRadius:4 }] }, options:{ indexAxis:'y', plugins:{ legend:{ display:false }, datalabels:{ display:false } }, maintainAspectRatio:false } });
+    } else document.getElementById(id).parentElement.querySelector('.rep-chart-title').insertAdjacentHTML('afterend','<div class="rep-chart-empty">Ejecuta análisis IA para ver temas.</div>');
+  }
+}
+
+// ── Export ────────────────────────────────────────────────────
+function repExportExcel() {
+  const reviews = repGetFiltered();
+  if (!reviews.length) { repShowToast('No hay reseñas para exportar.'); return; }
+  const wb = XLSX.utils.book_new();
+
+  const toRow = r => ({
+    ID: r.id, Fuente: r.source, Hotel: r.hotelId,
+    Autor: r.authorName, 'Puntuación (0-10)': r.rating, 'Rating (1-5)': (r.rating/2).toFixed(1),
+    Título: r.title||'', Comentario: r.comment||'',
+    Positivo: r.positiveComment||'', Negativo: r.negativeComment||'',
+    Idioma: r.language, Fecha: r.reviewDate?.slice(0,10)||'',
+    Estado: REP_STATUS_LABELS[r.status]||r.status,
+    Sentimiento: r.sentiment||'', Riesgo: r.riskLevel||'',
+    'Tema principal': r.mainTopic||'', 'Temas secundarios': (r.secondaryTopics||[]).join(', '),
+    Departamento: r.department||'', 'Respuesta': r.responseText||'',
+    'Publicado por': r.responsePublishedBy||'', 'Fecha respuesta': r.responsePublishedAt?.slice(0,10)||'',
+    URL: r.sourceUrl||'', 'Notas internas': r.internalNotes||''
+  });
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(reviews.map(toRow)), 'Reseñas');
+
+  const aiRows = reviews.filter(r => r.aiAnalysis).map(r => ({
+    'ID reseña': r.id, Hotel: r.hotelId, Autor: r.authorName,
+    Sentimiento: r.aiAnalysis.sentiment, Score: r.aiAnalysis.sentimentScore,
+    Riesgo: r.aiAnalysis.riskLevel, 'Tema principal': r.aiAnalysis.mainTopic,
+    Departamento: r.aiAnalysis.department, Urgencia: r.aiAnalysis.urgencyScore,
+    Halagos: (r.aiAnalysis.compliments||[]).join('; '),
+    Quejas: (r.aiAnalysis.complaints||[]).join('; '),
+    'Respuesta sugerida': r.aiAnalysis.generatedResponse||''
+  }));
+  if (aiRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(aiRows), 'Análisis IA');
+
+  const critRows = reviews.filter(r => r.riskLevel === 'critical' || r.riskLevel === 'high' || r.sentiment === 'critical');
+  if (critRows.length) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(critRows.map(toRow)), 'Críticas y Alto Riesgo');
+
+  // Summary by hotel
+  const byHotel = {};
+  reviews.forEach(r => { byHotel[r.hotelId] = byHotel[r.hotelId] || []; byHotel[r.hotelId].push(r); });
+  const summaryRows = Object.entries(byHotel).map(([hotel, hrs]) => ({
+    Hotel: hotel,
+    Total: hrs.length,
+    'Promedio': (hrs.reduce((s,r) => s + r.rating, 0) / hrs.length).toFixed(1),
+    Respondidas: hrs.filter(r => r.status === 'response_published').length,
+    'Tasa %': Math.round(hrs.filter(r => r.status === 'response_published').length / hrs.length * 100),
+    Positivas: hrs.filter(r => r.sentiment === 'positive').length,
+    Negativas: hrs.filter(r => r.sentiment === 'negative').length,
+    Críticas: hrs.filter(r => r.sentiment === 'critical').length,
+  }));
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(summaryRows), 'Resumen por Hotel');
+
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `reputacion_geh_${date}.xlsx`);
+  repShowToast('⬇ Exportado exitosamente');
+}
+
+// ── Demo data ─────────────────────────────────────────────────
+function repLoadDemoData() {
+  if (!confirm('¿Cargar datos demo? Esto agregará reseñas de ejemplo a la bandeja.')) return;
+  const now = new Date();
+  const ago = d => new Date(now - d * 86400000).toISOString();
+  const hotels = typeof HOTELS !== 'undefined' ? HOTELS : ['GEH Suites Centro','GEH Suites Norte'];
+  const h0 = hotels[0] || 'GEH Suites Centro';
+  const h1 = hotels[1] || 'GEH Suites Norte';
+
+  const demo = [
+    { id:'demo_1', source:'booking', hotelId:h0, authorName:'María González', rating:9.4, title:'Excelente estadía', positiveComment:'El personal fue increíblemente amable y servicial. La habitación estaba impecable y el desayuno delicioso.', negativeComment:'El estacionamiento estaba algo limitado.', comment:null, language:'es', reviewDate:ago(2), status:'pending_response', sentiment:'positive', riskLevel:'low', mainTopic:'Servicio', secondaryTopics:['Desayuno','Habitación'], tags:[] },
+    { id:'demo_2', source:'tripadvisor', hotelId:h1, authorName:'James Cooper', rating:4, title:'Disappointing experience', positiveComment:null, negativeComment:null, comment:'The room was not clean at all. Found hair on the sheets and the bathroom had mold. Staff was unresponsive when I complained. Would not recommend.', language:'en', reviewDate:ago(1), status:'pending_response', sentiment:'critical', riskLevel:'critical', mainTopic:'Limpieza', secondaryTopics:['Servicio al cliente'], tags:[] },
+    { id:'demo_3', source:'google_business', hotelId:h0, authorName:'Carlos Medina', rating:7, title:null, comment:'Buena ubicación y precio justo. El desayuno podría mejorar en variedad. El WiFi estuvo lento durante mi estadía. Personal amable.', language:'es', reviewDate:ago(5), status:'response_draft', sentiment:'neutral', riskLevel:'low', mainTopic:'WiFi', secondaryTopics:['Desayuno','Ubicación'], tags:[], responseDraft:'Estimado Carlos, gracias por tomarse el tiempo de compartir su experiencia con nosotros...' },
+    { id:'demo_4', source:'booking', hotelId:h1, authorName:'Ana Rodrigues', rating:9, positiveComment:'Quartos lindos e limpos. Ótimo café da manhã e localização perfeita.', negativeComment:'Nenhum problema.', comment:null, language:'pt', reviewDate:ago(3), status:'pending_response', sentiment:'positive', riskLevel:'low', mainTopic:'Habitación', secondaryTopics:['Desayuno','Ubicación'], tags:[] },
+    { id:'demo_5', source:'tripadvisor', hotelId:h0, authorName:'Sophie Martin', rating:5.6, title:'Average stay', comment:'The hotel is okay but nothing special. Staff was friendly but the facilities are a bit dated. Breakfast was limited. For the price, it was acceptable.', language:'en', reviewDate:ago(7), status:'pending_response', sentiment:'negative', riskLevel:'medium', mainTopic:'Instalaciones', secondaryTopics:['Desayuno'], tags:[] },
+    { id:'demo_6', source:'booking', hotelId:h0, authorName:'Roberto Sánchez', rating:2, positiveComment:null, negativeComment:null, comment:'', language:'es', reviewDate:ago(1), status:'pending_response', sentiment:'critical', riskLevel:'critical', tags:['score_only_no_reply_allowed'] },
+    { id:'demo_7', source:'google_business', hotelId:h1, authorName:'Alejandra Torres', rating:9.8, title:'Perfecto', comment:'Absolutamente increíble. El spa fue una experiencia de lujo. Las instalaciones son modernas y el personal anticipa cada necesidad. Volveré sin duda.', language:'es', reviewDate:ago(10), status:'response_published', sentiment:'positive', riskLevel:'low', mainTopic:'Spa', secondaryTopics:['Instalaciones','Servicio'], responseText:'Estimada Alejandra, gracias por sus maravillosas palabras sobre nuestro spa y las instalaciones. Es un placer saber que superamos sus expectativas. Esperamos recibirla nuevamente muy pronto. Con aprecio, Equipo GEH Suites.', responsePublishedBy:'Administrador', responsePublishedAt: ago(9), tags:[] },
+    { id:'demo_8', source:'tripadvisor', hotelId:h0, authorName:'Luigi Ferri', rating:8, title:'Ottimo hotel', comment:'Hotel molto bello, personale gentile e professionale. Camera pulita e confortevole. Colazione buona con buona varietà. Lo consiglio.', language:'it', reviewDate:ago(14), status:'pending_response', sentiment:'positive', riskLevel:'low', mainTopic:'Habitación', secondaryTopics:['Servicio','Desayuno'], tags:[] },
+  ].map(r => ({
+    ...r,
+    externalId: r.id,
+    authorCountry: null,
+    title: r.title || null,
+    comment: r.comment !== undefined ? r.comment : null,
+    positiveComment: r.positiveComment || null,
+    negativeComment: r.negativeComment || null,
+    sourceUrl: null,
+    internalNotes: null,
+    aiAnalysis: null,
+    department: r.mainTopic ? 'general' : null,
+    importedFromFile: null,
+    manuallyMarkedPublished: r.status === 'response_published',
+    createdAt: r.reviewDate,
+    updatedAt: r.reviewDate,
+  }));
+
+  const existing = repRead();
+  let added = 0;
+  demo.forEach(d => {
+    if (!existing.find(r => r.id === d.id)) { existing.push(d); added++; }
+  });
+  repWrite(existing);
+  _repReviews = existing;
+  repRenderList();
+  repPopulateHotelFilter();
+  repShowToast(`✅ ${added} reseñas demo agregadas`);
+}
+
+// ── Utils ─────────────────────────────────────────────────────
+function repEsc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function repShowToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.style.opacity = 1;
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._to);
+  t._to = setTimeout(() => { t.style.opacity = 0; t.style.transform = 'translateX(-50%) translateY(12px)'; }, 3000);
+}
+// ═══════════════════════════════════════════════════════════════
+// END REPUTATION MODULE
+// ═══════════════════════════════════════════════════════════════
+</script>
+
 </body>
 </html>
