@@ -92,6 +92,7 @@ export function login(users: User[], email: string, password: string): LoginResu
     createdAt: now,
     lastActivityAt: now,
     expiresAt: new Date(Date.now() + SESSION_INACTIVITY_HOURS * 3600000).toISOString(),
+    authProvider: user.authProvider ?? 'email',
   };
   writeSession(session);
   return { ok: true, session };

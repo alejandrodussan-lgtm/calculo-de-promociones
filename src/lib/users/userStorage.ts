@@ -60,6 +60,8 @@ export function create(data: Partial<User> & { password?: string }, createdBy: s
     updatedAt: now,
     createdBy,
     lastLoginAt: null,
+    authProvider: (data as Partial<User> & { authProvider?: AuthProvider }).authProvider ?? 'email',
+    allowedProviders: (data as Partial<User> & { allowedProviders?: AuthProvider[] }).allowedProviders ?? ['email'],
   };
   users.push(u);
   saveAll(users);
