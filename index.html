@@ -549,6 +549,79 @@
 .user-form-group input:focus,.user-form-group select:focus { border-color:var(--gold); }
 .hotels-checkbox-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:6px;border:1px solid var(--gold-border);border-radius:6px;padding:10px;max-height:160px;overflow-y:auto; }
 .hotels-checkbox-grid label { display:flex;align-items:center;gap:6px;font-size:.74rem;cursor:pointer; }
+
+/* ── SIDEBAR LAYOUT ─────────────────────────────────────────── */
+#dashboard-root { display:flex;flex-direction:column;height:100vh; }
+.app-body { display:flex;flex:1;overflow:hidden; }
+.main-sidebar {
+  width:220px;min-width:220px;background:var(--white);border-right:1.5px solid var(--gold-border);
+  display:flex;flex-direction:column;overflow:hidden;transition:width .22s ease,min-width .22s ease;
+  flex-shrink:0;
+}
+.main-sidebar.sb-collapsed { width:52px;min-width:52px; }
+.sb-toggle-btn {
+  display:flex;align-items:center;justify-content:flex-end;padding:8px 10px;
+  border-bottom:1px solid var(--gold-border);flex-shrink:0;
+}
+.sb-toggle-btn button {
+  background:none;border:none;cursor:pointer;padding:4px 6px;color:var(--gold-dark);
+  font-size:.85rem;border-radius:4px;transition:background .15s;
+}
+.sb-toggle-btn button:hover { background:var(--gold-pale); }
+.sb-nav { flex:1;overflow-y:auto;padding:8px 0; }
+.sb-group { margin-bottom:4px; }
+.sb-group-label {
+  font-size:.58rem;font-weight:900;color:var(--gray3);text-transform:uppercase;
+  letter-spacing:1px;padding:8px 14px 3px;white-space:nowrap;overflow:hidden;
+  transition:opacity .15s;
+}
+.main-sidebar.sb-collapsed .sb-group-label { opacity:0;pointer-events:none; }
+.sb-item {
+  display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;
+  font-size:.78rem;font-weight:600;color:var(--text);border:none;background:none;
+  width:100%;text-align:left;border-radius:0;transition:background .15s;
+  white-space:nowrap;overflow:hidden;position:relative;
+}
+.sb-item:hover { background:var(--gold-pale); }
+.sb-item.active { background:var(--gold-subtle);color:var(--gold-dark);font-weight:800; }
+.sb-item.active::before {
+  content:'';position:absolute;left:0;top:0;bottom:0;width:3px;
+  background:var(--gold);border-radius:0 2px 2px 0;
+}
+.sb-item-icon { font-size:1rem;flex-shrink:0;width:22px;text-align:center; }
+.sb-item-label { transition:opacity .15s,max-width .22s;max-width:200px;overflow:hidden; }
+.main-sidebar.sb-collapsed .sb-item-label { opacity:0;max-width:0;pointer-events:none; }
+.sb-item-future { opacity:.4;cursor:default;pointer-events:none; }
+.sb-item-future:hover { background:none; }
+.main-sidebar.sb-collapsed .sb-item { padding:8px 15px; }
+/* tooltip on collapsed */
+.main-sidebar.sb-collapsed .sb-item[data-tooltip]::after {
+  content:attr(data-tooltip);position:absolute;left:54px;top:50%;transform:translateY(-50%);
+  background:#333;color:#fff;font-size:.68rem;padding:3px 8px;border-radius:4px;
+  white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;
+}
+.main-sidebar.sb-collapsed .sb-item[data-tooltip]:hover::after { opacity:1; }
+.sb-divider { border:none;border-top:1px solid var(--gold-border);margin:6px 10px; }
+.content-area { flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0; }
+.content-area > .action-bar { flex-shrink:0; }
+.content-area > [id^="module-"] { flex:1;overflow-y:auto; }
+/* hamburger for mobile */
+.sb-hamburger {
+  display:none;background:none;border:none;cursor:pointer;padding:6px 10px;
+  font-size:1.2rem;color:var(--gold-dark);
+}
+.sb-mobile-overlay {
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:299;
+}
+@media(max-width:700px){
+  .sb-hamburger { display:block; }
+  .main-sidebar { position:fixed;left:0;top:0;bottom:0;z-index:300;transform:translateX(-100%);transition:transform .25s ease,width .22s ease; }
+  .main-sidebar.sb-mobile-open { transform:translateX(0); }
+  .sb-mobile-overlay.visible { display:block; }
+  .main-sidebar.sb-collapsed { width:220px;min-width:220px; }
+  .main-sidebar.sb-collapsed .sb-item-label { opacity:1;max-width:200px; }
+  .main-sidebar.sb-collapsed .sb-group-label { opacity:1; }
+}
 </style>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -610,6 +683,7 @@
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:14px;">
+    <button class="sb-hamburger" id="sb-hamburger" onclick="sbMobileOpen()" title="Menú">☰</button>
     <button class="hotel-toggle-btn" id="hotel-toggle-btn" onclick="openSidebar()">
       <span class="htb-icon">🏨</span>
       <span class="htb-name" id="hotel-badge">GEH Suites Hotels</span>
@@ -619,8 +693,8 @@
   </div>
 </header>
 
-<!-- MODULE NAV BAR -->
-<nav class="module-nav" id="module-nav">
+<!-- MODULE NAV BAR (hidden — replaced by sidebar) -->
+<nav class="module-nav" id="module-nav" style="display:none">
   <div class="module-nav-inner">
     <button class="module-nav-btn active" id="nav-simulator" onclick="switchModule('simulator')">
       <span class="mnb-icon">📊</span>
@@ -978,6 +1052,163 @@ function showDashboard() {
   // Show/hide users nav based on permissions
   const usersNav = document.getElementById('nav-users');
   if (usersNav) usersNav.style.display = (AUTH_SESSION && (AUTH_SESSION.role === 'master_admin' || hasPermission('canManageUsers'))) ? '' : 'none';
+  setupAppLayout();
+}
+
+// ── SIDEBAR NAVIGATION ────────────────────────────────────────
+function getAvailableModulesForUser() {
+  const modules = [
+    { group:'Revenue Management', items:[
+      { id:'simulator', icon:'📊', label:'Simulador de Tarifas' },
+      { id:'otb',       icon:'📈', label:'Comparativa OTB' },
+    ]},
+    { group:'Seguimiento', items:[
+      { id:'agenda', icon:'📋', label:'Agenda Revenue' },
+    ]},
+  ];
+  const isAdmin = AUTH_SESSION && (AUTH_SESSION.role === 'master_admin' || hasPermission('canManageUsers'));
+  if (isAdmin) {
+    modules.push({ group:'Administración', items:[
+      { id:'users', icon:'👤', label:'Usuarios' },
+    ]});
+  }
+  modules.push({ group:'Próximamente', items:[
+    { id:'forecast',     icon:'🔮', label:'Forecast', future:true },
+    { id:'reportes',     icon:'📑', label:'Reportes',  future:true },
+    { id:'configuracion',icon:'⚙',  label:'Configuración', future:true },
+  ]});
+  return modules;
+}
+
+let _sidebarReady = false;
+function setupAppLayout() {
+  if (_sidebarReady) { sidebarRebuild(); return; }
+  _sidebarReady = true;
+
+  // Mobile overlay
+  const mobileOverlay = document.createElement('div');
+  mobileOverlay.className = 'sb-mobile-overlay';
+  mobileOverlay.id = 'sb-mobile-overlay';
+  mobileOverlay.addEventListener('click', sbMobileClose);
+  document.body.appendChild(mobileOverlay);
+
+  // Build sidebar element
+  const sidebar = document.createElement('aside');
+  sidebar.className = 'main-sidebar' + (localStorage.getItem('rmd_sidebar_collapsed') === '1' ? ' sb-collapsed' : '');
+  sidebar.id = 'main-sidebar';
+
+  const toggleRow = document.createElement('div');
+  toggleRow.className = 'sb-toggle-btn';
+  toggleRow.innerHTML = '<button onclick="toggleMainSidebar()" title="Colapsar/expandir menú" id="sb-toggle-icon">◀</button>';
+  sidebar.appendChild(toggleRow);
+
+  const nav = document.createElement('nav');
+  nav.className = 'sb-nav';
+  nav.id = 'sb-nav';
+  sidebar.appendChild(nav);
+
+  // Build content-area
+  const contentArea = document.createElement('div');
+  contentArea.className = 'content-area';
+  contentArea.id = 'content-area';
+
+  // Move action bars and module panels into content-area
+  const toMove = [
+    'action-bar-simulator','action-bar-otb','action-bar-agenda','action-bar-users',
+    'module-simulator','module-otb','module-agenda','module-users',
+    'toast',
+  ];
+  // Also get hotel-sidebar overlay
+  const hotelOverlay = document.getElementById('sidebar-overlay');
+  const hotelSidebarEl = document.getElementById('hotel-sidebar');
+
+  toMove.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) contentArea.appendChild(el);
+  });
+  if (hotelOverlay) contentArea.appendChild(hotelOverlay);
+  if (hotelSidebarEl) contentArea.appendChild(hotelSidebarEl);
+
+  // Wrap in app-body
+  const appBody = document.createElement('div');
+  appBody.className = 'app-body';
+  appBody.id = 'app-body';
+  appBody.appendChild(sidebar);
+  appBody.appendChild(contentArea);
+
+  // Insert app-body after header
+  const header = document.querySelector('#dashboard-root > header');
+  if (header && header.nextSibling) {
+    header.parentNode.insertBefore(appBody, header.nextSibling);
+  } else if (header) {
+    header.parentNode.appendChild(appBody);
+  }
+
+  sidebarRebuild();
+  _updateToggleIcon();
+}
+
+function sidebarRebuild() {
+  const nav = document.getElementById('sb-nav');
+  if (!nav) return;
+  nav.innerHTML = '';
+  const groups = getAvailableModulesForUser();
+  groups.forEach(group => {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'sb-group';
+    const label = document.createElement('div');
+    label.className = 'sb-group-label';
+    label.textContent = group.group;
+    groupDiv.appendChild(label);
+    group.items.forEach(item => {
+      const btn = document.createElement('button');
+      btn.className = 'sb-item' + (item.future ? ' sb-item-future' : '');
+      btn.setAttribute('data-mod', item.id);
+      btn.setAttribute('data-tooltip', item.label);
+      if (!item.future) btn.addEventListener('click', () => { switchModule(item.id); sbMobileClose(); });
+      btn.innerHTML = `<span class="sb-item-icon">${item.icon}</span><span class="sb-item-label">${item.label}</span>`;
+      groupDiv.appendChild(btn);
+    });
+    nav.appendChild(groupDiv);
+    const hr = document.createElement('hr');
+    hr.className = 'sb-divider';
+    nav.appendChild(hr);
+  });
+}
+
+function sidebarNavSetActive(mod) {
+  document.querySelectorAll('.sb-item').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-mod') === mod);
+  });
+}
+
+function toggleMainSidebar() {
+  const sb = document.getElementById('main-sidebar');
+  if (!sb) return;
+  sb.classList.toggle('sb-collapsed');
+  localStorage.setItem('rmd_sidebar_collapsed', sb.classList.contains('sb-collapsed') ? '1' : '0');
+  _updateToggleIcon();
+}
+
+function _updateToggleIcon() {
+  const sb = document.getElementById('main-sidebar');
+  const btn = document.getElementById('sb-toggle-icon');
+  if (!btn || !sb) return;
+  btn.textContent = sb.classList.contains('sb-collapsed') ? '▶' : '◀';
+}
+
+function sbMobileOpen() {
+  const sb = document.getElementById('main-sidebar');
+  const ov = document.getElementById('sb-mobile-overlay');
+  if (sb) sb.classList.add('sb-mobile-open');
+  if (ov) ov.classList.add('visible');
+}
+
+function sbMobileClose() {
+  const sb = document.getElementById('main-sidebar');
+  const ov = document.getElementById('sb-mobile-overlay');
+  if (sb) sb.classList.remove('sb-mobile-open');
+  if (ov) ov.classList.remove('visible');
 }
 
 function updateHeaderUser() {
@@ -2100,6 +2331,8 @@ function switchModule(mod) {
   if (isAgenda) initAgenda();
   // Init Users on first open
   if (isUsers) initUsersModule();
+  // Sidebar active state
+  sidebarNavSetActive(mod);
   // Audit
   if (AUTH_SESSION) authWriteAudit('navigate_module', AUTH_SESSION.userId, AUTH_SESSION.userName, currentHotel, null, mod);
 }
