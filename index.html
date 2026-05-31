@@ -877,10 +877,22 @@ const USERS_STORAGE_KEY = 'rmd_users';
 const AUDIT_STORAGE_KEY = 'rmd_audit_log';
 const SESSION_INACTIVITY_HOURS = 24;
 
-// Google OAuth Client ID — public identifier, safe to store here.
-// Register at https://console.cloud.google.com → APIs & Services → Credentials.
-// Leave empty to disable Google Sign-In. Add your domain to "Authorized JavaScript origins".
-const GEH_GOOGLE_CLIENT_ID = '';
+// Google OAuth Client ID — resolved at runtime from /api/config (Next.js API route).
+// Set the GOOGLE_CLIENT_ID environment variable in your Vercel project settings.
+// Falls back to '' (Google Sign-In disabled) if the endpoint is unreachable (local file:// usage).
+let GEH_GOOGLE_CLIENT_ID = '';
+
+async function loadRuntimeConfig() {
+  try {
+    const res = await fetch('/api/config', { cache: 'no-store' });
+    if (res.ok) {
+      const cfg = await res.json();
+      if (cfg.googleClientId) GEH_GOOGLE_CLIENT_ID = cfg.googleClientId;
+    }
+  } catch (_) {
+    // Running as a local file or API not available — Google Sign-In stays disabled.
+  }
+}
 
 // Simple deterministic hash (DEV ONLY — replace with real crypto in production)
 function _hashPassword(raw) {
@@ -1430,7 +1442,8 @@ function handleLoginSubmit(e) {
 }
 
 // ── INIT AUTH ───────────────────────────────────────────────────
-function initAuth() {
+async function initAuth() {
+  await loadRuntimeConfig();
   initGoogleSignIn();
   const session = authGetSession();
   if (session) {
